@@ -2,6 +2,8 @@
 
 Русский проектный учебник по Python в духе Real-World Python: каждая глава строит работающий инструмент для расследования, а теория появляется там, где она нужна проекту.
 
+Сайт: [https://mkuziuk.github.io/python-tutorial/](https://mkuziuk.github.io/python-tutorial/)
+
 ## Что внутри
 
 - `src/content/docs/` - страницы Starlight: дела, справочник, материалы, карта навыков.
