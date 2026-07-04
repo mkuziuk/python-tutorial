@@ -1,0 +1,1093 @@
+---
+import heroImage from '../assets/case-desk-hero.png';
+
+const base = import.meta.env.BASE_URL;
+const casesBase = `${base}cases/`;
+const guideLink = `${base}field-guide/`;
+const materialsLink = `${base}materials/`;
+const skillMapLink = `${base}skill-map/`;
+
+const cases = [
+  {
+    number: '01',
+    slug: 'anonymous-letter',
+    title: 'Кто написал анонимное письмо?',
+    kicker: 'Текстовый отпечаток',
+    copy:
+      'Первая улика появляется без подписи. Мы начинаем с текста и учимся превращать ощущение стиля в проверяемые признаки.',
+    scene: 'В архивной редакции утром находят anonymous.txt: записку о странной правке в общей папке.',
+    question: 'Кто из трех коллег, вероятнее всего, написал ее?',
+    tool: 'Собираем текстовый отпечаток: слова, пунктуацию, частоты и сравнение профилей.',
+    outcome: 'Таблица кандидатов с объяснимыми признаками текста',
+    concepts: ['venv', 'regex', 'dict/set', 'Counter', 'Rich'],
+    files: ['anonymous.txt', 'author_*.txt', 'anonymous_letter.py'],
+    command: 'python anonymous_letter.py',
+    color: '#20d3bd',
+    tone: '#f3e1b8',
+  },
+  {
+    number: '02',
+    slug: 'copy-paste-detector',
+    title: 'Детектор текстовых совпадений',
+    kicker: 'Совпадения фрагментов',
+    copy:
+      'После записки команда проверяет соседние материалы архива. Теперь вопрос не в авторе, а в повторяющихся кусках текста.',
+    scene: 'В подборке черновиков несколько фрагментов повторяют соседние фразы почти тем же порядком слов.',
+    question: 'Какие пары похожи на копирование, а какие просто пишут об одной теме?',
+    tool: 'Режем тексты на n-граммы, сравниваем множества и сортируем пары по подозрительности.',
+    outcome: 'Рейтинг подозрительных пар с примером общего фрагмента',
+    concepts: ['tuple', 'n-граммы', 'set', 'sorting', 'functions'],
+    files: ['fragment_*.txt', 'copy_paste_detector.py', 'check_result.txt'],
+    command: 'python copy_paste_detector.py',
+    color: '#f2b84b',
+    tone: '#f7e7c7',
+  },
+  {
+    number: '03',
+    slug: 'phishing-email',
+    title: 'Фишинговое письмо или нет?',
+    kicker: 'Безопасный разбор писем',
+    copy:
+      'Расследование выходит за пределы текстов: в учебный ящик приходит письмо про доступ к архиву, и его нужно проверить безопасно.',
+    scene: 'Команда получает синтетическое .eml, которое торопит проверить доступ к архивным материалам.',
+    question: 'Какие признаки риска видны, если не открывать ссылки и вложения?',
+    tool: 'Разбираем письмо, ссылки, домены и IP, затем начисляем прозрачные баллы риска.',
+    outcome: 'Отчет по письмам: вердикт, баллы и причины',
+    concepts: ['email', 'URL', 'ipaddress', 'exceptions', 'rules'],
+    files: ['mail_*.eml', 'phishing_email.py', 'risk rules'],
+    command: 'python phishing_email.py',
+    color: '#ee6f5e',
+    tone: '#f4d8ce',
+  },
+  {
+    number: '04',
+    slug: 'secret-folder-archive',
+    title: 'Архивариус секретной папки',
+    kicker: 'Файлы, хеши, manifest',
+    copy:
+      'Теперь улики лежат не только в письмах: появляется папка с черновиками, логами и копиями, которую надо описать без ручной путаницы.',
+    scene: 'В secret_folder лежат заметки, логи, копии и черновики; по именам уже непонятно, что изменилось.',
+    question: 'Какие файлы совпадают, какие изменились и как сохранить снимок проверки?',
+    tool: 'Обходим папку через pathlib, считаем SHA-256 и записываем JSON-manifest.',
+    outcome: 'Manifest архива, группы дублей и список изменений',
+    concepts: ['pathlib', 'hashlib', 'JSON', 'timestamps', 'changes'],
+    files: ['secret_folder/', 'manifest.json', 'secret_folder_archive.py'],
+    command: 'python secret_folder_archive.py',
+    color: '#a7d56f',
+    tone: '#e4edca',
+  },
+  {
+    number: '05',
+    slug: 'investigation-system',
+    title: 'Система расследований',
+    kicker: 'OOP-модель дела',
+    copy:
+      'К финалу первой арки материалов становится слишком много для отдельных скриптов. Нужна маленькая система, которая держит дело целиком.',
+    scene: 'После текстов, писем и папок у команды есть люди, улики, заметки, теги и несколько версий событий.',
+    question: 'Как собрать это в одну модель, чтобы расследование можно было продолжать?',
+    tool: 'Описываем дело, людей и улики классами, затем сохраняем состояние в JSON.',
+    outcome: 'Мини-система учета дел с поиском, заметками и сохранением',
+    concepts: ['classes', 'dataclass', 'methods', 'composition', 'JSON'],
+    files: ['case_seed.json', 'investigation_system.py', 'Evidence'],
+    command: 'python investigation_system.py',
+    color: '#9fb7ff',
+    tone: '#dce4f8',
+  },
+].map((item) => ({
+  ...item,
+  href: `${casesBase}${item.slug}/`,
+  download: `${base}downloads/case-${item.number}.zip`,
+  solution: `${casesBase}${item.slug}-solution/`,
+}));
+---
+
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Проектный учебник по Python на русском: пять расследований, рабочие программы, справочник и материалы."
+    />
+    <title>Python-расследования</title>
+    <link rel="icon" href={`${base}images/favicon.svg`} />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href={base}>Python-расследования</a>
+      <nav aria-label="Основная навигация">
+        <a href={casesBase}>Дела</a>
+        <a href={materialsLink}>Материалы</a>
+        <a href={guideLink}>Справочник</a>
+        <a href={skillMapLink}>Карта навыков</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="course-hero" aria-labelledby="home-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Проектный учебник · Python 3.14+</p>
+          <h1 id="home-title">Пять дел. Один рабочий Python.</h1>
+          <p>
+            Учимся как в прикладной книге: ведем одну архивную историю и по дороге строим инструменты для текстов,
+            писем, папок и системы учета улик.
+          </p>
+          <div class="hero-actions" aria-label="Быстрые действия">
+            <a class="button primary" href={cases[0].href}>Начать первое дело</a>
+            <a class="button quiet" href={materialsLink}>Скачать материалы</a>
+            <a class="button quiet" href={guideLink}>Открыть справочник</a>
+          </div>
+        </div>
+
+        <div class="arc-cover" aria-label="Первая арка курса">
+          <div class="cover-photo">
+            <img
+              src={heroImage.src}
+              width={heroImage.width}
+              height={heroImage.height}
+              alt="Рабочий стол с материалами расследования, ноутбуком и заметками"
+            />
+          </div>
+          <ol class="cover-list">
+            {cases.map((item) => (
+              <li style={`--case-color: ${item.color};`}>
+                <span>{item.number}</span>
+                <strong>{item.kicker}</strong>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section class="case-story" data-case-story aria-label="Маршрут первой арки">
+        <div class="story-stage" aria-hidden="true">
+          <div class="stage-shell">
+            <div class="stage-progress">
+              <span>01</span>
+              <div><i></i></div>
+              <span>05</span>
+            </div>
+
+            <div class="case-visuals">
+              {cases.map((item, index) => (
+                <article
+                  class="case-visual"
+                  data-visual-case={index}
+                  style={`--case-color: ${item.color}; --case-tone: ${item.tone};`}
+                >
+                  <div class="visual-header">
+                    <span>Дело {item.number}</span>
+                    <strong>{item.kicker}</strong>
+                  </div>
+                  <div class="visual-main">
+                    <div class="visual-file">
+                      <p>{item.files[0]}</p>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <div class="visual-terminal">
+                      <code>python -m pip install -r requirements.txt</code>
+                      <code>{item.command}</code>
+                      <strong>{item.outcome}</strong>
+                    </div>
+                  </div>
+                  <div class="visual-tags">
+                    {item.concepts.slice(0, 4).map((concept) => <span>{concept}</span>)}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div class="story-steps">
+          {cases.map((item, index) => (
+            <article
+              class="case-step"
+              data-case-step
+              data-case-index={index}
+              style={`--case-color: ${item.color}; --case-tone: ${item.tone};`}
+            >
+              <p class="eyebrow">Дело {item.number} · {item.kicker}</p>
+              <h2>{item.title}</h2>
+              <p>{item.copy}</p>
+              <dl class="case-plot">
+                <div>
+                  <dt>Сцена</dt>
+                  <dd>{item.scene}</dd>
+                </div>
+                <div>
+                  <dt>Вопрос дела</dt>
+                  <dd>{item.question}</dd>
+                </div>
+                <div>
+                  <dt>Инструмент</dt>
+                  <dd>{item.tool}</dd>
+                </div>
+                <div>
+                  <dt>На выходе</dt>
+                  <dd>{item.outcome}</dd>
+                </div>
+              </dl>
+              <div class="concept-row" aria-label={`Темы дела ${item.number}`}>
+                {item.concepts.map((concept) => <span>{concept}</span>)}
+              </div>
+              <p class="case-files"><strong>Материалы:</strong> {item.files.join(' · ')}</p>
+              <div class="step-actions">
+                <a class="button primary" href={item.href}>Открыть дело {item.number}</a>
+                <a class="button quiet dark" href={item.download}>Скачать архив</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="mobile-case-path" aria-labelledby="mobile-path-title">
+        <p class="eyebrow">Маршрут первой арки</p>
+        <h2 id="mobile-path-title">От текста к маленькой системе</h2>
+        <div class="mobile-cases">
+          {cases.map((item) => (
+            <article style={`--case-color: ${item.color};`}>
+              <span>Дело {item.number}</span>
+              <h3>{item.title}</h3>
+              <p>{item.scene}</p>
+              <p class="mobile-question">{item.question}</p>
+              <a href={item.href}>Открыть главу</a>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="course-close" aria-labelledby="close-title">
+        <p class="eyebrow">Как здесь учиться</p>
+        <h2 id="close-title">Каждая глава ведет к программе, которую можно запустить локально.</h2>
+        <div class="close-steps">
+          <p><strong>1.</strong> Читаете дело и скачиваете материалы.</p>
+          <p><strong>2.</strong> Создаете venv, ставите <code>requirements.txt</code>, собираете инструмент шаг за шагом.</p>
+          <p><strong>3.</strong> Запускаете программу, сверяете форму отчета и только потом открываете полный разбор.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="button primary" href={casesBase}>Открыть все дела</a>
+          <a class="button paper" href={skillMapLink}>Посмотреть карту навыков</a>
+        </div>
+      </section>
+    </main>
+
+    <script is:inline type="module">
+      const root = document.documentElement;
+      const story = document.querySelector("[data-case-story]");
+      const steps = Array.from(document.querySelectorAll("[data-case-step]"));
+      const visuals = Array.from(document.querySelectorAll("[data-visual-case]"));
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let frame = 0;
+
+      const clamp = (value, min = 0, max = 1) => Math.min(Math.max(value, min), max);
+
+      function setActive(index) {
+        root.style.setProperty("--active-case", String(index));
+        visuals.forEach((visual, visualIndex) => {
+          visual.dataset.active = visualIndex === index ? "true" : "false";
+        });
+        steps.forEach((step, stepIndex) => {
+          step.dataset.active = stepIndex === index ? "true" : "false";
+        });
+      }
+
+      function updateProgress() {
+        frame = 0;
+        if (!story) return;
+
+        const scrollable = Math.max(1, story.offsetHeight - window.innerHeight);
+        const progress = reduceMotion.matches
+          ? 1
+          : clamp(-story.getBoundingClientRect().top / scrollable);
+
+        root.style.setProperty("--story-progress", progress.toFixed(4));
+      }
+
+      function requestProgress() {
+        if (frame) return;
+        frame = window.requestAnimationFrame(updateProgress);
+      }
+
+      if ("IntersectionObserver" in window && !reduceMotion.matches) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            let best = null;
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              if (!best || entry.intersectionRatio > best.intersectionRatio) {
+                best = entry;
+              }
+            }
+            if (best) setActive(Number(best.target.dataset.caseIndex));
+          },
+          {
+            rootMargin: "-36% 0px -36% 0px",
+            threshold: [0.2, 0.45, 0.7],
+          }
+        );
+
+        steps.forEach((step) => observer.observe(step));
+      }
+
+      window.addEventListener("scroll", requestProgress, { passive: true });
+      window.addEventListener("resize", requestProgress);
+      reduceMotion.addEventListener("change", () => {
+        setActive(0);
+        requestProgress();
+      });
+
+      setActive(0);
+      updateProgress();
+    </script>
+  </body>
+</html>
+
+<style>
+  :root {
+    color-scheme: dark;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f1110;
+    color: #f5ead5;
+    --ink: #101211;
+    --paper: #f3e2bf;
+    --paper-soft: #fff4dc;
+    --muted: rgba(245, 234, 213, 0.72);
+    --line: rgba(245, 234, 213, 0.18);
+    --teal: #20d3bd;
+    --story-progress: 0;
+    --active-case: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    background:
+      linear-gradient(90deg, rgba(245, 234, 213, 0.035) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(245, 234, 213, 0.028) 1px, transparent 1px),
+      linear-gradient(180deg, #0f1110 0%, #141613 100%);
+    background-size: 64px 64px, 64px 64px, auto;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  ol,
+  dl,
+  dd {
+    margin: 0;
+  }
+
+  .site-header {
+    position: fixed;
+    top: 0.85rem;
+    left: 50%;
+    z-index: 20;
+    width: min(72rem, calc(100% - 2rem));
+    min-height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid rgba(245, 234, 213, 0.16);
+    border-radius: 999px;
+    padding: 0.6rem 0.8rem 0.6rem 1rem;
+    background: rgba(15, 17, 16, 0.82);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 1.4rem 3.5rem rgba(0, 0, 0, 0.28);
+    transform: translateX(-50%);
+  }
+
+  .brand {
+    font-size: 1rem;
+    font-weight: 950;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .site-header nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .site-header nav a {
+    border-radius: 999px;
+    padding: 0.62rem 0.82rem;
+    color: rgba(245, 234, 213, 0.76);
+    font-size: 0.92rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .site-header nav a:hover,
+  .site-header nav a:focus-visible {
+    background: rgba(245, 234, 213, 0.09);
+    color: #fff7e8;
+  }
+
+  .course-hero {
+    min-height: 100svh;
+    width: min(76rem, calc(100% - 2rem));
+    margin-inline: auto;
+    padding-block: 8rem 5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.02fr) minmax(24rem, 0.78fr);
+    gap: 3.5rem;
+    align-items: center;
+  }
+
+  .hero-copy h1 {
+    max-width: 10.5ch;
+    margin-block: 0.75rem 1.1rem;
+    font-size: 5.4rem;
+    line-height: 0.94;
+    letter-spacing: 0;
+  }
+
+  .hero-copy > p:not(.eyebrow) {
+    max-width: 42rem;
+    color: var(--muted);
+    font-size: 1.22rem;
+    line-height: 1.65;
+  }
+
+  .eyebrow {
+    color: var(--teal);
+    font-size: 0.82rem;
+    font-weight: 950;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .hero-actions,
+  .step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-block-start: 1.4rem;
+  }
+
+  .button {
+    min-height: 2.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0.72rem 1.05rem;
+    text-decoration: none;
+    font-weight: 950;
+    letter-spacing: 0;
+    transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+  }
+
+  .button:hover,
+  .button:focus-visible {
+    transform: translateY(-2px);
+  }
+
+  .button.primary {
+    background: var(--teal);
+    color: #06110f;
+  }
+
+  .button.quiet {
+    border-color: rgba(245, 234, 213, 0.18);
+    background: rgba(245, 234, 213, 0.08);
+    color: #fff6e4;
+  }
+
+  .button.quiet.dark {
+    border-color: rgba(16, 18, 17, 0.18);
+    background: rgba(16, 18, 17, 0.06);
+    color: var(--ink);
+  }
+
+  .button.paper {
+    border-color: rgba(16, 18, 17, 0.16);
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink);
+  }
+
+  .arc-cover {
+    position: relative;
+    min-height: 36rem;
+    border: 1px solid var(--line);
+    border-radius: 34px;
+    padding: 1rem;
+    background: rgba(245, 234, 213, 0.07);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2rem 6rem rgba(0, 0, 0, 0.35);
+  }
+
+  .cover-photo {
+    height: 21rem;
+    overflow: hidden;
+    border-radius: 26px;
+    background: #181a17;
+  }
+
+  .cover-photo img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .cover-list {
+    list-style: none;
+    display: grid;
+    gap: 0.7rem;
+    padding: 1rem 0 0;
+  }
+
+  .cover-list li {
+    min-height: 3.85rem;
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.7rem;
+    border: 1px solid rgba(245, 234, 213, 0.14);
+    border-radius: 18px;
+    padding: 0.6rem 0.75rem;
+    background: rgba(15, 17, 16, 0.72);
+  }
+
+  .cover-list span {
+    width: 2.15rem;
+    height: 2.15rem;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--case-color);
+    color: #101211;
+    font-weight: 950;
+  }
+
+  .cover-list strong {
+    font-size: 1rem;
+  }
+
+  .case-story {
+    position: relative;
+    width: min(76rem, calc(100% - 2rem));
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(25rem, 0.9fr);
+    gap: 4rem;
+    padding-block: 4rem;
+  }
+
+  .story-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    display: grid;
+    align-items: center;
+    order: 2;
+  }
+
+  .stage-shell {
+    position: relative;
+    min-height: 34rem;
+    border-radius: 38px;
+    padding: 1.2rem;
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      #151714;
+    background-size: 38px 38px, 38px 38px, auto;
+    box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+  }
+
+  .stage-progress {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.7rem;
+    color: rgba(245, 234, 213, 0.68);
+    font-size: 0.78rem;
+    font-weight: 950;
+  }
+
+  .stage-progress div {
+    height: 0.28rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(245, 234, 213, 0.16);
+  }
+
+  .stage-progress i {
+    display: block;
+    width: calc(var(--story-progress) * 100%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--teal);
+  }
+
+  .case-visuals {
+    position: relative;
+    min-height: 29.5rem;
+    margin-block-start: 1rem;
+  }
+
+  .case-visual {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 1rem;
+    border: 1px solid rgba(16, 18, 17, 0.14);
+    border-radius: 30px;
+    padding: 1rem;
+    background: var(--case-tone);
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(2.4rem) scale(0.96);
+    transition: opacity 420ms ease, transform 520ms ease;
+  }
+
+  .case-visual[data-active="true"] {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .visual-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    border-bottom: 1px solid rgba(16, 18, 17, 0.14);
+    padding-block-end: 0.75rem;
+  }
+
+  .visual-header span {
+    color: rgba(16, 18, 17, 0.64);
+    font-size: 0.85rem;
+    font-weight: 950;
+  }
+
+  .visual-header strong {
+    max-width: 14rem;
+    text-align: right;
+  }
+
+  .visual-main {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 1rem;
+  }
+
+  .visual-file {
+    min-height: 12rem;
+    border: 1px solid rgba(16, 18, 17, 0.16);
+    border-radius: 22px;
+    padding: 1rem;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.14)),
+      var(--paper-soft);
+  }
+
+  .visual-file p {
+    color: rgba(16, 18, 17, 0.72);
+    font-weight: 950;
+  }
+
+  .visual-file span {
+    display: block;
+    height: 0.75rem;
+    margin-block-start: 0.82rem;
+    border-radius: 999px;
+    background: rgba(16, 18, 17, 0.13);
+  }
+
+  .visual-file span:nth-child(2) {
+    width: 88%;
+  }
+
+  .visual-file span:nth-child(3) {
+    width: 72%;
+  }
+
+  .visual-file span:nth-child(4) {
+    width: 54%;
+    background: var(--case-color);
+  }
+
+  .visual-terminal {
+    display: grid;
+    gap: 0.45rem;
+    border-radius: 20px;
+    padding: 0.9rem;
+    background: #101211;
+    color: #f7ead4;
+  }
+
+  .visual-terminal code {
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    color: rgba(247, 234, 212, 0.72);
+    white-space: normal;
+  }
+
+  .visual-terminal strong {
+    color: var(--case-color);
+    line-height: 1.35;
+  }
+
+  .visual-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .visual-tags span,
+  .concept-row span {
+    border-radius: 999px;
+    padding: 0.44rem 0.65rem;
+    font-size: 0.82rem;
+    font-weight: 900;
+  }
+
+  .visual-tags span {
+    background: rgba(16, 18, 17, 0.1);
+  }
+
+  .story-steps {
+    order: 1;
+  }
+
+  .case-step {
+    min-height: 94svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: 4rem;
+    opacity: 0.54;
+    transform: translateY(1.8rem);
+    transition: opacity 320ms ease, transform 420ms ease;
+  }
+
+  .case-step[data-active="true"] {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .case-step h2 {
+    max-width: 13.5ch;
+    margin-block: 0.72rem 1rem;
+    color: #fff4dc;
+    font-size: 4.2rem;
+    line-height: 0.96;
+    letter-spacing: 0;
+  }
+
+  .case-step > p:not(.eyebrow):not(.case-files) {
+    max-width: 38rem;
+    color: rgba(245, 234, 213, 0.74);
+    font-size: 1.08rem;
+    line-height: 1.65;
+  }
+
+  .concept-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block: 1.15rem;
+  }
+
+  .concept-row span {
+    background: rgba(245, 234, 213, 0.1);
+    color: #fff4dc;
+  }
+
+  .case-plot {
+    display: grid;
+    gap: 0;
+    max-width: 42rem;
+    margin-block-start: 1.25rem;
+    border-block: 1px solid rgba(245, 234, 213, 0.16);
+  }
+
+  .case-plot div {
+    display: grid;
+    grid-template-columns: 7.25rem minmax(0, 1fr);
+    gap: 1rem;
+    padding-block: 0.72rem;
+  }
+
+  .case-plot div + div {
+    border-block-start: 1px solid rgba(245, 234, 213, 0.12);
+  }
+
+  .case-plot dt {
+    color: var(--case-color);
+    font-size: 0.82rem;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+
+  .case-plot dd {
+    color: rgba(245, 234, 213, 0.78);
+    line-height: 1.45;
+  }
+
+  .case-files {
+    max-width: 38rem;
+    color: rgba(245, 234, 213, 0.68);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .case-files strong {
+    color: #fff4dc;
+  }
+
+  .mobile-case-path {
+    display: none;
+  }
+
+  .course-close {
+    --paper-ink: #17120a;
+    --paper-muted: #3b3325;
+    --paper-soft-line: rgba(23, 18, 10, 0.2);
+    width: min(76rem, calc(100% - 2rem));
+    margin-inline: auto;
+    border-radius: 38px 38px 0 0;
+    padding: 5rem 3rem 6rem;
+    background: #ece0c7;
+    color: var(--paper-ink);
+  }
+
+  .course-close .eyebrow {
+    color: #05645d;
+  }
+
+  .course-close h2 {
+    max-width: 14ch;
+    margin-block: 0.75rem 1.4rem;
+    color: #14110b;
+    font-size: 4.4rem;
+    line-height: 0.98;
+    letter-spacing: 0;
+  }
+
+  .close-steps {
+    display: grid;
+    gap: 0.8rem;
+    max-width: 50rem;
+    color: var(--paper-muted);
+    font-size: 1.05rem;
+    line-height: 1.55;
+  }
+
+  .close-steps strong {
+    color: #05645d;
+  }
+
+  .close-steps code {
+    border: 1px solid rgba(23, 18, 10, 0.14);
+    border-radius: 8px;
+    padding: 0.1rem 0.34rem;
+    background: rgba(255, 250, 238, 0.62);
+    color: #15110a;
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    font-weight: 850;
+  }
+
+  .course-close .button.primary {
+    background: #06786e;
+    color: #fff8e8;
+  }
+
+  .course-close .button.primary:hover,
+  .course-close .button.primary:focus-visible {
+    background: #055f58;
+  }
+
+  .course-close .button.paper {
+    border-color: var(--paper-soft-line);
+    background: #fff8e8;
+    color: #15110a;
+  }
+
+  .course-close .button.paper:hover,
+  .course-close .button.paper:focus-visible {
+    background: #ffffff;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      transition-duration: 1ms !important;
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+    }
+
+    .case-step {
+      opacity: 1;
+      transform: none;
+    }
+
+    .case-visual[data-visual-case="0"] {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 920px) {
+    .site-header {
+      position: static;
+      width: calc(100% - 1rem);
+      margin: 0.5rem auto 0;
+      transform: none;
+    }
+
+    .site-header nav {
+      display: none;
+    }
+
+    .course-hero {
+      min-height: auto;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      padding-block: 3rem 2rem;
+    }
+
+    .hero-copy h1 {
+      max-width: 11ch;
+      font-size: 3.35rem;
+    }
+
+    .hero-copy > p:not(.eyebrow) {
+      font-size: 1.05rem;
+    }
+
+    .arc-cover {
+      min-height: auto;
+    }
+
+    .cover-photo {
+      height: 15rem;
+    }
+
+    .case-story {
+      display: none;
+    }
+
+    .mobile-case-path {
+      display: block;
+      width: min(76rem, calc(100% - 2rem));
+      margin-inline: auto;
+      padding-block: 2rem 3rem;
+    }
+
+    .mobile-case-path h2 {
+      max-width: 12ch;
+      margin-block: 0.55rem 1.2rem;
+      color: #fff4dc;
+      font-size: 2.7rem;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .mobile-cases {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .mobile-cases article {
+      border: 1px solid rgba(245, 234, 213, 0.16);
+      border-radius: 24px;
+      padding: 1.05rem;
+      background: rgba(245, 234, 213, 0.08);
+    }
+
+    .mobile-cases span {
+      color: var(--case-color);
+      font-size: 0.8rem;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .mobile-cases h3 {
+      margin-block: 0.35rem 0.5rem;
+      color: #fff4dc;
+      font-size: 1.45rem;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .mobile-cases p {
+      color: rgba(245, 234, 213, 0.72);
+      line-height: 1.5;
+    }
+
+    .mobile-cases .mobile-question {
+      margin-block-start: 0.45rem;
+      color: rgba(245, 234, 213, 0.86);
+      font-weight: 800;
+    }
+
+    .mobile-cases a {
+      display: inline-flex;
+      margin-block-start: 0.75rem;
+      color: var(--case-color);
+      font-weight: 950;
+      text-decoration-thickness: 0.12em;
+      text-underline-offset: 0.18em;
+    }
+
+    .course-close {
+      width: 100%;
+      border-radius: 28px 28px 0 0;
+      padding: 3rem 1rem 4rem;
+    }
+
+    .course-close h2 {
+      max-width: 13ch;
+      font-size: 2.55rem;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .hero-copy h1 {
+      font-size: 2.95rem;
+    }
+
+    .hero-actions,
+    .step-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .button {
+      width: 100%;
+    }
+
+    .cover-list li {
+      grid-template-columns: 2.35rem minmax(0, 1fr);
+    }
+  }
+</style>

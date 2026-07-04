@@ -1,0 +1,18 @@
+From: Billing Notes <billing@example.net>
+To: Learner <learner@example.org>
+Subject: Case 03 invoice note
+Date: Wed, 04 Mar 2026 11:20:00 +0000
+Message-ID: <case03-03@example.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Добрый день!
+
+Это безопасный макет письма про учебный счет. Вложений нет, переход ведет на
+тот же домен, с которого пришло письмо.
+
+Ссылка на карточку счета:
+https://billing.example.net/invoices/training-204
+
+Никаких действий в реальных системах это письмо не требует.

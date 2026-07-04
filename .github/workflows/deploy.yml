@@ -1,0 +1,42 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure GitHub Pages URLs
+        run: |
+          echo "SITE_URL=https://${GITHUB_REPOSITORY_OWNER}.github.io" >> "$GITHUB_ENV"
+          repo="${GITHUB_REPOSITORY#*/}"
+          if [ "$repo" != "${GITHUB_REPOSITORY_OWNER}.github.io" ]; then
+            echo "BASE_PATH=/$repo" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install, build, and upload site
+        uses: withastro/action@v6
+        with:
+          package-manager: pnpm@latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
