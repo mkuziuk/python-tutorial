@@ -81,6 +81,7 @@ export default defineConfig({
             { label: 'Counter', slug: 'field-guide/counter' },
             { label: 'tuple', slug: 'field-guide/tuple' },
             { label: 'sorting', slug: 'field-guide/sorting' },
+            { label: 'functions', slug: 'field-guide/functions' },
             { label: 'email, URL и IP', slug: 'field-guide/email-url-ip' },
             { label: 'exceptions', slug: 'field-guide/exceptions' },
             { label: 'pathlib', slug: 'field-guide/pathlib' },

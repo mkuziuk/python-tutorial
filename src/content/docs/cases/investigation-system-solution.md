@@ -45,7 +45,7 @@ class Evidence:
     tags: list[str] = field(default_factory=list)
     reliability: int = 3
 
-    def __post_init__(self) -> None:
+    def __post_init__(self):
         self.evidence_id = self.evidence_id.strip()
         self.kind = self.kind.strip()
         self.title = self.title.strip()
@@ -59,7 +59,7 @@ class Evidence:
             raise ValueError("Evidence reliability must be between 1 and 5")
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "Evidence":
+    def from_dict(cls, data):
         return cls(
             evidence_id=str(data["evidence_id"]),
             kind=str(data["kind"]),
@@ -70,7 +70,7 @@ class Evidence:
             reliability=int(data.get("reliability", 3)),
         )
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self):
         return {
             "evidence_id": self.evidence_id,
             "kind": self.kind,
@@ -81,7 +81,7 @@ class Evidence:
             "reliability": self.reliability,
         }
 
-    def matches(self, query: str) -> bool:
+    def matches(self, query):
         normalized_query = query.casefold().strip()
         if not normalized_query:
             return True
@@ -98,7 +98,7 @@ class Evidence:
         ).casefold()
         return normalized_query in haystack
 
-    def short_body(self, limit: int = 90) -> str:
+    def short_body(self, limit=90):
         compact = " ".join(self.body.split())
         if len(compact) <= limit:
             return compact
@@ -114,7 +114,7 @@ class Person:
     notes: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "Person":
+    def from_dict(cls, data):
         return cls(
             person_id=str(data["person_id"]),
             name=str(data["name"]),
@@ -123,7 +123,7 @@ class Person:
             notes=[str(note) for note in data.get("notes", [])],
         )
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self):
         return {
             "person_id": self.person_id,
             "name": self.name,
@@ -132,7 +132,7 @@ class Person:
             "notes": self.notes,
         }
 
-    def label(self) -> str:
+    def label(self):
         return f"{self.name} - {self.role}"
 
 
@@ -143,14 +143,14 @@ class CaseNote:
     created_at: str
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "CaseNote":
+    def from_dict(cls, data):
         return cls(
             author=str(data["author"]),
             text=str(data["text"]),
             created_at=str(data["created_at"]),
         )
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self):
         return {
             "author": self.author,
             "text": self.text,
@@ -168,7 +168,7 @@ class Investigation:
     notes: list[CaseNote] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "Investigation":
+    def from_dict(cls, data):
         return cls(
             case_id=str(data["case_id"]),
             title=str(data["title"]),
@@ -178,7 +178,7 @@ class Investigation:
             notes=[CaseNote.from_dict(item) for item in data.get("notes", [])],
         )
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self):
         return {
             "case_id": self.case_id,
             "title": self.title,
@@ -188,29 +188,29 @@ class Investigation:
             "notes": [note.to_dict() for note in self.notes],
         }
 
-    def add_evidence(self, item: Evidence) -> None:
+    def add_evidence(self, item):
         if self.evidence_by_id(item.evidence_id) is not None:
             raise ValueError(f"Evidence {item.evidence_id!r} already exists")
         self.evidence.append(item)
 
-    def add_note(self, author: str, text: str, created_at: str) -> None:
+    def add_note(self, author, text, created_at):
         self.notes.append(CaseNote(author=author, text=text, created_at=created_at))
 
-    def evidence_by_id(self, evidence_id: str) -> Evidence | None:
+    def evidence_by_id(self, evidence_id):
         normalized_id = evidence_id.casefold()
         for item in self.evidence:
             if item.evidence_id.casefold() == normalized_id:
                 return item
         return None
 
-    def find_evidence(self, query: str) -> list[Evidence]:
+    def find_evidence(self, query):
         return [item for item in self.evidence if item.matches(query)]
 
-    def priority_evidence(self, limit: int = 3) -> list[Evidence]:
+    def priority_evidence(self, limit=3):
         return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
 
-    def tag_index(self) -> dict[str, list[Evidence]]:
-        index: dict[str, list[Evidence]] = {}
+    def tag_index(self):
+        index = {}
         for item in self.evidence:
             for tag in item.tags:
                 index.setdefault(tag, []).append(item)
@@ -221,20 +221,20 @@ class Investigation:
 
 
 class CaseRepository:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path):
         self.path = path
 
-    def load(self) -> Investigation:
+    def load(self):
         raw_data = json.loads(self.path.read_text(encoding="utf-8"))
         return Investigation.from_dict(raw_data)
 
-    def save(self, investigation: Investigation) -> None:
+    def save(self, investigation):
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(investigation.to_dict(), ensure_ascii=False, indent=2)
         self.path.write_text(f"{payload}\n", encoding="utf-8")
 
 
-def render_overview(investigation: Investigation) -> None:
+def render_overview(investigation):
     console.print(f"[bold cyan]{investigation.title}[/bold cyan]")
     console.print(investigation.summary)
 
@@ -266,7 +266,7 @@ def render_overview(investigation: Investigation) -> None:
     console.print(evidence_table)
 
 
-def render_search_results(query: str, results: list[Evidence]) -> None:
+def render_search_results(query, results):
     table = Table(title=f"Поиск: {query}")
     table.add_column("ID", style="cyan")
     table.add_column("Название")
@@ -278,7 +278,7 @@ def render_search_results(query: str, results: list[Evidence]) -> None:
     console.print(table)
 
 
-def build_report(seed_path: Path = SEED_PATH, output_path: Path = OUTPUT_PATH) -> Investigation:
+def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
     investigation = CaseRepository(seed_path).load()
     signal_matches = investigation.find_evidence("сигнал")
     investigation.add_note(
@@ -290,7 +290,7 @@ def build_report(seed_path: Path = SEED_PATH, output_path: Path = OUTPUT_PATH) -
     return investigation
 
 
-def main() -> None:
+def main():
     investigation = build_report()
     render_overview(investigation)
     render_search_results("сигнал", investigation.find_evidence("сигнал"))
@@ -309,7 +309,7 @@ if __name__ == "__main__":
 
 Частые ошибки: оставить сырые словари внутри `Investigation`, забыть `field(default_factory=list)`, разрешить дубликаты `evidence_id` или смешать сохранение JSON с логикой поиска.
 
-Справочник: [classes](../../field-guide/classes/), [dataclasses](../../field-guide/dataclasses/), [JSON](../../field-guide/json/), [pathlib](../../field-guide/pathlib/), [dict](../../field-guide/dict/), [list](../../field-guide/list/), [Rich](../../field-guide/rich/).
+Справочник: [classes](../../field-guide/classes/), [dataclasses](../../field-guide/dataclasses/), [JSON](../../field-guide/json/), [pathlib](../../field-guide/pathlib/), [dict](../../field-guide/dict/), [list](../../field-guide/list/), [functions](../../field-guide/functions/), [Rich](../../field-guide/rich/).
 
 ## Что важно заметить
 

@@ -20,7 +20,6 @@ time: "15-20 минут"
 ```python
 from itertools import combinations
 from pathlib import Path
-from typing import Any, cast
 
 from rich.console import Console
 from rich.table import Table
@@ -31,9 +30,6 @@ TOP_EXAMPLES = 3
 
 console = Console()
 
-Ngram = tuple[str, ...]
-TextProfile = dict[str, Any]
-OverlapResult = dict[str, Any]
 
 DISPLAY_NAMES = {
     "report_north_table": "Опись Северного стола",
@@ -44,12 +40,12 @@ DISPLAY_NAMES = {
 }
 
 
-def read_text(path: Path) -> str:
+def read_text(path):
     return path.read_text(encoding="utf-8")
 
 
-def normalize_words(text: str) -> list[str]:
-    cleaned: list[str] = []
+def normalize_words(text):
+    cleaned = []
 
     for char in text.lower():
         if char.isalpha():
@@ -60,7 +56,7 @@ def normalize_words(text: str) -> list[str]:
     return "".join(cleaned).split()
 
 
-def make_ngrams(words: list[str], size: int = NGRAM_SIZE) -> list[Ngram]:
+def make_ngrams(words, size=NGRAM_SIZE):
     if size < 1:
         raise ValueError("N-gram size must be positive")
 
@@ -70,11 +66,11 @@ def make_ngrams(words: list[str], size: int = NGRAM_SIZE) -> list[Ngram]:
     ]
 
 
-def display_name(path: Path) -> str:
+def display_name(path):
     return DISPLAY_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
-def build_profile(path: Path, ngram_size: int = NGRAM_SIZE) -> TextProfile:
+def build_profile(path, ngram_size=NGRAM_SIZE):
     text = read_text(path)
     words = normalize_words(text)
     ngrams = set(make_ngrams(words, ngram_size))
@@ -88,7 +84,7 @@ def build_profile(path: Path, ngram_size: int = NGRAM_SIZE) -> TextProfile:
     }
 
 
-def overlap_score(left: set[Ngram], right: set[Ngram]) -> float:
+def overlap_score(left, right):
     if not left or not right:
         return 0.0
 
@@ -101,9 +97,9 @@ def overlap_score(left: set[Ngram], right: set[Ngram]) -> float:
     return round(containment * 0.7 + jaccard * 0.3, 3)
 
 
-def compare_profiles(left: TextProfile, right: TextProfile) -> OverlapResult:
-    left_ngrams = cast(set[Ngram], left["ngrams"])
-    right_ngrams = cast(set[Ngram], right["ngrams"])
+def compare_profiles(left, right):
+    left_ngrams = left["ngrams"]
+    right_ngrams = right["ngrams"]
     shared_ngrams = sorted(left_ngrams & right_ngrams)
 
     return {
@@ -114,7 +110,7 @@ def compare_profiles(left: TextProfile, right: TextProfile) -> OverlapResult:
     }
 
 
-def load_profiles(data_dir: Path = DATA_DIR, ngram_size: int = NGRAM_SIZE) -> list[TextProfile]:
+def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     paths = sorted(data_dir.glob("report_*.txt"))
     if not paths:
         raise FileNotFoundError(f"No report_*.txt files found in {data_dir}")
@@ -122,9 +118,9 @@ def load_profiles(data_dir: Path = DATA_DIR, ngram_size: int = NGRAM_SIZE) -> li
     return [build_profile(path, ngram_size) for path in paths]
 
 
-def rank_overlaps(data_dir: Path = DATA_DIR, ngram_size: int = NGRAM_SIZE) -> list[OverlapResult]:
+def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     profiles = load_profiles(data_dir, ngram_size)
-    results: list[OverlapResult] = []
+    results = []
 
     for left, right in combinations(profiles, 2):
         result = compare_profiles(left, right)
@@ -138,11 +134,11 @@ def rank_overlaps(data_dir: Path = DATA_DIR, ngram_size: int = NGRAM_SIZE) -> li
     )
 
 
-def format_ngram(ngram: Ngram) -> str:
+def format_ngram(ngram):
     return " ".join(ngram)
 
 
-def render_results(results: list[OverlapResult], limit: int = 5) -> None:
+def render_results(results, limit=5):
     table = Table(title="Подозрительные совпадения")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Пара")
@@ -151,8 +147,8 @@ def render_results(results: list[OverlapResult], limit: int = 5) -> None:
     table.add_column("Пример")
 
     for position, result in enumerate(results[:limit], start=1):
-        left, right = cast(tuple[str, str], result["pair"])
-        examples = cast(list[Ngram], result["examples"])
+        left, right = result["pair"]
+        examples = result["examples"]
         example = format_ngram(examples[0]) if examples else "нет общих n-грамм"
 
         table.add_row(
@@ -167,14 +163,14 @@ def render_results(results: list[OverlapResult], limit: int = 5) -> None:
 
     if results:
         best = results[0]
-        left, right = cast(tuple[str, str], best["pair"])
+        left, right = best["pair"]
         console.print(
             f"\n[bold]Главная версия:[/bold] {left} и {right} "
             f"имеют самый сильный общий след: [cyan]{float(best['score']):.3f}[/cyan]."
         )
 
 
-def main() -> None:
+def main():
     render_results(rank_overlaps())
 
 
@@ -190,11 +186,9 @@ if __name__ == "__main__":
 
 Частые ошибки: вернуть списки вместо кортежей, забыть проверку `size < 1`, сортировать пары только по числу общих n-грамм или печатать все совпадения вместо короткого примера.
 
-Справочник: [list](../../field-guide/list/), [tuple](../../field-guide/tuple/), [set](../../field-guide/set/), [dict](../../field-guide/dict/), [sorting](../../field-guide/sorting/), [Rich](../../field-guide/rich/).
+Справочник: [list](../../field-guide/list/), [tuple](../../field-guide/tuple/), [set](../../field-guide/set/), [dict](../../field-guide/dict/), [sorting](../../field-guide/sorting/), [functions](../../field-guide/functions/), [Rich](../../field-guide/rich/).
 
 ## Что важно заметить
-
-`Ngram` - это псевдоним для `tuple[str, ...]`. Он не меняет работу программы, но делает сигнатуры функций короче и читабельнее.
 
 Формула `overlap_score()` совмещает два сигнала. `containment` помогает заметить короткий повторяющийся отчет внутри длинного текста, а `jaccard` снижает оценку, если у пары много разных n-грамм.
 

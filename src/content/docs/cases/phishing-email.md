@@ -22,7 +22,7 @@ time: "90-120 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-03.zip">case-03.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../phishing-email-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/email-url-ip/">email, URL и IP</a> · <a href="../../field-guide/regex/">regex</a> · <a href="../../field-guide/exceptions/">exceptions</a> · <a href="../../field-guide/str/">str</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/dataclasses/">dataclasses</a> · <a href="../../field-guide/rich/">Rich</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/email-url-ip/">email, URL и IP</a> · <a href="../../field-guide/regex/">regex</a> · <a href="../../field-guide/exceptions/">exceptions</a> · <a href="../../field-guide/str/">str</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/dataclasses/">dataclasses</a> · <a href="../../field-guide/rich/">Rich</a></p>
 </div>
 
 ## Проблема
@@ -157,11 +157,10 @@ class EmailAnalysisError(Exception):
 
 ```python
 from email import policy
-from email.message import EmailMessage
 from email.parser import BytesParser
 
 
-def load_message(path: Path) -> EmailMessage:
+def load_message(path):
     try:
         with path.open("rb") as file:
             message = BytesParser(policy=policy.default).parse(file)
@@ -184,13 +183,13 @@ def load_message(path: Path) -> EmailMessage:
 TEXT_CONTENT_TYPES = {"text/plain", "text/html"}
 
 
-def text_from_message(message: EmailMessage) -> str:
+def text_from_message(message):
     try:
         if not message.is_multipart():
             content = message.get_content()
             return content if isinstance(content, str) else ""
 
-        chunks: list[str] = []
+        chunks = []
         for part in message.walk():
             if part.is_multipart() or part.get_content_disposition() == "attachment":
                 continue
@@ -234,7 +233,7 @@ from urllib.parse import urlparse
 import ipaddress
 
 
-def is_ip_address(host: str) -> bool:
+def is_ip_address(host):
     if not host:
         return False
     try:
@@ -244,7 +243,7 @@ def is_ip_address(host: str) -> bool:
     return True
 
 
-def make_link_info(raw_url: str, label: str = "") -> LinkInfo:
+def make_link_info(raw_url, label=""):
     parsed = urlparse(raw_url)
     host = normalize_host(parsed.hostname or "")
     return LinkInfo(
@@ -265,11 +264,11 @@ def make_link_info(raw_url: str, label: str = "") -> LinkInfo:
 
 ```python
 def add_signal(
-    signals: list[RiskSignal],
-    title: str,
-    points: int,
-    level: str = "warning",
-) -> None:
+    signals,
+    title,
+    points,
+    level="warning",
+):
     if all(signal.title != title for signal in signals):
         signals.append(RiskSignal(title=title, points=points, level=level))
 ```
@@ -279,14 +278,14 @@ def add_signal(
 Теперь центральная функция анализа становится последовательным списком правил:
 
 ```python
-def analyze_message(message: EmailMessage, filename: str = "<memory>") -> EmailReport:
+def analyze_message(message, filename="<memory>"):
     subject = str(message.get("Subject", "(без темы)"))
     sender = str(message.get("From", ""))
     sender_domain = domain_from_address(sender)
     reply_to_domain = domain_from_address(message.get("Reply-To"))
     body = text_from_message(message)
     links = extract_links(body)
-    signals: list[RiskSignal] = []
+    signals = []
 
     if reply_to_domain and base_domain(reply_to_domain) != base_domain(sender_domain):
         add_signal(signals, "Reply-To ведет в другой домен", 2)
@@ -312,7 +311,7 @@ def analyze_message(message: EmailMessage, filename: str = "<memory>") -> EmailR
 Баллы превращаются в человеческий вердикт. Границы выбраны так, чтобы один слабый сигнал не поднимал письмо наверх, а несколько независимых признаков давали заметный результат:
 
 ```python
-def risk_verdict(score: int) -> str:
+def risk_verdict(score):
     if score >= 7:
         return "высокий риск"
     if score >= 3:
@@ -323,7 +322,7 @@ def risk_verdict(score: int) -> str:
 Для вывода используем только две части [Rich](../../field-guide/rich/): `Console` и `Table`. `render_results()` не решает, опасно ли письмо; он только показывает готовые `EmailReport`.
 
 ```python
-def render_results(reports: list[EmailReport]) -> None:
+def render_results(reports):
     table = Table(title="Проверка писем")
     table.add_column("Файл", style="cyan")
     table.add_column("Вердикт")

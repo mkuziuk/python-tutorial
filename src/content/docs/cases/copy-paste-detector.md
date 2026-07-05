@@ -21,12 +21,12 @@ time: "90-120 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-02.zip">case-02.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../copy-paste-detector-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/tuple/">tuple</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/sorting/">sorting</a> · <a href="../../field-guide/rich/">Rich</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/tuple/">tuple</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/sorting/">sorting</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a></p>
 </div>
 
 ## Проблема
 
-После анонимной записки редактор просматривает соседние материалы архива. В подборке коротких отчетов появляется новая странность: два текста о правках почти дословно повторяют закрытую опись витрины, хотя эта опись еще не должна была покинуть рабочую папку.
+После анонимной записки редактор просматривает соседние материалы архива. В подборке полных рабочих отчетов появляется новая странность: два документа почти дословно повторяют закрытую опись витрины, хотя эта опись еще не должна была покинуть рабочую папку.
 
 Вопрос дела: какие пары действительно похожи на копирование или утечку, а какие просто описывают одну тему похожими словами?
 
@@ -38,7 +38,7 @@ time: "90-120 минут"
 
 - `copy_paste_detector.py` - стартовый файл, который мы будем дорабатывать;
 - `requirements.txt` - точная версия Rich для красивой таблицы;
-- `data/report_*.txt` - отчеты и заметки из архива;
+- `data/report_*.txt` - полные отчеты из архива;
 - `check_result.txt` - форма ожидаемого результата.
 
 Полное решение вынесено отдельно: [Разбор полного решения](../copy-paste-detector-solution/).
@@ -73,7 +73,7 @@ python -m pip install -r requirements.txt
 python copy_paste_detector.py
 ```
 
-Пока он только загружает материалы и показывает короткую сводку. Дальше мы превратим его в детектор.
+Пока он только загружает папку с отчетами и показывает список файлов. Дальше мы превратим его в детектор.
 
 ## Стратегия
 
@@ -106,15 +106,22 @@ python copy_paste_detector.py
 
 ## Сборка инструмента
 
-Откройте `copy_paste_detector.py`. В начале уже есть `Path`, `Console`, путь к данным и функция чтения файла.
+Откройте `copy_paste_detector.py`. В начале есть только `Path`, `Console`, путь к данным и `main()`, который показывает список отчетов. Все рабочие функции мы добавим сами.
+
+Сначала добавьте чтение файла:
+
+```python
+def read_text(path):
+    return path.read_text(encoding="utf-8")
+```
 
 ### Нормализуем слова
 
-Нам не нужны запятые, точки и регистр. Сделаем простую функцию: буквы оставляем, все остальное превращаем в пробел. На входе у нее текст, на выходе `list[str]`; если этот шаг пропустить, совпадения будут зависеть от запятых и заглавных букв.
+Нам не нужны запятые, точки и регистр. Сделаем простую функцию: буквы оставляем, все остальное превращаем в пробел. На входе у нее текст, на выходе список слов; если этот шаг пропустить, совпадения будут зависеть от запятых и заглавных букв.
 
 ```python
-def normalize_words(text: str) -> list[str]:
-    cleaned: list[str] = []
+def normalize_words(text):
+    cleaned = []
 
     for char in text.lower():
         if char.isalpha():
@@ -135,11 +142,11 @@ def normalize_words(text: str) -> list[str]:
 NGRAM_SIZE = 4
 
 
-def make_ngrams(words: list[str], size: int = NGRAM_SIZE) -> list[tuple[str, ...]]:
+def make_ngrams(words, size=NGRAM_SIZE):
     if size < 1:
         raise ValueError("N-gram size must be positive")
 
-    ngrams: list[tuple[str, ...]] = []
+    ngrams = []
 
     for index in range(len(words) - size + 1):
         ngram = tuple(words[index : index + size])
@@ -148,7 +155,7 @@ def make_ngrams(words: list[str], size: int = NGRAM_SIZE) -> list[tuple[str, ...
     return ngrams
 ```
 
-Тип `tuple[str, ...]` значит "кортеж из строк, длина может быть разной". В нашем проекте длина обычно равна четырем, но запись остается удобной для любого `size`.
+Кортеж хранит соседние слова в фиксированном порядке. В нашем проекте длина обычно равна четырем, но сама функция остается удобной для любого `size`.
 
 ### Профиль отчета
 
@@ -164,14 +171,14 @@ DISPLAY_NAMES = {
 }
 
 
-def display_name(path: Path) -> str:
+def display_name(path):
     return DISPLAY_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 ```
 
 Теперь профиль:
 
 ```python
-def build_profile(path: Path, ngram_size: int = NGRAM_SIZE) -> dict[str, object]:
+def build_profile(path, ngram_size=NGRAM_SIZE):
     text = read_text(path)
     words = normalize_words(text)
     ngrams = set(make_ngrams(words, ngram_size))
@@ -196,10 +203,9 @@ def build_profile(path: Path, ngram_size: int = NGRAM_SIZE) -> dict[str, object]
 Вторая - Jaccard: какая доля общих n-грамм есть среди всех n-грамм пары.
 
 ```python
-Ngram = tuple[str, ...]
 
 
-def overlap_score(left: set[Ngram], right: set[Ngram]) -> float:
+def overlap_score(left, right):
     if not left or not right:
         return 0.0
 
@@ -219,7 +225,7 @@ def overlap_score(left: set[Ngram], right: set[Ngram]) -> float:
 Результат сравнения тоже удобно держать в словаре: это одна запись будущего отчета, где есть пара, оценка, количество совпадений и несколько примеров.
 
 ```python
-def compare_profiles(left: dict[str, object], right: dict[str, object]) -> dict[str, object]:
+def compare_profiles(left, right):
     left_ngrams = left["ngrams"]
     right_ngrams = right["ngrams"]
     shared_ngrams = sorted(left_ngrams & right_ngrams)
@@ -245,7 +251,7 @@ from itertools import combinations
 Загрузка профилей:
 
 ```python
-def load_profiles(data_dir: Path = DATA_DIR, ngram_size: int = NGRAM_SIZE) -> list[dict[str, object]]:
+def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     paths = sorted(data_dir.glob("report_*.txt"))
     if not paths:
         raise FileNotFoundError(f"No report_*.txt files found in {data_dir}")
@@ -256,9 +262,9 @@ def load_profiles(data_dir: Path = DATA_DIR, ngram_size: int = NGRAM_SIZE) -> li
 Рейтинг:
 
 ```python
-def rank_overlaps(data_dir: Path = DATA_DIR, ngram_size: int = NGRAM_SIZE) -> list[dict[str, object]]:
+def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     profiles = load_profiles(data_dir, ngram_size)
-    results: list[dict[str, object]] = []
+    results = []
 
     for left, right in combinations(profiles, 2):
         result = compare_profiles(left, right)
@@ -283,11 +289,11 @@ from rich.table import Table
 ```
 
 ```python
-def format_ngram(ngram: Ngram) -> str:
+def format_ngram(ngram):
     return " ".join(ngram)
 
 
-def render_results(results: list[dict[str, object]], limit: int = 5) -> None:
+def render_results(results, limit=5):
     table = Table(title="Подозрительные совпадения")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Пара")
@@ -313,7 +319,7 @@ def render_results(results: list[dict[str, object]], limit: int = 5) -> None:
 В конце `main()` должен запускать рейтинг и печатать таблицу:
 
 ```python
-def main() -> None:
+def main():
     render_results(rank_overlaps())
 ```
 
@@ -327,11 +333,11 @@ python copy_paste_detector.py
 
 Ожидаемая форма результата:
 
-```text
-Подозрительные совпадения
-1  Опись Северного стола / Черновик экскурсии       0.45+  ...
-2  Отчет охраны / Дневник ночного сигнала           0.30+  ...
-```
+	```text
+	Подозрительные совпадения
+	1  Опись Северного стола / Черновик экскурсии       0.27  ...
+	2  Дневник ночного сигнала / Отчет охраны           0.18  ...
+	```
 
 Числа могут немного отличаться, если вы поменяли размер n-граммы или формулу в `overlap_score()`. Важно, чтобы наверху оказались пары с реальными общими фразами, а не любые тексты на похожую тему.
 
@@ -350,7 +356,7 @@ python copy_paste_detector.py
 - [Кортежи `tuple`](../../field-guide/tuple/) - неизменяемые группы соседних слов.
 - [Сортировка](../../field-guide/sorting/) - рейтинг пар по подозрительности.
 - [Rich](../../field-guide/rich/) - аккуратная таблица без смешивания вывода и анализа.
-- Функции - маленькие проверяемые шаги вместо одного большого скрипта.
+- [Функции](../../field-guide/functions/) - маленькие проверяемые шаги вместо одного большого скрипта.
 
 ## Усложняем проект
 

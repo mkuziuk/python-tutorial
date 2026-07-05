@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 import json
 from pathlib import Path
@@ -24,7 +22,7 @@ class Evidence:
     reliability: int = 3
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "Evidence":
+    def from_dict(cls, data):
         return cls(
             evidence_id=str(data["evidence_id"]),
             kind=str(data["kind"]),
@@ -35,7 +33,7 @@ class Evidence:
             reliability=int(data.get("reliability", 3)),
         )
 
-    def matches(self, query: str) -> bool:
+    def matches(self, query):
         # TODO: искать query в ID, типе, заголовке, источнике, тексте и тегах.
         # Подсказка: соберите эти поля в одну строку и сравнивайте через casefold().
         normalized_query = query.casefold().strip()
@@ -53,7 +51,7 @@ class Person:
     notes: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "Person":
+    def from_dict(cls, data):
         return cls(
             person_id=str(data["person_id"]),
             name=str(data["name"]),
@@ -70,7 +68,7 @@ class CaseNote:
     created_at: str
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "CaseNote":
+    def from_dict(cls, data):
         return cls(
             author=str(data["author"]),
             text=str(data["text"]),
@@ -88,7 +86,7 @@ class Investigation:
     notes: list[CaseNote] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "Investigation":
+    def from_dict(cls, data):
         return cls(
             case_id=str(data["case_id"]),
             title=str(data["title"]),
@@ -98,32 +96,32 @@ class Investigation:
             notes=[CaseNote.from_dict(item) for item in data.get("notes", [])],
         )
 
-    def find_evidence(self, query: str) -> list[Evidence]:
+    def find_evidence(self, query):
         # TODO: вернуть только те улики, для которых Evidence.matches(query) дает True.
         return []
 
-    def add_note(self, author: str, text: str, created_at: str) -> None:
+    def add_note(self, author, text, created_at):
         # TODO: создать CaseNote и добавить его в self.notes.
         raise NotImplementedError("Добавьте заметку в список self.notes")
 
-    def priority_evidence(self, limit: int = 3) -> list[Evidence]:
+    def priority_evidence(self, limit=3):
         return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
 
 
 class CaseRepository:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path):
         self.path = path
 
-    def load(self) -> Investigation:
+    def load(self):
         raw_data = json.loads(self.path.read_text(encoding="utf-8"))
         return Investigation.from_dict(raw_data)
 
-    def save(self, investigation: Investigation) -> None:
+    def save(self, investigation):
         # TODO: превратить investigation обратно в словарь и записать JSON.
         raise NotImplementedError("Сохранение появится в финальной версии")
 
 
-def render_overview(investigation: Investigation) -> None:
+def render_overview(investigation):
     table = Table(title=f"Дело: {investigation.title}")
     table.add_column("Показатель", style="cyan")
     table.add_column("Значение", justify="right")
@@ -137,7 +135,7 @@ def render_overview(investigation: Investigation) -> None:
         console.print(f"{item.evidence_id}: {item.title} ({item.reliability}/5)")
 
 
-def main() -> None:
+def main():
     investigation = CaseRepository(SEED_PATH).load()
     render_overview(investigation)
     console.print("\n[dim]Дальше в главе вы добавите поиск, заметки и сохранение JSON-снимка.[/dim]")

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from email import policy
-from email.message import EmailMessage
 from email.parser import BytesParser
 from email.utils import parseaddr
 from pathlib import Path
@@ -12,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 
 
-def default_data_dir() -> Path:
+def default_data_dir():
     script_dir = Path(__file__).resolve().parent
     local_data = script_dir / "data"
     if local_data.exists():
@@ -78,16 +77,16 @@ class EmailReport:
     verdict: str
 
 
-def clean_url(raw_url: str) -> str:
+def clean_url(raw_url):
     return raw_url.rstrip(TRAILING_URL_CHARS)
 
 
-def clean_label(raw_label: str) -> str:
+def clean_label(raw_label):
     without_tags = TAG_RE.sub(" ", raw_label)
     return SPACE_RE.sub(" ", without_tags).strip()
 
 
-def is_ip_address(host: str) -> bool:
+def is_ip_address(host):
     if not host:
         return False
     try:
@@ -97,11 +96,11 @@ def is_ip_address(host: str) -> bool:
     return True
 
 
-def normalize_host(host: str) -> str:
+def normalize_host(host):
     return host.strip().strip(".").lower()
 
 
-def base_domain(host: str) -> str:
+def base_domain(host):
     host = normalize_host(host)
     if not host or is_ip_address(host):
         return host
@@ -112,21 +111,21 @@ def base_domain(host: str) -> str:
     return ".".join(labels[-2:])
 
 
-def domain_from_address(value: str | None) -> str:
+def domain_from_address(value):
     _, address = parseaddr(value or "")
     if "@" not in address:
         return ""
     return normalize_host(address.rsplit("@", 1)[1])
 
 
-def display_host_from_label(label: str) -> str:
+def display_host_from_label(label):
     match = DOMAIN_RE.search(label)
     if match is None:
         return ""
     return normalize_host(match.group(0))
 
 
-def make_link_info(raw_url: str, label: str = "") -> LinkInfo:
+def make_link_info(raw_url, label=""):
     parsed = urlparse(raw_url)
     host = normalize_host(parsed.hostname or "")
     return LinkInfo(
@@ -139,9 +138,9 @@ def make_link_info(raw_url: str, label: str = "") -> LinkInfo:
     )
 
 
-def extract_links(text: str) -> list[LinkInfo]:
-    links: list[LinkInfo] = []
-    seen_urls: set[str] = set()
+def extract_links(text):
+    links = []
+    seen_urls = set()
 
     for match in HTML_LINK_RE.finditer(text):
         url = clean_url(match.group("url"))
@@ -159,7 +158,7 @@ def extract_links(text: str) -> list[LinkInfo]:
     return links
 
 
-def load_message(path: Path) -> EmailMessage:
+def load_message(path):
     try:
         with path.open("rb") as file:
             message = BytesParser(policy=policy.default).parse(file)
@@ -174,13 +173,13 @@ def load_message(path: Path) -> EmailMessage:
     return message
 
 
-def text_from_message(message: EmailMessage) -> str:
+def text_from_message(message):
     try:
         if not message.is_multipart():
             content = message.get_content()
             return content if isinstance(content, str) else ""
 
-        chunks: list[str] = []
+        chunks = []
         for part in message.walk():
             if part.is_multipart() or part.get_content_disposition() == "attachment":
                 continue
@@ -193,8 +192,8 @@ def text_from_message(message: EmailMessage) -> str:
         raise EmailAnalysisError("Cannot decode message body") from exc
 
 
-def attachment_names(message: EmailMessage) -> list[str]:
-    names: list[str] = []
+def attachment_names(message):
+    names = []
     for part in message.walk():
         if part.get_content_disposition() == "attachment":
             filename = part.get_filename()
@@ -203,17 +202,12 @@ def attachment_names(message: EmailMessage) -> list[str]:
     return names
 
 
-def add_signal(
-    signals: list[RiskSignal],
-    title: str,
-    points: int,
-    level: str = "warning",
-) -> None:
+def add_signal(signals, title, points, level="warning"):
     if all(signal.title != title for signal in signals):
         signals.append(RiskSignal(title=title, points=points, level=level))
 
 
-def risk_verdict(score: int) -> str:
+def risk_verdict(score):
     if score >= 7:
         return "высокий риск"
     if score >= 3:
@@ -221,14 +215,14 @@ def risk_verdict(score: int) -> str:
     return "низкий риск"
 
 
-def analyze_message(message: EmailMessage, filename: str = "<memory>") -> EmailReport:
+def analyze_message(message, filename="<memory>"):
     subject = str(message.get("Subject", "(без темы)"))
     sender = str(message.get("From", ""))
     sender_domain = domain_from_address(sender)
     reply_to_domain = domain_from_address(message.get("Reply-To"))
     body = text_from_message(message)
     links = extract_links(body)
-    signals: list[RiskSignal] = []
+    signals = []
 
     if reply_to_domain and base_domain(reply_to_domain) != base_domain(sender_domain):
         add_signal(signals, "Reply-To ведет в другой домен", 2)
@@ -276,18 +270,18 @@ def analyze_message(message: EmailMessage, filename: str = "<memory>") -> EmailR
     )
 
 
-def analyze_file(path: Path) -> EmailReport:
+def analyze_file(path):
     return analyze_message(load_message(path), filename=path.name)
 
 
-def analyze_directory(data_dir: Path = DATA_DIR) -> list[EmailReport]:
+def analyze_directory(data_dir=DATA_DIR):
     paths = sorted(data_dir.glob("*.eml"))
     if not paths:
         raise EmailAnalysisError(f"No .eml files found in {data_dir}")
     return [analyze_file(path) for path in paths]
 
 
-def render_results(reports: list[EmailReport]) -> None:
+def render_results(reports):
     table = Table(title="Проверка писем")
     table.add_column("Файл", style="cyan")
     table.add_column("Вердикт")
@@ -314,7 +308,7 @@ def render_results(reports: list[EmailReport]) -> None:
     )
 
 
-def main() -> None:
+def main():
     try:
         reports = analyze_directory()
     except EmailAnalysisError as exc:

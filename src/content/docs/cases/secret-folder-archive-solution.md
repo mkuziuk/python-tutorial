@@ -32,7 +32,7 @@ MANIFEST_PATH = Path(__file__).resolve().parents[1] / "manifest.json"
 console = Console()
 
 
-def utc_timestamp(seconds: float | None = None) -> str:
+def utc_timestamp(seconds=None):
     if seconds is None:
         moment = datetime.now(timezone.utc)
     else:
@@ -41,7 +41,7 @@ def utc_timestamp(seconds: float | None = None) -> str:
     return moment.isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def iter_files(root: Path) -> list[Path]:
+def iter_files(root):
     if not root.exists():
         raise FileNotFoundError(f"Folder not found: {root}")
     if not root.is_dir():
@@ -50,11 +50,11 @@ def iter_files(root: Path) -> list[Path]:
     return sorted(path for path in root.rglob("*") if path.is_file())
 
 
-def relative_name(root: Path, path: Path) -> str:
+def relative_name(root, path):
     return path.relative_to(root).as_posix()
 
 
-def file_sha256(path: Path, chunk_size: int = 65_536) -> str:
+def file_sha256(path, chunk_size=65_536):
     digest = hashlib.sha256()
 
     with path.open("rb") as file:
@@ -64,7 +64,7 @@ def file_sha256(path: Path, chunk_size: int = 65_536) -> str:
     return digest.hexdigest()
 
 
-def build_record(root: Path, path: Path) -> dict[str, object]:
+def build_record(root, path):
     stat = path.stat()
 
     return {
@@ -75,13 +75,13 @@ def build_record(root: Path, path: Path) -> dict[str, object]:
     }
 
 
-def scan_folder(root: Path) -> list[dict[str, object]]:
+def scan_folder(root):
     root = root.resolve()
     return [build_record(root, path) for path in iter_files(root)]
 
 
-def detect_duplicates(records: list[dict[str, object]]) -> list[dict[str, object]]:
-    by_hash: dict[str, list[str]] = {}
+def detect_duplicates(records):
+    by_hash = {}
 
     for record in records:
         digest = str(record["sha256"])
@@ -95,7 +95,7 @@ def detect_duplicates(records: list[dict[str, object]]) -> list[dict[str, object
     return groups
 
 
-def build_manifest(root: Path) -> dict[str, object]:
+def build_manifest(root):
     records = scan_folder(root)
 
     return {
@@ -108,7 +108,7 @@ def build_manifest(root: Path) -> dict[str, object]:
     }
 
 
-def load_manifest(path: Path) -> dict[str, object] | None:
+def load_manifest(path):
     if not path.exists():
         return None
 
@@ -118,13 +118,13 @@ def load_manifest(path: Path) -> dict[str, object] | None:
     return data
 
 
-def write_manifest(manifest: dict[str, object], path: Path) -> None:
+def write_manifest(manifest, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(manifest, ensure_ascii=False, indent=2)
     path.write_text(text + "\n", encoding="utf-8")
 
 
-def index_by_path(manifest: dict[str, object]) -> dict[str, dict[str, object]]:
+def index_by_path(manifest):
     return {
         str(record["path"]): record
         for record in manifest.get("files", [])
@@ -133,9 +133,9 @@ def index_by_path(manifest: dict[str, object]) -> dict[str, dict[str, object]]:
 
 
 def compare_manifests(
-    previous: dict[str, object],
-    current: dict[str, object],
-) -> dict[str, list[str]]:
+    previous,
+    current,
+):
     old_files = index_by_path(previous)
     new_files = index_by_path(current)
     old_paths = set(old_files)
@@ -161,10 +161,10 @@ def compare_manifests(
 
 
 def render_report(
-    manifest: dict[str, object],
-    changes: dict[str, list[str]],
-    had_previous_manifest: bool,
-) -> None:
+    manifest,
+    changes,
+    had_previous_manifest,
+):
     summary = Table(title="Индекс секретной папки")
     summary.add_column("Показатель")
     summary.add_column("Значение", justify="right")
@@ -195,7 +195,7 @@ def render_report(
     console.print(change_table)
 
 
-def render_duplicates(manifest: dict[str, object]) -> None:
+def render_duplicates(manifest):
     groups = manifest["duplicates"]
     if not groups:
         console.print("[green]Дубли не найдены.[/green]")
@@ -211,7 +211,7 @@ def render_duplicates(manifest: dict[str, object]) -> None:
     console.print(table)
 
 
-def main() -> None:
+def main():
     previous = load_manifest(MANIFEST_PATH)
     current = build_manifest(DATA_DIR)
     changes = compare_manifests(previous or {"files": []}, current)
@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
 Частые ошибки: сохранять абсолютные пути в manifest, читать большие файлы целиком, считать изменением только новую дату или забыть обработать первый запуск без `manifest.json`.
 
-Справочник: [pathlib](../../field-guide/pathlib/), [hashlib](../../field-guide/hashlib/), [JSON](../../field-guide/json/), [exceptions](../../field-guide/exceptions/), [dict](../../field-guide/dict/), [list](../../field-guide/list/), [Rich](../../field-guide/rich/).
+Справочник: [pathlib](../../field-guide/pathlib/), [hashlib](../../field-guide/hashlib/), [JSON](../../field-guide/json/), [exceptions](../../field-guide/exceptions/), [dict](../../field-guide/dict/), [list](../../field-guide/list/), [functions](../../field-guide/functions/), [Rich](../../field-guide/rich/).
 
 ## Что важно заметить
 

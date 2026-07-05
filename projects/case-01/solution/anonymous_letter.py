@@ -17,15 +17,15 @@ AUTHOR_NAMES = {
 }
 
 
-def normalize_words(text: str) -> list[str]:
+def normalize_words(text):
     return WORD_RE.findall(text.lower())
 
 
-def punctuation_profile(text: str) -> Counter[str]:
+def punctuation_profile(text):
     return Counter(char for char in text if char in PUNCTUATION)
 
 
-def build_profile(name: str, text: str) -> dict[str, object]:
+def build_profile(name, text):
     words = normalize_words(text)
     if not words:
         raise ValueError(f"Text for {name!r} does not contain Russian words")
@@ -41,13 +41,13 @@ def build_profile(name: str, text: str) -> dict[str, object]:
     }
 
 
-def jaccard(left: set[str], right: set[str]) -> float:
+def jaccard(left, right):
     if not left and not right:
         return 1.0
     return len(left & right) / len(left | right)
 
 
-def punctuation_similarity(left: Counter[str], right: Counter[str]) -> float:
+def punctuation_similarity(left, right):
     left_total = sum(left.values()) or 1
     right_total = sum(right.values()) or 1
     distance = 0.0
@@ -58,7 +58,7 @@ def punctuation_similarity(left: Counter[str], right: Counter[str]) -> float:
     return max(0.0, 1.0 - distance / 2)
 
 
-def compare_profiles(anonymous: dict[str, object], candidate: dict[str, object]) -> float:
+def compare_profiles(anonymous, candidate):
     anonymous_words = {word for word, _ in anonymous["common_words"]}
     candidate_words = {word for word, _ in candidate["common_words"]}
     word_overlap = jaccard(anonymous_words, candidate_words)
@@ -76,17 +76,17 @@ def compare_profiles(anonymous: dict[str, object], candidate: dict[str, object])
     return round(word_overlap * 0.45 + length_score * 0.25 + punctuation_score * 0.30, 3)
 
 
-def display_name(path: Path) -> str:
+def display_name(path):
     return AUTHOR_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
-def read_text(path: Path) -> str:
+def read_text(path):
     return path.read_text(encoding="utf-8")
 
 
-def rank_candidates(data_dir: Path = DATA_DIR) -> list[tuple[str, float]]:
+def rank_candidates(data_dir=DATA_DIR):
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
-    results: list[tuple[str, float]] = []
+    results = []
 
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
@@ -95,7 +95,7 @@ def rank_candidates(data_dir: Path = DATA_DIR) -> list[tuple[str, float]]:
     return sorted(results, key=lambda item: item[1], reverse=True)
 
 
-def render_results(results: list[tuple[str, float]]) -> None:
+def render_results(results):
     table = Table(title="Вероятные авторы")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Кандидат")
@@ -112,7 +112,7 @@ def render_results(results: list[tuple[str, float]]) -> None:
     )
 
 
-def main() -> None:
+def main():
     render_results(rank_candidates())
 
 

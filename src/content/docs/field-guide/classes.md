@@ -17,11 +17,11 @@ order: 14
 
 ```python
 class CaseFile:
-    def __init__(self, title: str) -> None:
+    def __init__(self, title):
         self.title = title
         self.evidence = []
 
-    def add_evidence(self, item: str) -> None:
+    def add_evidence(self, item):
         self.evidence.append(item)
 ```
 

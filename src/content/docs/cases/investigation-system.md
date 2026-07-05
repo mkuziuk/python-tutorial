@@ -22,7 +22,7 @@ time: "120-150 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-05.zip">case-05.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../investigation-system-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/classes/">classes</a> · <a href="../../field-guide/dataclasses/">dataclasses</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/rich/">Rich</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/classes/">classes</a> · <a href="../../field-guide/dataclasses/">dataclasses</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a></p>
 </div>
 
 ## Проблема
@@ -70,9 +70,9 @@ tags = item["tags"]
 CaseRepository
   -> load()
      -> Investigation
-        -> list[Person]
-        -> list[Evidence]
-        -> list[CaseNote]
+        -> участники
+        -> улики
+        -> заметки
   -> save(investigation)
 ```
 
@@ -122,7 +122,7 @@ python investigation_system.py
 [`dataclass`](../../field-guide/dataclasses/) сам создает метод `__init__()`: нам не нужно вручную присваивать каждое поле. Добавьте в `Evidence` метод `__post_init__()`. Он запускается сразу после создания объекта.
 
 ```python
-def __post_init__(self) -> None:
+def __post_init__(self):
     self.evidence_id = self.evidence_id.strip()
     self.kind = self.kind.strip()
     self.title = self.title.strip()
@@ -141,7 +141,7 @@ def __post_init__(self) -> None:
 Теперь научим улику превращаться обратно в [словарь](../../field-guide/dict/):
 
 ```python
-def to_dict(self) -> dict[str, object]:
+def to_dict(self):
     return {
         "evidence_id": self.evidence_id,
         "kind": self.kind,
@@ -160,7 +160,7 @@ def to_dict(self) -> dict[str, object]:
 Метод `matches()` должен проверить запрос сразу в нескольких полях. Это лучше, чем писать такую проверку снаружи каждый раз: вся логика поиска по одной улике живет рядом с данными этой улики.
 
 ```python
-def matches(self, query: str) -> bool:
+def matches(self, query):
     normalized_query = query.casefold().strip()
     if not normalized_query:
         return True
@@ -183,7 +183,7 @@ def matches(self, query: str) -> bool:
 Для красивого вывода добавьте короткую выдержку текста:
 
 ```python
-def short_body(self, limit: int = 90) -> str:
+def short_body(self, limit=90):
     compact = " ".join(self.body.split())
     if len(compact) <= limit:
         return compact
@@ -195,7 +195,7 @@ def short_body(self, limit: int = 90) -> str:
 У `Person` и `CaseNote` тоже нужен путь обратно в JSON. Они проще, чем `Evidence`, поэтому им хватает `to_dict()` без отдельного поиска или валидации.
 
 ```python
-def to_dict(self) -> dict[str, object]:
+def to_dict(self):
     return {
         "person_id": self.person_id,
         "name": self.name,
@@ -208,7 +208,7 @@ def to_dict(self) -> dict[str, object]:
 Для `CaseNote`:
 
 ```python
-def to_dict(self) -> dict[str, object]:
+def to_dict(self):
     return {
         "author": self.author,
         "text": self.text,
@@ -219,7 +219,7 @@ def to_dict(self) -> dict[str, object]:
 Можно добавить маленький метод для подписи участника:
 
 ```python
-def label(self) -> str:
+def label(self):
     return f"{self.name} - {self.role}"
 ```
 
@@ -232,7 +232,7 @@ def label(self) -> str:
 Добавьте метод `to_dict()`:
 
 ```python
-def to_dict(self) -> dict[str, object]:
+def to_dict(self):
     return {
         "case_id": self.case_id,
         "title": self.title,
@@ -246,7 +246,7 @@ def to_dict(self) -> dict[str, object]:
 Теперь добавим операции дела.
 
 ```python
-def evidence_by_id(self, evidence_id: str) -> Evidence | None:
+def evidence_by_id(self, evidence_id):
     normalized_id = evidence_id.casefold()
     for item in self.evidence:
         if item.evidence_id.casefold() == normalized_id:
@@ -254,10 +254,10 @@ def evidence_by_id(self, evidence_id: str) -> Evidence | None:
     return None
 ```
 
-`Evidence | None` означает: функция вернет либо улику, либо ничего.
+Если совпадения нет, функция возвращает `None`: это обычный способ сказать "ничего не найдено".
 
 ```python
-def add_evidence(self, item: Evidence) -> None:
+def add_evidence(self, item):
     if self.evidence_by_id(item.evidence_id) is not None:
         raise ValueError(f"Evidence {item.evidence_id!r} already exists")
     self.evidence.append(item)
@@ -266,22 +266,22 @@ def add_evidence(self, item: Evidence) -> None:
 Так дело само следит, чтобы два объекта не получили один ID.
 
 ```python
-def add_note(self, author: str, text: str, created_at: str) -> None:
+def add_note(self, author, text, created_at):
     self.notes.append(CaseNote(author=author, text=text, created_at=created_at))
 ```
 
 Поиск становится коротким, потому что подробности спрятаны внутри `Evidence.matches()`:
 
 ```python
-def find_evidence(self, query: str) -> list[Evidence]:
+def find_evidence(self, query):
     return [item for item in self.evidence if item.matches(query)]
 ```
 
 Сделаем индекс по тегам. Это пригодится, когда улик станет больше.
 
 ```python
-def tag_index(self) -> dict[str, list[Evidence]]:
-    index: dict[str, list[Evidence]] = {}
+def tag_index(self):
+    index = {}
     for item in self.evidence:
         for tag in item.tags:
             index.setdefault(tag, []).append(item)
@@ -294,7 +294,7 @@ def tag_index(self) -> dict[str, list[Evidence]]:
 И оставим сортировку приоритетных улик:
 
 ```python
-def priority_evidence(self, limit: int = 3) -> list[Evidence]:
+def priority_evidence(self, limit=3):
     return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
 ```
 
@@ -304,14 +304,14 @@ def priority_evidence(self, limit: int = 3) -> list[Evidence]:
 
 ```python
 class CaseRepository:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path):
         self.path = path
 
-    def load(self) -> Investigation:
+    def load(self):
         raw_data = json.loads(self.path.read_text(encoding="utf-8"))
         return Investigation.from_dict(raw_data)
 
-    def save(self, investigation: Investigation) -> None:
+    def save(self, investigation):
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(investigation.to_dict(), ensure_ascii=False, indent=2)
         self.path.write_text(f"{payload}\n", encoding="utf-8")
@@ -324,7 +324,7 @@ class CaseRepository:
 [Rich](../../field-guide/rich/) нужен только для вывода. Данные и логика остаются обычным Python.
 
 ```python
-def render_search_results(query: str, results: list[Evidence]) -> None:
+def render_search_results(query, results):
     table = Table(title=f"Поиск: {query}")
     table.add_column("ID", style="cyan")
     table.add_column("Название")
@@ -339,7 +339,7 @@ def render_search_results(query: str, results: list[Evidence]) -> None:
 Функция сборки отчета загружает исходный JSON, делает автоматическую проверку и сохраняет новый снимок.
 
 ```python
-def build_report(seed_path: Path = SEED_PATH, output_path: Path = OUTPUT_PATH) -> Investigation:
+def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
     investigation = CaseRepository(seed_path).load()
     signal_matches = investigation.find_evidence("сигнал")
     investigation.add_note(
@@ -354,7 +354,7 @@ def build_report(seed_path: Path = SEED_PATH, output_path: Path = OUTPUT_PATH) -
 В `main()` остается связать шаги:
 
 ```python
-def main() -> None:
+def main():
     investigation = build_report()
     render_overview(investigation)
     render_search_results("сигнал", investigation.find_evidence("сигнал"))

@@ -23,14 +23,14 @@ time: "90-120 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-01.zip">case-01.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../anonymous-letter-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/str/">str</a> · <a href="../../field-guide/regex/">regex</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/counter/">Counter</a> · <a href="../../field-guide/rich/">Rich</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/str/">str</a> · <a href="../../field-guide/regex/">regex</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/counter/">Counter</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a></p>
 </div>
 
 ## Завязка
 
 В небольшой редакции готовят публичный показ оцифрованного архива. Ночью перед контрольной сверкой в общей папке появляется файл `anonymous.txt`. В нем нет угроз и громких обвинений, но есть холодное предупреждение: часть черновиков уже тронули, а следующая подмена будет выглядеть как обычная ошибка.
 
-В команде три человека, которые часто работают с архивом: Алина Морозова, Илья Соколов и Никита Королев. У каждого есть известный текстовый образец. Вопрос дела не в том, кого обвинить. Нужно понять, кто оставил предупреждение: этот человек может знать, какой файл изменили, когда это случилось и где след исчезнет первым.
+В команде три человека, которые часто работают с архивом: Алина Морозова, Илья Соколов и Никита Королев. У каждого есть два известных рабочих текстовых фрагмента. Вопрос дела не в том, кого обвинить. Нужно понять, кто оставил предупреждение: этот человек может знать, какой файл изменили, когда это случилось и где след исчезнет первым.
 
 Наша задача - построить инструмент первичной проверки. Он достанет слова, посчитает привычки письма и покажет, с кем команда должна поговорить в первую очередь.
 
@@ -155,11 +155,11 @@ WORD_RE = re.compile(r"[а-яё]+", re.IGNORECASE)
 Теперь можно получить слова чище:
 
 ```python
-def normalize_words(text: str) -> list[str]:
+def normalize_words(text):
     return WORD_RE.findall(text.lower())
 ```
 
-Добавьте `import re`, `WORD_RE` и функцию `normalize_words()` в `anonymous_letter.py`. Эта функция получает одну [строку](../../field-guide/str/) и возвращает `list[str]`: дальше весь анализ работает уже не с исходным текстом, а с чистым списком слов. Если оставить пунктуацию внутри слов, `Counter` будет считать `след` и `след.` разными признаками.
+Добавьте `import re`, `WORD_RE` и функцию `normalize_words()` в `anonymous_letter.py`. Эта функция получает одну [строку](../../field-guide/str/) и возвращает список слов: дальше весь анализ работает уже не с исходным текстом, а с чистыми словами. Если оставить пунктуацию внутри слов, `Counter` будет считать `след` и `след.` разными признаками.
 
 ## Профиль текста
 
@@ -171,14 +171,14 @@ from collections import Counter
 PUNCTUATION = ".,;:!?"
 
 
-def punctuation_profile(text: str) -> Counter[str]:
+def punctuation_profile(text):
     return Counter(char for char in text if char in PUNCTUATION)
 ```
 
 Функция [`Counter`](../../field-guide/counter/) похожа на словарь, но специально создана для подсчета. В `punctuation_profile()` она превращает поток символов в карту "знак -> сколько раз встретился".
 
 ```python
-def build_profile(name: str, text: str) -> dict[str, object]:
+def build_profile(name, text):
     words = normalize_words(text)
     if not words:
         raise ValueError(f"Text for {name!r} does not contain Russian words")
@@ -196,7 +196,7 @@ def build_profile(name: str, text: str) -> dict[str, object]:
 
 `build_profile()` - центральная функция подготовки данных: на входе имя и текст, на выходе один профиль, который удобно сравнивать с другими профилями. Здесь появляются главные структуры данных дела:
 
-- `list[str]` хранит слова в порядке появления;
+- `list` хранит слова в порядке появления;
 - `set(words)` оставляет только уникальные слова;
 - `dict` собирает разные признаки в один профиль;
 - `Counter` считает слова и знаки.
@@ -206,7 +206,7 @@ def build_profile(name: str, text: str) -> dict[str, object]:
 Частые слова сравним через пересечение [множеств](../../field-guide/set/). Это дешевый способ спросить: "какие признаки есть у обоих текстов?"
 
 ```python
-def jaccard(left: set[str], right: set[str]) -> float:
+def jaccard(left, right):
     if not left and not right:
         return 1.0
     return len(left & right) / len(left | right)
@@ -217,7 +217,7 @@ def jaccard(left: set[str], right: set[str]) -> float:
 Пунктуацию сравним по долям: если один автор ставит много запятых, а другой почти не ставит, расстояние увеличится.
 
 ```python
-def punctuation_similarity(left: Counter[str], right: Counter[str]) -> float:
+def punctuation_similarity(left, right):
     left_total = sum(left.values()) or 1
     right_total = sum(right.values()) or 1
     distance = 0.0
@@ -231,7 +231,7 @@ def punctuation_similarity(left: Counter[str], right: Counter[str]) -> float:
 Общая оценка будет смесью трех сигналов:
 
 ```python
-def compare_profiles(anonymous: dict[str, object], candidate: dict[str, object]) -> float:
+def compare_profiles(anonymous, candidate):
     anonymous_words = {word for word, _ in anonymous["common_words"]}
     candidate_words = {word for word, _ in candidate["common_words"]}
     word_overlap = jaccard(anonymous_words, candidate_words)
@@ -263,13 +263,13 @@ AUTHOR_NAMES = {
 }
 
 
-def display_name(path: Path) -> str:
+def display_name(path):
     return AUTHOR_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
-def rank_candidates(data_dir: Path = DATA_DIR) -> list[tuple[str, float]]:
+def rank_candidates(data_dir=DATA_DIR):
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
-    results: list[tuple[str, float]] = []
+    results = []
 
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
@@ -286,7 +286,7 @@ def rank_candidates(data_dir: Path = DATA_DIR) -> list[tuple[str, float]]:
 from rich.table import Table
 
 
-def render_results(results: list[tuple[str, float]]) -> None:
+def render_results(results):
     table = Table(title="Вероятные авторы")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Кандидат")
@@ -306,7 +306,7 @@ def render_results(results: list[tuple[str, float]]) -> None:
 В конце `main()` должен запускать ранжирование и печатать отчет:
 
 ```python
-def main() -> None:
+def main():
     render_results(rank_candidates())
 ```
 
@@ -321,8 +321,8 @@ python anonymous_letter.py
 ```text
 Вероятные авторы
 1  Алина Морозова  0.69
-2  Никита Королев  0.51
-3  Илья Соколов    0.44
+2  Никита Королев  0.53
+3  Илья Соколов    0.40
 ```
 
 Если первым стоит Алина Морозова, инструмент работает как задумано. Если числа немного отличаются, проверьте веса в `compare_profiles()`.
@@ -337,7 +337,7 @@ python anonymous_letter.py
 - [Множества `set`](../../field-guide/set/) - уникальные слова и пересечение признаков.
 - [Counter](../../field-guide/counter/) - частоты слов и пунктуации.
 - [Rich](../../field-guide/rich/) - читаемая таблица результата.
-- Функции - отдельные проверяемые шаги: нормализация, профиль, сравнение и отчет.
+- [Функции](../../field-guide/functions/) - отдельные проверяемые шаги: нормализация, профиль, сравнение и отчет.
 
 ## Усложняем проект
 

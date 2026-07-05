@@ -8,7 +8,7 @@ MANIFEST_PATH = Path(__file__).with_name("manifest.json")
 console = Console()
 
 
-def iter_files(root: Path) -> list[Path]:
+def iter_files(root):
     if not root.exists():
         raise FileNotFoundError(f"Folder not found: {root}")
     if not root.is_dir():
@@ -17,11 +17,11 @@ def iter_files(root: Path) -> list[Path]:
     return sorted(path for path in root.rglob("*") if path.is_file())
 
 
-def relative_name(root: Path, path: Path) -> str:
+def relative_name(root, path):
     return path.relative_to(root).as_posix()
 
 
-def build_record(root: Path, path: Path) -> dict[str, object]:
+def build_record(root, path):
     stat = path.stat()
 
     return {
@@ -32,12 +32,12 @@ def build_record(root: Path, path: Path) -> dict[str, object]:
     }
 
 
-def scan_folder(root: Path) -> list[dict[str, object]]:
+def scan_folder(root):
     root = root.resolve()
     return [build_record(root, path) for path in iter_files(root)]
 
 
-def render_preview(records: list[dict[str, object]]) -> None:
+def render_preview(records):
     table = Table(title="Черновой индекс секретной папки")
     table.add_column("Файл")
     table.add_column("Байт", justify="right")
@@ -55,7 +55,7 @@ def render_preview(records: list[dict[str, object]]) -> None:
     console.print(table)
 
 
-def main() -> None:
+def main():
     records = scan_folder(DATA_DIR)
     render_preview(records)
     console.print(f"[dim]Найдено файлов: {len(records)}[/dim]")

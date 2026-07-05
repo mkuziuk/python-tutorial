@@ -21,7 +21,7 @@ from secret_folder_archive import (  # noqa: E402
 
 
 class SecretFolderArchiveTests(unittest.TestCase):
-    def test_file_sha256_matches_hashlib(self) -> None:
+    def test_file_sha256_matches_hashlib(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "note.txt"
             path.write_text("secret archive\n", encoding="utf-8")
@@ -29,10 +29,10 @@ class SecretFolderArchiveTests(unittest.TestCase):
             expected = hashlib.sha256("secret archive\n".encode("utf-8")).hexdigest()
             self.assertEqual(file_sha256(path), expected)
 
-    def test_utc_timestamp_uses_z_suffix(self) -> None:
+    def test_utc_timestamp_uses_z_suffix(self):
         self.assertEqual(utc_timestamp(0), "1970-01-01T00:00:00Z")
 
-    def test_scan_folder_returns_relative_records(self) -> None:
+    def test_scan_folder_returns_relative_records(self):
         records = scan_folder(PROJECT_DIR / "data" / "secret_folder")
         paths = [record["path"] for record in records]
 
@@ -42,7 +42,7 @@ class SecretFolderArchiveTests(unittest.TestCase):
         self.assertTrue(all(len(str(record["sha256"])) == 64 for record in records))
         self.assertTrue(all(str(record["modified_at"]).endswith("Z") for record in records))
 
-    def test_detect_duplicates_finds_photo_index_copy(self) -> None:
+    def test_detect_duplicates_finds_photo_index_copy(self):
         records = scan_folder(PROJECT_DIR / "data" / "secret_folder")
         duplicates = detect_duplicates(records)
 
@@ -52,7 +52,7 @@ class SecretFolderArchiveTests(unittest.TestCase):
             ["evidence/photo_index.txt", "evidence/photo_index_copy.txt"],
         )
 
-    def test_compare_manifests_reports_added_removed_changed(self) -> None:
+    def test_compare_manifests_reports_added_removed_changed(self):
         previous = {
             "files": [
                 {"path": "same.txt", "sha256": "aaa"},
@@ -78,7 +78,7 @@ class SecretFolderArchiveTests(unittest.TestCase):
             },
         )
 
-    def test_write_and_load_manifest_round_trip(self) -> None:
+    def test_write_and_load_manifest_round_trip(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "manifest.json"
             manifest = {"files": [{"path": "a.txt", "sha256": "123"}], "root": "tmp"}
@@ -87,7 +87,7 @@ class SecretFolderArchiveTests(unittest.TestCase):
             self.assertEqual(load_manifest(path), manifest)
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), manifest)
 
-    def test_build_manifest_contains_summary_and_duplicates(self) -> None:
+    def test_build_manifest_contains_summary_and_duplicates(self):
         manifest = build_manifest(PROJECT_DIR / "data" / "secret_folder")
 
         self.assertEqual(manifest["file_count"], 6)

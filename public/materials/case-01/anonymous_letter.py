@@ -6,11 +6,11 @@ DATA_DIR = Path(__file__).with_name("data")
 console = Console()
 
 
-def read_text(path: Path) -> str:
+def read_text(path):
     return path.read_text(encoding="utf-8")
 
 
-def main() -> None:
+def main():
     anonymous_text = read_text(DATA_DIR / "anonymous.txt")
     samples = sorted(DATA_DIR.glob("author_*.txt"))
 

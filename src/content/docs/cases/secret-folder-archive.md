@@ -22,7 +22,7 @@ time: "100-130 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-04.zip">case-04.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../secret-folder-archive-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/hashlib/">hashlib</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/exceptions/">exceptions</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/rich/">Rich</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/hashlib/">hashlib</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/exceptions/">exceptions</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a></p>
 </div>
 
 ## Проблема
@@ -127,7 +127,7 @@ console = Console()
 [`pathlib`](../../field-guide/pathlib/) умеет рекурсивно проходить по дереву:
 
 ```python
-def iter_files(root: Path) -> list[Path]:
+def iter_files(root):
     if not root.exists():
         raise FileNotFoundError(f"Folder not found: {root}")
     if not root.is_dir():
@@ -143,7 +143,7 @@ def iter_files(root: Path) -> list[Path]:
 Манифест должен быть читаемым:
 
 ```python
-def relative_name(root: Path, path: Path) -> str:
+def relative_name(root, path):
     return path.relative_to(root).as_posix()
 ```
 
@@ -154,7 +154,7 @@ def relative_name(root: Path, path: Path) -> str:
 Файл лучше читать кусками. Маленькие файлы можно прочитать целиком, но привычка с чанками спасает, когда архив разрастается. `file_sha256()` принимает путь и возвращает строку-хэш; именно эта строка потом решает, одинаковые ли файлы.
 
 ```python
-def file_sha256(path: Path, chunk_size: int = 65_536) -> str:
+def file_sha256(path, chunk_size=65_536):
     digest = hashlib.sha256()
 
     with path.open("rb") as file:
@@ -171,7 +171,7 @@ def file_sha256(path: Path, chunk_size: int = 65_536) -> str:
 Для манифеста нужна предсказуемая запись времени. Не используем локальный часовой пояс: сегодня скрипт запускают в Москве, завтра на сервере в другой стране.
 
 ```python
-def utc_timestamp(seconds: float | None = None) -> str:
+def utc_timestamp(seconds=None):
     if seconds is None:
         moment = datetime.now(timezone.utc)
     else:
@@ -187,7 +187,7 @@ def utc_timestamp(seconds: float | None = None) -> str:
 Теперь соберем один файл в [словарь](../../field-guide/dict/):
 
 ```python
-def build_record(root: Path, path: Path) -> dict[str, object]:
+def build_record(root, path):
     stat = path.stat()
 
     return {
@@ -205,7 +205,7 @@ def build_record(root: Path, path: Path) -> dict[str, object]:
 Сначала получим [список](../../field-guide/list/) записей:
 
 ```python
-def scan_folder(root: Path) -> list[dict[str, object]]:
+def scan_folder(root):
     root = root.resolve()
     return [build_record(root, path) for path in iter_files(root)]
 ```
@@ -213,8 +213,8 @@ def scan_folder(root: Path) -> list[dict[str, object]]:
 Для дублей сгруппируем пути по хэшу. `detect_duplicates()` не читает файлы повторно: она работает только с готовыми записями, поэтому ее легко проверить отдельно.
 
 ```python
-def detect_duplicates(records: list[dict[str, object]]) -> list[dict[str, object]]:
-    by_hash: dict[str, list[str]] = {}
+def detect_duplicates(records):
+    by_hash = {}
 
     for record in records:
         digest = str(record["sha256"])
@@ -235,7 +235,7 @@ def detect_duplicates(records: list[dict[str, object]]) -> list[dict[str, object
 Манифест - обычный словарь, который потом легко записать в JSON:
 
 ```python
-def build_manifest(root: Path) -> dict[str, object]:
+def build_manifest(root):
     records = scan_folder(root)
 
     return {
@@ -255,14 +255,14 @@ def build_manifest(root: Path) -> dict[str, object]:
 Добавим две функции. `load_manifest()` возвращает либо старый снимок, либо `None`, поэтому первый запуск не считается ошибкой; `write_manifest()` отвечает только за сохранение текущего снимка.
 
 ```python
-def load_manifest(path: Path) -> dict[str, object] | None:
+def load_manifest(path):
     if not path.exists():
         return None
 
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def write_manifest(manifest: dict[str, object], path: Path) -> None:
+def write_manifest(manifest, path):
     text = json.dumps(manifest, ensure_ascii=False, indent=2)
     path.write_text(text + "\n", encoding="utf-8")
 ```
@@ -274,7 +274,7 @@ def write_manifest(manifest: dict[str, object], path: Path) -> None:
 Чтобы найти изменения, превратим список файлов в словарь `путь -> запись`:
 
 ```python
-def index_by_path(manifest: dict[str, object]) -> dict[str, dict[str, object]]:
+def index_by_path(manifest):
     return {
         str(record["path"]): record
         for record in manifest.get("files", [])
@@ -286,9 +286,9 @@ def index_by_path(manifest: dict[str, object]) -> dict[str, dict[str, object]]:
 
 ```python
 def compare_manifests(
-    previous: dict[str, object],
-    current: dict[str, object],
-) -> dict[str, list[str]]:
+    previous,
+    current,
+):
     old_files = index_by_path(previous)
     new_files = index_by_path(current)
     old_paths = set(old_files)
@@ -321,10 +321,10 @@ def compare_manifests(
 
 ```python
 def render_report(
-    manifest: dict[str, object],
-    changes: dict[str, list[str]],
-    had_previous_manifest: bool,
-) -> None:
+    manifest,
+    changes,
+    had_previous_manifest,
+):
     summary = Table(title="Индекс секретной папки")
     summary.add_column("Показатель")
     summary.add_column("Значение", justify="right")
@@ -358,7 +358,7 @@ def render_report(
 Для дублей можно сделать отдельную таблицу:
 
 ```python
-def render_duplicates(manifest: dict[str, object]) -> None:
+def render_duplicates(manifest):
     groups = manifest["duplicates"]
     if not groups:
         console.print("[green]Дубли не найдены.[/green]")
@@ -379,7 +379,7 @@ def render_duplicates(manifest: dict[str, object]) -> None:
 В `main()` свяжем все шаги:
 
 ```python
-def main() -> None:
+def main():
     previous = load_manifest(MANIFEST_PATH)
     current = build_manifest(DATA_DIR)
     changes = compare_manifests(previous or {"files": []}, current)
