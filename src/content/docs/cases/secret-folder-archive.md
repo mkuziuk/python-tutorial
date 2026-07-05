@@ -48,13 +48,13 @@ time: "100-130 минут"
 
 ### Подготовка окружения
 
-Нужен Python 3.14 или новее.
+Нужна современная версия Python 3.
 
 Windows PowerShell:
 
 ```powershell
 cd path\to\case-04
-py -3.14 -m venv .venv
+py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -64,7 +64,7 @@ macOS или Linux:
 
 ```bash
 cd path/to/case-04
-python3.14 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -408,7 +408,7 @@ python secret_folder_archive.py
 
 ## Что мы использовали
 
-- [Установка Python](../../field-guide/install-python/) - Python 3.14+, виртуальная среда и точная версия зависимости.
+- [Установка Python](../../field-guide/install-python/) - современная версия Python 3, виртуальная среда и точная версия зависимости.
 - [pathlib.Path](../../field-guide/pathlib/) - пути, рекурсивный обход и относительные имена.
 - [hashlib.sha256()](../../field-guide/hashlib/) - надежный отпечаток содержимого файла.
 - [JSON](../../field-guide/json/) - человекочитаемый манифест.

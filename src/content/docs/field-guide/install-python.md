@@ -1,6 +1,6 @@
 ---
 title: Установка Python
-description: Короткая проверка Python, виртуальной среды и зависимостей перед делом.
+description: Короткая настройка Python, виртуальной среды и зависимостей перед делом.
 concept: "install-python"
 usedIn:
   - "case-01"
@@ -13,15 +13,7 @@ order: 0
 
 ## Что нужно
 
-Для дел нужен Python 3.14 или новее. На Windows обычно удобно запускать его как `py -3.14`, на macOS и Linux - как `python3.14`.
-
-В корне сайта есть быстрая проверка:
-
-```bash
-pnpm check:python
-```
-
-Она падает, если локальный `python3` старее 3.14.
+Для дел нужна современная версия Python 3. На Windows обычно удобно запускать его как `py -3`, на macOS и Linux - как `python3`.
 
 ## Где запускать команды
 
@@ -34,7 +26,7 @@ pnpm check:python
 Windows PowerShell:
 
 ```powershell
-py -3.14 -m venv .venv
+py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -43,7 +35,7 @@ python -m pip install -r requirements.txt
 macOS или Linux:
 
 ```bash
-python3.14 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt

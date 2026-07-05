@@ -6,12 +6,12 @@
 
 ## Подготовка
 
-Нужен Python 3.14 или новее.
+Нужна современная версия Python 3.
 
 ### Windows PowerShell
 
 ```powershell
-py -3.14 -m venv .venv
+py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -20,7 +20,7 @@ python -m pip install -r requirements.txt
 ### macOS или Linux
 
 ```bash
-python3.14 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt

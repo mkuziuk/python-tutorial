@@ -56,7 +56,7 @@ time: "90-120 минут"
 
 ```powershell
 cd path\to\case-01
-py -3.14 -m venv .venv
+py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -73,7 +73,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 ```bash
 cd path/to/case-01
-python3.14 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -344,7 +344,7 @@ python anonymous_letter.py
 
 ## Что мы использовали
 
-- [Установка Python](../../field-guide/install-python/) - Python 3.14+, виртуальная среда и установка зависимостей.
+- [Установка Python](../../field-guide/install-python/) - современная версия Python 3, виртуальная среда и установка зависимостей.
 - [Строки `str`](../../field-guide/str/) - исходный текст и нормализация.
 - [Regex](../../field-guide/regex/) - поиск русских слов без приклеенной пунктуации.
 - [Списки `list`](../../field-guide/list/) - последовательность найденных слов.

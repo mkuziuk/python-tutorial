@@ -45,13 +45,13 @@ time: "90-120 минут"
 
 ### Подготовка окружения
 
-Нужен Python 3.14 или новее.
+Нужна современная версия Python 3.
 
 Windows PowerShell:
 
 ```powershell
 cd path\to\case-02
-py -3.14 -m venv .venv
+py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -61,7 +61,7 @@ macOS или Linux:
 
 ```bash
 cd path/to/case-02
-python3.14 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -360,7 +360,7 @@ python copy_paste_detector.py
 
 ## Что мы использовали
 
-- [Установка Python](../../field-guide/install-python/) - Python 3.14+, виртуальная среда и зависимости.
+- [Установка Python](../../field-guide/install-python/) - современная версия Python 3, виртуальная среда и зависимости.
 - [Списки `list`](../../field-guide/list/) - слова и последовательность n-грамм.
 - [Словари `dict`](../../field-guide/dict/) - профиль текста и результат сравнения.
 - [Множества `set`](../../field-guide/set/) - быстрые пересечения n-грамм.

@@ -86,7 +86,7 @@ CaseRepository
 
 ```powershell
 cd path\to\case-05
-py -3.14 -m venv .venv
+py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -103,7 +103,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 ```bash
 cd path/to/case-05
-python3.14 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -488,7 +488,7 @@ JSON-снимок сохранен: case_report.json
 
 ## Что мы использовали
 
-- [Установка Python](../../field-guide/install-python/) - Python 3.14+, виртуальная среда и читаемые типы.
+- [Установка Python](../../field-guide/install-python/) - современная версия Python 3, виртуальная среда и читаемые типы.
 - [Списки `list`](../../field-guide/list/) - коллекции участников, улик и заметок.
 - [Словари `dict`](../../field-guide/dict/) - JSON-структура до превращения в объекты.
 - [Классы](../../field-guide/classes/) - собственные типы для предметной области.
