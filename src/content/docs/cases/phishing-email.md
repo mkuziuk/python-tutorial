@@ -37,7 +37,7 @@ time: "90-120 минут"
 
 Внутри learner-набора:
 
-- `phishing_email.py` - стартовый файл с чтением `.eml` и черновой таблицей;
+- `phishing_email.py` - пустой стартовый файл, который мы будем заполнять;
 - `requirements.txt` - единственная внешняя зависимость для красивого вывода;
 - `data/*.eml` - письма из дела;
 - `check_result.txt` - ориентиры ожидаемого результата.
@@ -96,22 +96,38 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Проверьте стартовый файл:
+Проверьте пустой стартовый файл:
 
 ```bash
 python phishing_email.py
 ```
 
-Он уже должен показать темы писем и найденные хосты. Теперь превратим обзор в анализатор риска.
+Он пока ничего не выводит: это нормально. Теперь начнем собирать анализатор риска.
+
+Откройте `phishing_email.py` и добавьте импорты, путь к письмам и консоль:
+
+```python
+from dataclasses import dataclass
+from email import policy
+from email.parser import BytesParser
+from email.utils import parseaddr
+from pathlib import Path
+import ipaddress
+import re
+from urllib.parse import urlparse
+
+from rich.console import Console
+from rich.table import Table
+
+DATA_DIR = Path(__file__).with_name("data")
+console = Console()
+```
 
 ### Данные отчета
 
 Добавим структуры для ссылки, сигнала и отчета. [`dataclass`](../../field-guide/dataclasses/) удобен, когда нужно передавать по программе несколько связанных полей. Здесь каждая структура делает форму данных явной: ссылка, сигнал риска и итоговый отчет не смешиваются в один большой словарь.
 
 ```python
-from dataclasses import dataclass
-
-
 @dataclass(frozen=True)
 class LinkInfo:
     raw: str

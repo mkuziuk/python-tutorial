@@ -40,7 +40,7 @@ time: "90-120 минут"
 
 Внутри learner-набора:
 
-- `anonymous_letter.py` - стартовый файл, который мы будем наращивать;
+- `anonymous_letter.py` - пустой стартовый файл, который мы будем наращивать;
 - `requirements.txt` - внешняя библиотека для красивого отчета;
 - `data/anonymous.txt` - анонимная записка;
 - `data/author_morozova.txt`, `data/author_sokolov.txt`, `data/author_korolev.txt` - образцы кандидатов;
@@ -86,13 +86,28 @@ python -m pip install -r requirements.txt
 - `requirements.txt` фиксирует точную версию зависимости;
 - `rich==15.0.0` нужен только для красивой таблицы в терминале.
 
-Проверьте стартовый файл:
+Проверьте пустой стартовый файл:
 
 ```bash
 python anonymous_letter.py
 ```
 
-Он пока только загружает материалы дела. Дальше мы превратим его в инструмент.
+Он пока ничего не выводит: это нормально. Откройте `anonymous_letter.py` и начните с путей, консоли и чтения текста:
+
+```python
+from pathlib import Path
+
+from rich.console import Console
+
+DATA_DIR = Path(__file__).with_name("data")
+console = Console()
+
+
+def read_text(path):
+    return path.read_text(encoding="utf-8")
+```
+
+Дальше мы превратим пустой файл в инструмент.
 
 ## Стратегия
 

@@ -36,7 +36,7 @@ time: "90-120 минут"
 
 В learner-наборе:
 
-- `copy_paste_detector.py` - стартовый файл, который мы будем дорабатывать;
+- `copy_paste_detector.py` - пустой стартовый файл, который мы будем дорабатывать;
 - `requirements.txt` - точная версия Rich для красивой таблицы;
 - `data/report_*.txt` - полные отчеты из архива;
 - `check_result.txt` - форма ожидаемого результата.
@@ -67,7 +67,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Запустите стартовый файл:
+Запустите пустой стартовый файл:
 
 ```bash
 python copy_paste_detector.py
@@ -106,7 +106,18 @@ python copy_paste_detector.py
 
 ## Сборка инструмента
 
-Откройте `copy_paste_detector.py`. В начале есть только `Path`, `Console` и путь к папке `data`. Все рабочие функции и запуск программы мы добавим сами.
+Откройте пустой `copy_paste_detector.py`. Сначала добавьте путь к данным, размер n-граммы и консоль:
+
+```python
+from pathlib import Path
+
+from rich.console import Console
+
+DATA_DIR = Path(__file__).with_name("data")
+NGRAM_SIZE = 4
+TOP_EXAMPLES = 3
+console = Console()
+```
 
 Сначала добавьте чтение файла:
 

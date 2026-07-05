@@ -45,7 +45,7 @@ tags = item["tags"]
 
 Внутри:
 
-- `investigation_system.py` - стартовый файл со скелетом классов;
+- `investigation_system.py` - пустой стартовый файл, который мы будем заполнять;
 - `data/case_seed.json` - исходное дело с участниками, уликами и первой заметкой;
 - `requirements.txt` - версия Rich для таблиц;
 - `check_result.txt` - форма ожидаемого результата.
@@ -109,17 +109,111 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Проверьте стартовый файл:
+Проверьте пустой стартовый файл:
 
 ```bash
 python investigation_system.py
 ```
 
-Он уже загружает JSON и показывает краткую сводку. Теперь добавим поведение.
+Он пока ничего не выводит: это нормально. Откройте `investigation_system.py` и сначала создайте базовую форму файла: импорты, пути, консоль и классы с полями.
+
+```python
+from dataclasses import dataclass, field
+import json
+from pathlib import Path
+
+from rich.console import Console
+from rich.table import Table
+
+DATA_DIR = Path(__file__).with_name("data")
+SEED_PATH = DATA_DIR / "case_seed.json"
+OUTPUT_PATH = Path(__file__).with_name("case_report.json")
+console = Console()
+
+
+@dataclass(slots=True)
+class Evidence:
+    evidence_id: str
+    kind: str
+    title: str
+    source: str
+    body: str
+    tags: list[str] = field(default_factory=list)
+    reliability: int = 3
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            evidence_id=str(data["evidence_id"]),
+            kind=str(data["kind"]),
+            title=str(data["title"]),
+            source=str(data["source"]),
+            body=str(data["body"]),
+            tags=[str(tag) for tag in data.get("tags", [])],
+            reliability=int(data.get("reliability", 3)),
+        )
+
+
+@dataclass(slots=True)
+class Person:
+    person_id: str
+    name: str
+    role: str
+    contact: str
+    notes: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            person_id=str(data["person_id"]),
+            name=str(data["name"]),
+            role=str(data["role"]),
+            contact=str(data["contact"]),
+            notes=[str(note) for note in data.get("notes", [])],
+        )
+
+
+@dataclass(slots=True)
+class CaseNote:
+    author: str
+    text: str
+    created_at: str
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            author=str(data["author"]),
+            text=str(data["text"]),
+            created_at=str(data["created_at"]),
+        )
+
+
+@dataclass(slots=True)
+class Investigation:
+    case_id: str
+    title: str
+    summary: str
+    people: list[Person] = field(default_factory=list)
+    evidence: list[Evidence] = field(default_factory=list)
+    notes: list[CaseNote] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            case_id=str(data["case_id"]),
+            title=str(data["title"]),
+            summary=str(data["summary"]),
+            people=[Person.from_dict(item) for item in data.get("people", [])],
+            evidence=[Evidence.from_dict(item) for item in data.get("evidence", [])],
+            notes=[CaseNote.from_dict(item) for item in data.get("notes", [])],
+        )
+```
+
+Во всех следующих блоках с методами сохраняйте отступ внутри нужного `class`.
 
 ### Улика как объект
 
-[`dataclass`](../../field-guide/dataclasses/) сам создает метод `__init__()`: нам не нужно вручную присваивать каждое поле. Добавьте в `Evidence` метод `__post_init__()`. Он запускается сразу после создания объекта.
+[`dataclass`](../../field-guide/dataclasses/) сам создает метод `__init__()`: нам не нужно вручную присваивать каждое поле. После объявления полей добавьте в `Evidence` метод `__post_init__()`. Он запускается сразу после создания объекта.
 
 ```python
 def __post_init__(self):
@@ -153,7 +247,7 @@ def to_dict(self):
     }
 ```
 
-Метод `from_dict()` уже есть в стартовом файле. Вместе `from_dict()` и `to_dict()` образуют мост между JSON и объектом.
+Метод `from_dict()` мы добавили в первом каркасе. Вместе `from_dict()` и `to_dict()` образуют мост между JSON и объектом.
 
 ### Поиск по уликам
 
