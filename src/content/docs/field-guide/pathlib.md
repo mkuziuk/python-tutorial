@@ -42,5 +42,5 @@ report.write_text("{}", encoding="utf-8")
 
 ## Где встречается в делах
 
-- [Дело 04. Архивариус секретной папки](../../cases/secret-folder-archive/) - обходим папку и пишем manifest.
-- [Дело 05. Система расследований](../../cases/investigation-system/) - сохраняем базу дел в JSON.
+- [Дело 04. Ночной сигнал архива](../../cases/secret-folder-archive/) - обходим папку и пишем manifest.
+- [Дело 05. Доска расследования](../../cases/investigation-system/) - сохраняем базу дел в JSON.

@@ -29,7 +29,6 @@ export default defineConfig({
             {
               label: '01. Кто написал анонимное письмо?',
               slug: 'cases/anonymous-letter',
-              badge: { text: 'готово', variant: 'success' },
             },
             {
               label: '01. Разбор полного решения',
@@ -38,7 +37,6 @@ export default defineConfig({
             {
               label: '02. Детектор текстовых совпадений',
               slug: 'cases/copy-paste-detector',
-              badge: { text: 'готово', variant: 'success' },
             },
             {
               label: '02. Разбор полного решения',
@@ -47,25 +45,22 @@ export default defineConfig({
             {
               label: '03. Фишинговое письмо или нет?',
               slug: 'cases/phishing-email',
-              badge: { text: 'готово', variant: 'success' },
             },
             {
               label: '03. Разбор полного решения',
               slug: 'cases/phishing-email-solution',
             },
             {
-              label: '04. Архивариус секретной папки',
+              label: '04. Ночной сигнал архива',
               slug: 'cases/secret-folder-archive',
-              badge: { text: 'готово', variant: 'success' },
             },
             {
               label: '04. Разбор полного решения',
               slug: 'cases/secret-folder-archive-solution',
             },
             {
-              label: '05. Система расследований',
+              label: '05. Доска расследования',
               slug: 'cases/investigation-system',
-              badge: { text: 'готово', variant: 'success' },
             },
             {
               label: '05. Разбор полного решения',
@@ -77,7 +72,7 @@ export default defineConfig({
           label: 'Справочник',
           items: [
             { label: 'Как пользоваться', slug: 'field-guide' },
-            { label: 'Современный Python', slug: 'field-guide/modern-python' },
+            { label: 'Установка Python', slug: 'field-guide/install-python' },
             { label: 'str', slug: 'field-guide/str' },
             { label: 'regex', slug: 'field-guide/regex' },
             { label: 'list', slug: 'field-guide/list' },

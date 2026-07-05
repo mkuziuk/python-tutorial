@@ -42,5 +42,5 @@ data = json.loads(path.read_text(encoding="utf-8"))
 
 ## Где встречается в делах
 
-- [Дело 04. Архивариус секретной папки](../../cases/secret-folder-archive/) - manifest архива.
-- [Дело 05. Система расследований](../../cases/investigation-system/) - сохранение дел и улик.
+- [Дело 04. Ночной сигнал архива](../../cases/secret-folder-archive/) - manifest архива.
+- [Дело 05. Доска расследования](../../cases/investigation-system/) - сохранение дел и улик.

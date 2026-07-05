@@ -68,7 +68,7 @@ python -m pip install -r requirements.txt
 python phishing_email.py
 ```
 
-## Дело 04. Архивариус секретной папки
+## Дело 04. Ночной сигнал архива
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/case-04/</code></p>
@@ -78,7 +78,7 @@ python phishing_email.py
 
 Ключевые файлы:
 
-- стартовый скрипт архивариуса;
+- стартовый скрипт индексатора;
 - папка `data/secret_folder/` с учебным архивом;
 - `check_result.txt` с формой отчета по manifest.
 
@@ -88,7 +88,7 @@ python -m pip install -r requirements.txt
 python secret_folder_archive.py
 ```
 
-## Дело 05. Система расследований
+## Дело 05. Доска расследования
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/case-05/</code></p>
@@ -98,7 +98,7 @@ python secret_folder_archive.py
 
 Ключевые файлы:
 
-- стартовый скрипт системы расследований;
+- стартовый скрипт доски расследования;
 - начальные данные в `data/`;
 - `check_result.txt` с примером терминальной сводки.
 

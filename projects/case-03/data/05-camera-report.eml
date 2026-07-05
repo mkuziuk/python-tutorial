@@ -1,0 +1,44 @@
+From: Watch Room <camera@example.net>
+To: Learner <learner@example.org>
+Subject: Последнее уведомление по камере хранения
+Date: Thu, 05 Mar 2026 21:40:00 +0000
+Message-ID: <case03-05@example.net>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="case03-05"
+
+--case03-05
+Content-Type: multipart/alternative; boundary="case03-05-body"
+
+--case03-05-body
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+После ночного сигнала найден обрывок записи. Немедленно откройте отчет:
+
+https://camera-report.example.invalid/view/77
+
+Вложение содержит учебный файл с рискованным расширением. Не запускайте его.
+
+--case03-05-body
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+<!doctype html>
+<html>
+  <body>
+    <p>После ночного сигнала найден обрывок записи. Немедленно откройте отчет.</p>
+    <p><a href="https://camera-report.example.invalid/view/77">camera.example.net/report</a></p>
+    <p>Вложение содержит учебный файл с рискованным расширением. Не запускайте его.</p>
+  </body>
+</html>
+
+--case03-05-body--
+
+--case03-05
+Content-Type: application/octet-stream; name="camera_report.js"
+Content-Disposition: attachment; filename="camera_report.js"
+Content-Transfer-Encoding: base64
+
+LyogdHJhaW5pbmcgZmlsZSAtIGRvIG5vdCBydW4gKi8K
+
+--case03-05--

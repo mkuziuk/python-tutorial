@@ -1,6 +1,6 @@
 From: Case Desk <training@example.org>
 To: Learner <learner@example.org>
-Subject: Case 03 training update
+Subject: Обновление карточки архива
 Date: Tue, 03 Mar 2026 09:15:00 +0000
 Message-ID: <case03-01@example.org>
 MIME-Version: 1.0
@@ -10,10 +10,10 @@ Content-Transfer-Encoding: 8bit
 Здравствуйте!
 
 Команда учебного стенда обновила карточку третьего дела. В материалах появились
-новые безопасные примеры писем и форма для заметок аналитика.
+новые примеры писем и форма для заметок аналитика по архивному сигналу.
 
 Открыть карточку можно здесь:
-https://learning.example.org/cases/03
+https://training.example.org/cases/03
 
 Статус учебного стенда:
 https://status.example.org/training

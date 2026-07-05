@@ -22,7 +22,7 @@ class InvestigationSystemTests(unittest.TestCase):
 
     def test_repository_loads_composed_objects(self) -> None:
         investigation = self.load_seed()
-        self.assertEqual(investigation.case_id, "case-05-draft-archive")
+        self.assertEqual(investigation.case_id, "case-05-archive-alarm")
         self.assertEqual(len(investigation.people), 4)
         self.assertEqual(len(investigation.evidence), 5)
         self.assertIsInstance(investigation.evidence[0], Evidence)
@@ -30,26 +30,26 @@ class InvestigationSystemTests(unittest.TestCase):
     def test_evidence_search_checks_tags_and_body(self) -> None:
         investigation = self.load_seed()
         self.assertEqual(
-            [item.evidence_id for item in investigation.find_evidence("цепочка")],
-            ["EV-001", "EV-003"],
+            [item.evidence_id for item in investigation.find_evidence("сигнал")],
+            ["EV-001", "EV-002", "EV-004"],
         )
         self.assertEqual(
-            [item.evidence_id for item in investigation.find_evidence("zeta-14")],
-            ["EV-005"],
+            [item.evidence_id for item in investigation.find_evidence("02-lockout")],
+            ["EV-003"],
         )
 
     def test_priority_evidence_sorts_by_reliability_then_id(self) -> None:
         investigation = self.load_seed()
         self.assertEqual(
             [item.evidence_id for item in investigation.priority_evidence()],
-            ["EV-001", "EV-003", "EV-002"],
+            ["EV-001", "EV-002", "EV-004"],
         )
 
     def test_tag_index_groups_evidence(self) -> None:
         investigation = self.load_seed()
         index = investigation.tag_index()
-        self.assertEqual([item.evidence_id for item in index["архив"]], ["EV-002", "EV-005"])
-        self.assertEqual([item.evidence_id for item in index["цепочка"]], ["EV-001", "EV-003"])
+        self.assertEqual([item.evidence_id for item in index["доступ"]], ["EV-003", "EV-005"])
+        self.assertEqual([item.evidence_id for item in index["сигнал"]], ["EV-001", "EV-002", "EV-004"])
 
     def test_add_evidence_rejects_duplicate_id(self) -> None:
         investigation = self.load_seed()
@@ -74,7 +74,7 @@ class InvestigationSystemTests(unittest.TestCase):
             restored = CaseRepository(output_path).load()
 
         self.assertEqual(restored.notes[-1].author, "Тест")
-        self.assertEqual(restored.evidence[0].tags, ["текст", "цепочка", "черновики"])
+        self.assertEqual(restored.evidence[0].tags, ["правка", "сигнал", "текст"])
 
     def test_build_report_adds_note_and_saves_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -82,13 +82,13 @@ class InvestigationSystemTests(unittest.TestCase):
             investigation = build_report(PROJECT_DIR / "data" / "case_seed.json", output_path)
             self.assertTrue(output_path.exists())
 
-        self.assertEqual(investigation.notes[-1].author, "Система расследований")
-        self.assertIn("2", investigation.notes[-1].text)
+        self.assertEqual(investigation.notes[-1].author, "Доска расследования")
+        self.assertIn("3", investigation.notes[-1].text)
 
     def test_render_functions_accept_loaded_data(self) -> None:
         investigation = self.load_seed()
         render_overview(investigation)
-        render_search_results("цепочка", investigation.find_evidence("цепочка"))
+        render_search_results("сигнал", investigation.find_evidence("сигнал"))
 
 
 if __name__ == "__main__":

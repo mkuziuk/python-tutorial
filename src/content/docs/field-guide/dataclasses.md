@@ -41,4 +41,4 @@ print(evidence.title)
 ## Где встречается в делах
 
 - [Дело 03. Фишинговое письмо или нет?](../../cases/phishing-email/) - `LinkInfo`, `RiskSignal` и `EmailReport` как явные формы результата.
-- [Дело 05. Система расследований](../../cases/investigation-system/) - `Evidence`, `Person`, `CaseNote` и `Investigation` как объекты предметной области.
+- [Дело 05. Доска расследования](../../cases/investigation-system/) - `Evidence`, `Person`, `CaseNote` и `Investigation` как объекты предметной области.

@@ -43,4 +43,4 @@ except FileNotFoundError:
 ## Где встречается в делах
 
 - [Дело 03. Фишинговое письмо или нет?](../../cases/phishing-email/) - проверяем URL и IP без падения на странных ссылках.
-- [Дело 04. Архивариус секретной папки](../../cases/secret-folder-archive/) - аккуратно работаем с файлами и manifest JSON.
+- [Дело 04. Ночной сигнал архива](../../cases/secret-folder-archive/) - аккуратно работаем с файлами и manifest JSON.

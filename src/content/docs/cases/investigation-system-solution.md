@@ -1,6 +1,6 @@
 ---
 title: "Дело 05. Разбор полного решения"
-description: "Полный код системы расследований с dataclass-моделями, методами, композицией и JSON-сохранением."
+description: "Полный код доски расследования с dataclass-моделями, методами, композицией и JSON-сохранением."
 concepts:
   - classes
   - dataclasses
@@ -280,10 +280,10 @@ def render_search_results(query: str, results: list[Evidence]) -> None:
 
 def build_report(seed_path: Path = SEED_PATH, output_path: Path = OUTPUT_PATH) -> Investigation:
     investigation = CaseRepository(seed_path).load()
-    chain_matches = investigation.find_evidence("цепочка")
+    signal_matches = investigation.find_evidence("сигнал")
     investigation.add_note(
-        author="Система расследований",
-        text=f"Автоматический поиск по слову 'цепочка' нашел улик: {len(chain_matches)}.",
+        author="Доска расследования",
+        text=f"Автоматический поиск по слову 'сигнал' нашел улик: {len(signal_matches)}.",
         created_at="2026-02-12T12:30:00",
     )
     CaseRepository(output_path).save(investigation)
@@ -293,7 +293,7 @@ def build_report(seed_path: Path = SEED_PATH, output_path: Path = OUTPUT_PATH) -
 def main() -> None:
     investigation = build_report()
     render_overview(investigation)
-    render_search_results("цепочка", investigation.find_evidence("цепочка"))
+    render_search_results("сигнал", investigation.find_evidence("сигнал"))
     console.print(f"\n[green]JSON-снимок сохранен:[/green] {OUTPUT_PATH.name}")
 
 

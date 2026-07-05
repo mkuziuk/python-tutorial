@@ -41,7 +41,7 @@ class CopyPasteDetectorTests(unittest.TestCase):
 
     def test_build_profile_contains_ngram_set(self) -> None:
         profile = build_profile(PROJECT_DIR / "data" / "fragment_greenhouse_note.txt")
-        self.assertEqual(profile["title"], "Заметка о теплице")
+        self.assertEqual(profile["title"], "Черновик экскурсии")
         self.assertGreater(profile["word_count"], 60)
         self.assertIsInstance(profile["ngrams"], set)
 
@@ -49,12 +49,12 @@ class CopyPasteDetectorTests(unittest.TestCase):
         ranking = rank_overlaps(PROJECT_DIR / "data")
         self.assertEqual(
             set(ranking[0]["pair"]),
-            {"Отчет атриума", "Заметка о теплице"},
+            {"Опись Северного стола", "Черновик экскурсии"},
         )
         self.assertGreater(float(ranking[0]["score"]), 0.45)
         self.assertEqual(
             set(ranking[1]["pair"]),
-            {"Блог кружка", "Дневник сенсорной лаборатории"},
+            {"Отчет охраны", "Дневник ночного сигнала"},
         )
         self.assertEqual(len(ranking), 2)
 
@@ -62,7 +62,7 @@ class CopyPasteDetectorTests(unittest.TestCase):
         render_results(
             [
                 {
-                    "pair": ("Отчет атриума", "Заметка о теплице"),
+                    "pair": ("Опись Северного стола", "Черновик экскурсии"),
                     "score": 0.61,
                     "shared_count": 31,
                     "examples": [("каждое", "утро", "дежурная", "группа")],

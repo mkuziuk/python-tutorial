@@ -40,27 +40,47 @@ class PhishingEmailTests(unittest.TestCase):
         self.assertTrue(links[0].is_ip_host)
 
     def test_load_message_requires_core_headers(self) -> None:
-        message_path = PROJECT_DIR / "data" / "01-team-update.eml"
+        message_path = PROJECT_DIR / "data" / "01-archive-update.eml"
         self.assertIsInstance(load_message(message_path), EmailMessage)
 
-    def test_high_risk_message_gets_expected_signals(self) -> None:
-        report = analyze_file(PROJECT_DIR / "data" / "02-account-review.eml")
+    def test_lockout_warning_gets_expected_signals(self) -> None:
+        report = analyze_file(PROJECT_DIR / "data" / "02-lockout-warning.eml")
         titles = {signal.title for signal in report.signals}
         self.assertEqual(report.verdict, "высокий риск")
         self.assertIn("Reply-To ведет в другой домен", titles)
         self.assertIn("Ссылка ведет на IP-адрес вместо домена", titles)
         self.assertIn("Видимый домен ссылки не совпадает с реальным", titles)
 
+    def test_camera_report_uses_different_risk_pattern(self) -> None:
+        report = analyze_file(PROJECT_DIR / "data" / "05-camera-report.eml")
+        titles = {signal.title for signal in report.signals}
+        self.assertEqual(report.verdict, "высокий риск")
+        self.assertIn("Есть вложение с рискованным расширением", titles)
+        self.assertIn("Видимый домен ссылки не совпадает с реальным", titles)
+        self.assertNotIn("Ссылка ведет на IP-адрес вместо домена", titles)
+
     def test_safe_messages_stay_low_risk(self) -> None:
         reports = {
             report.filename: report for report in analyze_directory(PROJECT_DIR / "data")
         }
-        self.assertEqual(reports["01-team-update.eml"].verdict, "низкий риск")
-        self.assertEqual(reports["03-invoice-note.eml"].verdict, "низкий риск")
-        self.assertEqual(reports["04-calendar-mix.eml"].verdict, "проверить вручную")
+        self.assertEqual(len(reports), 6)
+        for filename in [
+            "01-archive-update.eml",
+            "03-receipt-note.eml",
+            "04-schedule-note.eml",
+            "06-staff-note.eml",
+        ]:
+            self.assertEqual(reports[filename].verdict, "низкий риск")
+
+        high_risk = {
+            filename
+            for filename, report in reports.items()
+            if report.verdict == "высокий риск"
+        }
+        self.assertEqual(high_risk, {"02-lockout-warning.eml", "05-camera-report.eml"})
         self.assertGreater(
-            reports["02-account-review.eml"].score,
-            reports["04-calendar-mix.eml"].score,
+            reports["02-lockout-warning.eml"].score,
+            reports["05-camera-report.eml"].score,
         )
 
     def test_risk_verdict_boundaries(self) -> None:

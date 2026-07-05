@@ -36,11 +36,11 @@ TextProfile = dict[str, Any]
 OverlapResult = dict[str, Any]
 
 DISPLAY_NAMES = {
-    "fragment_atrium_report": "Отчет атриума",
-    "fragment_greenhouse_note": "Заметка о теплице",
-    "fragment_river_walk": "Маршрут у реки",
-    "fragment_sensor_lab": "Дневник сенсорной лаборатории",
-    "fragment_school_blog": "Блог кружка",
+    "fragment_atrium_report": "Опись Северного стола",
+    "fragment_greenhouse_note": "Черновик экскурсии",
+    "fragment_river_walk": "Карта подвального коридора",
+    "fragment_sensor_lab": "Дневник ночного сигнала",
+    "fragment_school_blog": "Отчет охраны",
 }
 
 
