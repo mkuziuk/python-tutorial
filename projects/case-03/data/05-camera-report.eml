@@ -17,7 +17,7 @@ Content-Transfer-Encoding: 8bit
 
 https://camera-report.example.invalid/view/77
 
-Вложение содержит учебный файл с рискованным расширением. Не запускайте его.
+Вложение выглядит как скрипт с отчетом. Не запускайте его.
 
 --case03-05-body
 Content-Type: text/html; charset="utf-8"
@@ -28,7 +28,7 @@ Content-Transfer-Encoding: 8bit
   <body>
     <p>После ночного сигнала найден обрывок записи. Немедленно откройте отчет.</p>
     <p><a href="https://camera-report.example.invalid/view/77">camera.example.net/report</a></p>
-    <p>Вложение содержит учебный файл с рискованным расширением. Не запускайте его.</p>
+    <p>Вложение выглядит как скрипт с отчетом. Не запускайте его.</p>
   </body>
 </html>
 

@@ -24,10 +24,10 @@ def make_ngrams(words: list[str], size: int = NGRAM_SIZE) -> list[tuple[str, ...
 
 
 def main() -> None:
-    paths = sorted(DATA_DIR.glob("fragment_*.txt"))
+    paths = sorted(DATA_DIR.glob("report_*.txt"))
 
     console.print("[bold cyan]Материалы дела загружены.[/bold cyan]")
-    console.print(f"Фрагменты: {len(paths)} файла")
+    console.print(f"Отчеты: {len(paths)} файла")
 
     for path in paths:
         words = normalize_words(read_text(path))
@@ -38,7 +38,7 @@ def main() -> None:
         )
 
     console.print(
-        "\n[dim]Дальше в главе мы научим программу сравнивать фрагменты попарно.[/dim]"
+        "\n[dim]Дальше в главе мы научим программу сравнивать отчеты попарно.[/dim]"
     )
 
 

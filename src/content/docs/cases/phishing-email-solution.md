@@ -309,7 +309,7 @@ def analyze_directory(data_dir: Path = DATA_DIR) -> list[EmailReport]:
 
 
 def render_results(reports: list[EmailReport]) -> None:
-    table = Table(title="Проверка учебных писем")
+    table = Table(title="Проверка писем")
     table.add_column("Файл", style="cyan")
     table.add_column("Вердикт")
     table.add_column("Балл", justify="right")
@@ -351,7 +351,7 @@ if __name__ == "__main__":
 
 ## Как читать решение
 
-Поток данных такой: `load_message()` разбирает `.eml`, `text_from_message()` собирает безопасный текст, `extract_links()` делает список `LinkInfo`, `analyze_message()` начисляет `RiskSignal`, а `EmailReport` передается в таблицу.
+Поток данных такой: `load_message()` разбирает `.eml`, `text_from_message()` собирает текст письма, `extract_links()` делает список `LinkInfo`, `analyze_message()` начисляет `RiskSignal`, а `EmailReport` передается в таблицу.
 
 Главное решение - правила остаются явными. Инструмент не говорит "письмо плохое" магически: каждый балл связан с проверяемым фактом, который ученик может показать в отчете.
 

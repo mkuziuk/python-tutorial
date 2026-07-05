@@ -288,7 +288,7 @@ def analyze_directory(data_dir: Path = DATA_DIR) -> list[EmailReport]:
 
 
 def render_results(reports: list[EmailReport]) -> None:
-    table = Table(title="Проверка учебных писем")
+    table = Table(title="Проверка писем")
     table.add_column("Файл", style="cyan")
     table.add_column("Вердикт")
     table.add_column("Балл", justify="right")

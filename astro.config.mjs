@@ -27,7 +27,7 @@ export default defineConfig({
           items: [
             { label: 'Обзор дел', slug: 'cases' },
             {
-              label: '01. Кто написал анонимное письмо?',
+              label: '01. Кто оставил предупреждение?',
               slug: 'cases/anonymous-letter',
             },
             {

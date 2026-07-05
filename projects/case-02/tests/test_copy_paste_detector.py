@@ -40,7 +40,7 @@ class CopyPasteDetectorTests(unittest.TestCase):
         self.assertEqual(overlap_score(left, right), 0.617)
 
     def test_build_profile_contains_ngram_set(self) -> None:
-        profile = build_profile(PROJECT_DIR / "data" / "fragment_greenhouse_note.txt")
+        profile = build_profile(PROJECT_DIR / "data" / "report_tour_draft.txt")
         self.assertEqual(profile["title"], "Черновик экскурсии")
         self.assertGreater(profile["word_count"], 60)
         self.assertIsInstance(profile["ngrams"], set)

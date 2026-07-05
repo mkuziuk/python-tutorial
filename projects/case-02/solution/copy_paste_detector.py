@@ -16,11 +16,11 @@ TextProfile = dict[str, Any]
 OverlapResult = dict[str, Any]
 
 DISPLAY_NAMES = {
-    "fragment_atrium_report": "Опись Северного стола",
-    "fragment_greenhouse_note": "Черновик экскурсии",
-    "fragment_river_walk": "Карта подвального коридора",
-    "fragment_sensor_lab": "Дневник ночного сигнала",
-    "fragment_school_blog": "Отчет охраны",
+    "report_north_table": "Опись Северного стола",
+    "report_tour_draft": "Черновик экскурсии",
+    "report_basement_route": "Карта подвального коридора",
+    "report_alarm_stand": "Дневник ночного сигнала",
+    "report_guard_note": "Отчет охраны",
 }
 
 
@@ -95,9 +95,9 @@ def compare_profiles(left: TextProfile, right: TextProfile) -> OverlapResult:
 
 
 def load_profiles(data_dir: Path = DATA_DIR, ngram_size: int = NGRAM_SIZE) -> list[TextProfile]:
-    paths = sorted(data_dir.glob("fragment_*.txt"))
+    paths = sorted(data_dir.glob("report_*.txt"))
     if not paths:
-        raise FileNotFoundError(f"No fragment_*.txt files found in {data_dir}")
+        raise FileNotFoundError(f"No report_*.txt files found in {data_dir}")
 
     return [build_profile(path, ngram_size) for path in paths]
 
