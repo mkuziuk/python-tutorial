@@ -46,6 +46,7 @@ console = Console()
 
 
 def utc_timestamp(seconds=None):
+    # Явно используем UTC, чтобы время не зависело от часового пояса компьютера.
     if seconds is None:
         moment = datetime.now(timezone.utc)
     else:
@@ -60,6 +61,7 @@ def iter_files(root):
     if not root.is_dir():
         raise NotADirectoryError(f"Expected a folder: {root}")
 
+    # rglob("*") рекурсивно проходит и вложенные каталоги.
     return sorted(path for path in root.rglob("*") if path.is_file())
 
 
@@ -71,6 +73,7 @@ def file_sha256(path, chunk_size=65_536):
     digest = hashlib.sha256()
 
     with path.open("rb") as file:
+        # Оператор := сохраняет блок и сразу проверяет, не закончился ли файл.
         while chunk := file.read(chunk_size):
             digest.update(chunk)
 
@@ -98,6 +101,7 @@ def detect_duplicates(records):
 
     for record in records:
         digest = str(record["sha256"])
+        # При первом хэше setdefault создаёт список, затем возвращает его же.
         by_hash.setdefault(digest, []).append(str(record["path"]))
 
     groups = []
@@ -151,6 +155,7 @@ def compare_manifests(previous, current):
     old_paths = set(old_files)
     new_paths = set(new_files)
 
+    # Пересечение — общие пути; разности множеств — добавленные и удалённые.
     changed = []
     for path in sorted(old_paths & new_paths):
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
@@ -175,6 +180,7 @@ def compare_timeline_versions(current_path, backup_path):
     backup_lines = backup_path.read_text(encoding="utf-8").splitlines()
     differences = {"current": [], "backup": []}
 
+    # В ndiff "- " относится к первой версии, "+ " — ко второй.
     for line in ndiff(current_lines, backup_lines):
         if line.startswith("- "):
             differences["current"].append(line[2:])
@@ -247,6 +253,7 @@ def render_timeline_difference(differences):
 def main():
     previous = load_manifest(MANIFEST_PATH)
     current = build_manifest(DATA_DIR)
+    # На первом запуске сравниваем новый снимок с пустым списком файлов.
     changes = compare_manifests(previous or {"files": []}, current)
 
     render_report(current, changes, previous is not None)

@@ -125,6 +125,7 @@ DATA_PATH = PROJECT_DIR / "data" / "evidence_bundle.json"
 OUTPUT_PATH = PROJECT_DIR / "verdict.json"
 
 
+# StrEnum ограничивает значения, но в JSON они остаются обычными строками.
 class EvidenceKind(StrEnum):
     ANALYSIS = "analysis"
     EMAIL = "email"
@@ -152,6 +153,7 @@ class AssessmentStatus(StrEnum):
     NO_EVIDENCE = "no_evidence"
 
 
+# frozen запрещает менять объект после загрузки, slots фиксирует набор его полей.
 @dataclass(frozen=True, slots=True)
 class Effect:
     hypothesis_id: str
@@ -194,6 +196,7 @@ class Evidence:
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             evidence_id=str(data["evidence_id"]).strip(),
+            # ISO-строку превращаем в datetime; часовой пояс проверяется выше.
             occurred_at=datetime.fromisoformat(str(data["occurred_at"])),
             kind=EvidenceKind(str(data["kind"])),
             title=str(data["title"]).strip(),
@@ -260,6 +263,7 @@ class HypothesisAssessment:
             "rank": rank,
             "hypothesis_id": self.hypothesis.hypothesis_id,
             "claim": self.hypothesis.claim,
+            # .value сохраняет в отчете строку, а не объект перечисления.
             "status": self.status.value,
             "score": self.score,
             "support_points": self.support_points,
@@ -317,6 +321,7 @@ python -c "import final_verdict as f; b=f.load_bundle(); t=f.build_timeline(b.ev
 def classify_assessment(
     support_points: int, conflict_points: int
 ) -> AssessmentStatus:
+    # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
         case 0, 0:
             return AssessmentStatus.NO_EVIDENCE
@@ -343,6 +348,7 @@ def score_hypothesis(
             if effect.hypothesis_id != hypothesis.hypothesis_id:
                 continue
 
+            # Вклад зависит и от надежности источника, и от силы его связи.
             points = item.reliability * effect.weight
             match effect.stance:
                 case Stance.SUPPORT:
@@ -370,6 +376,7 @@ def rank_hypotheses(bundle: CaseBundle) -> list[HypothesisAssessment]:
     ]
     return sorted(
         assessments,
+        # Минусы дают убывание баллов; ID задаёт стабильный порядок при ничьей.
         key=lambda item: (
             -item.score,
             -item.support_points,
@@ -402,6 +409,7 @@ python -c "import final_verdict as f; b=f.load_bundle(); print([(a.hypothesis.hy
 def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
     timeline = build_timeline(bundle.evidence)
     assessments = rank_hypotheses(bundle)
+    # Основной вывод берём из рассчитанного рейтинга, а не задаём вручную.
     primary = assessments[0]
 
     return {

@@ -28,6 +28,7 @@ from rich.table import Table
 def default_data_dir():
     script_dir = Path(__file__).resolve().parent
     local_data = script_dir / "data"
+    # После копирования рядом будет data; в solution/ она находится уровнем выше.
     if local_data.exists():
         return local_data
     return script_dir.parent / "data"
@@ -68,6 +69,7 @@ def make_ngrams(words, size=NGRAM_SIZE):
     if size < 1:
         raise ValueError("N-gram size must be positive")
 
+    # Последнее окно начинается в len(words) - size; +1 включает эту позицию.
     return [
         tuple(words[index : index + size])
         for index in range(len(words) - size + 1)
@@ -100,6 +102,7 @@ def overlap_score(left, right):
     if not shared:
         return 0.0
 
+    # Первая доля ищет вложение в меньший текст, вторая штрафует лишние n-граммы.
     containment = len(shared) / min(len(left), len(right))
     jaccard = len(shared) / len(left | right)
     return round(containment * 0.7 + jaccard * 0.3, 3)
@@ -130,6 +133,7 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     profiles = load_profiles(data_dir, ngram_size)
     results = []
 
+    # combinations(..., 2) выдаёт каждую пару один раз и не сравнивает файл с собой.
     for left, right in combinations(profiles, 2):
         result = compare_profiles(left, right)
         if int(result["shared_count"]) > 0:
@@ -137,6 +141,7 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
 
     return sorted(
         results,
+        # Кортеж задаёт два ключа: сначала балл, затем число совпадений.
         key=lambda item: (float(item["score"]), int(item["shared_count"])),
         reverse=True,
     )

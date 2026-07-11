@@ -51,16 +51,19 @@ class Evidence:
     source: str
     body: str
     created_at: str
+    # default_factory даёт каждой улике свой список, а не один общий.
     tags: list[str] = field(default_factory=list)
     reliability: int = 3
 
     def __post_init__(self):
+        # dataclass вызывает этот метод после __init__: здесь очищаем входные данные.
         self.evidence_id = self.evidence_id.strip()
         self.kind = self.kind.strip()
         self.title = self.title.strip()
         self.source = self.source.strip()
         self.body = self.body.strip()
         self.created_at = self.created_at.strip()
+        # Множество убирает дубли, а casefold() выравнивает регистр тегов.
         self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
 
         if not self.evidence_id:
@@ -72,6 +75,7 @@ class Evidence:
 
     @classmethod
     def from_dict(cls, data):
+        # cls(...) создаёт Evidence и затем автоматически запускает __post_init__().
         return cls(
             evidence_id=str(data["evidence_id"]),
             kind=str(data["kind"]),
@@ -184,6 +188,7 @@ class Investigation:
 
     @classmethod
     def from_dict(cls, data):
+        # Вложенные словари превращаем в объекты, из которых состоит дело.
         return cls(
             case_id=str(data["case_id"]),
             title=str(data["title"]),
@@ -194,6 +199,7 @@ class Investigation:
         )
 
     def to_dict(self):
+        # Для JSON разворачиваем композицию обратно в словари и списки.
         return {
             "case_id": self.case_id,
             "title": self.title,

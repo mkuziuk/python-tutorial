@@ -129,6 +129,7 @@ def base_domain(host):
     labels = host.split(".")
     if len(labels) < 2:
         return host
+    # В учебных данных базовый домен — две последние части хоста.
     return ".".join(labels[-2:])
 
 
@@ -148,6 +149,7 @@ def display_host_from_label(label):
 
 def make_link_info(raw_url, label=""):
     parsed = urlparse(raw_url)
+    # hostname уже отделён от схемы, порта, пути и параметров URL.
     host = normalize_host(parsed.hostname or "")
     return LinkInfo(
         raw=raw_url,
@@ -170,6 +172,7 @@ def extract_links(text):
             links.append(make_link_info(url, label))
             seen_urls.add(url)
 
+    # href уже найден выше; seen_urls не даёт учесть тот же URL второй раз.
     for match in URL_RE.finditer(text):
         url = clean_url(match.group(0))
         if url not in seen_urls:
@@ -182,6 +185,7 @@ def extract_links(text):
 def load_message(path):
     try:
         with path.open("rb") as file:
+            # Читаем исходные байты, чтобы policy.default корректно декодировала MIME.
             message = BytesParser(policy=policy.default).parse(file)
     except OSError as exc:
         raise EmailAnalysisError(f"Cannot read {path}") from exc
@@ -202,6 +206,7 @@ def text_from_message(message):
 
         chunks = []
         for part in message.walk():
+            # walk() возвращает и multipart-контейнеры, поэтому пропускаем их и вложения.
             if part.is_multipart() or part.get_content_disposition() == "attachment":
                 continue
             if part.get_content_type() in TEXT_CONTENT_TYPES:
@@ -229,6 +234,7 @@ def add_signal(
     points,
     level="warning",
 ):
+    # Один тип риска учитываем один раз, даже если его дали несколько ссылок.
     if all(signal.title != title for signal in signals):
         signals.append(RiskSignal(title=title, points=points, level=level))
 
@@ -263,6 +269,7 @@ def analyze_message(message, filename="<memory>"):
         if link.scheme == "http":
             add_signal(signals, "Ссылка использует http без шифрования", 2)
 
+        # Текст ссылки может обещать один домен, а href вести на другой.
         if link.display_host and base_domain(link.display_host) != base_domain(link.host):
             add_signal(signals, "Видимый домен ссылки не совпадает с реальным", 3, "danger")
 

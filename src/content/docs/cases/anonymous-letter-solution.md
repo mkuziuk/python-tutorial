@@ -27,6 +27,7 @@ from rich.console import Console
 from rich.table import Table
 
 DATA_DIR = Path(__file__).with_name("data")
+# Шаблон выделяет только цепочки русских букв, включая «ё».
 WORD_RE = re.compile(r"[а-яё]+", re.IGNORECASE)
 PUNCTUATION = ".,;:!?"
 console = Console()
@@ -43,6 +44,7 @@ def normalize_words(text):
 
 
 def punctuation_profile(text):
+    # Counter получает только нужные знаки и сам подсчитывает их частоты.
     return Counter(char for char in text if char in PUNCTUATION)
 
 
@@ -65,10 +67,12 @@ def build_profile(name, text):
 def jaccard(left, right):
     if not left and not right:
         return 1.0
+    # «&» даёт общие слова, а «|» — все слова из обоих множеств.
     return len(left & right) / len(left | right)
 
 
 def punctuation_similarity(left, right):
+    # Единица защищает от деления на ноль, а / 2 приводит результат к диапазону 0–1.
     left_total = sum(left.values()) or 1
     right_total = sum(right.values()) or 1
     distance = 0.0
@@ -94,6 +98,7 @@ def compare_profiles(anonymous, candidate):
         candidate["punctuation"],
     )
 
+    # Веса складываются в 1: это эвристика сходства, а не вероятность авторства.
     return round(word_overlap * 0.45 + length_score * 0.25 + punctuation_score * 0.30, 3)
 
 
