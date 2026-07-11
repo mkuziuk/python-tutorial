@@ -9,6 +9,9 @@ concepts:
   - JSON
   - pathlib
   - Rich
+  - comprehensions
+  - type hints
+  - unittest
 difficulty: "средний"
 projectId: "case-05"
 time: "120-150 минут"
@@ -23,7 +26,7 @@ time: "120-150 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-05.zip">case-05.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../investigation-system-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/classes/">classes</a> · <a href="../../field-guide/dataclasses/">dataclasses</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/classes/">classes</a> · <a href="../../field-guide/dataclasses/">dataclasses</a> · <a href="../../field-guide/type-hints/">аннотации типов</a> · <a href="../../field-guide/comprehensions/">включения</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a> · <a href="../../field-guide/testing/">unittest</a></p>
 </div>
 
 ## Проблема

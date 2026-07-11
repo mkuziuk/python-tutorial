@@ -10,6 +10,10 @@ concepts:
   - Counter
   - Rich
   - functions
+  - control flow
+  - comprehensions
+  - file I/O
+  - unittest
 difficulty: "начальный+"
 projectId: "case-01"
 time: "90-120 минут"
@@ -24,7 +28,7 @@ time: "90-120 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-01.zip">case-01.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../anonymous-letter-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/str/">str</a> · <a href="../../field-guide/regex/">regex</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/counter/">Counter</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/control-flow/">условия и циклы</a> · <a href="../../field-guide/str/">str</a> · <a href="../../field-guide/regex/">regex</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/counter/">Counter</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/comprehensions/">включения</a> · <a href="../../field-guide/file-io/">файлы</a> · <a href="../../field-guide/rich/">Rich</a> · <a href="../../field-guide/testing/">unittest</a></p>
 </div>
 
 ## Завязка

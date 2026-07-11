@@ -10,6 +10,10 @@ concepts:
   - change detection
   - difflib
   - Rich
+  - control flow
+  - file I/O
+  - datetime
+  - unittest
 difficulty: "средний"
 projectId: "case-04"
 time: "100-130 минут"
@@ -24,7 +28,7 @@ time: "100-130 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-04.zip">case-04.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../secret-folder-archive-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/hashlib/">hashlib</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/exceptions/">exceptions</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/control-flow/">условия и циклы</a> · <a href="../../field-guide/file-io/">файлы</a> · <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/hashlib/">hashlib</a> · <a href="../../field-guide/datetime/">дата и время</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/exceptions/">exceptions</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/rich/">Rich</a> · <a href="../../field-guide/testing/">unittest</a></p>
 </div>
 
 ## Проблема

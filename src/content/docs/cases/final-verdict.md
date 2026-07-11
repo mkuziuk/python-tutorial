@@ -8,6 +8,10 @@ concepts:
   - JSON
   - sorting
   - scoring
+  - comprehensions
+  - type hints
+  - datetime
+  - unittest
 difficulty: "продвинутый"
 projectId: "case-06"
 time: "120-150 минут"
@@ -22,7 +26,7 @@ time: "120-150 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-06.zip">case-06.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../final-verdict-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/dataclasses/">dataclass</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/sorting/">сортировка</a> · <a href="../../field-guide/functions/">функции</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/dataclasses/">dataclass</a> · <a href="../../field-guide/type-hints/">аннотации типов</a> · <a href="../../field-guide/comprehensions/">включения</a> · <a href="../../field-guide/datetime/">дата и время</a> · <a href="../../field-guide/enums-match/">StrEnum и match</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/sorting/">сортировка</a> · <a href="../../field-guide/functions/">функции</a> · <a href="../../field-guide/testing/">unittest</a></p>
 </div>
 
 ## Последние часы
