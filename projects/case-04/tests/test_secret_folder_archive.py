@@ -1,19 +1,27 @@
 from pathlib import Path
 import hashlib
 import json
+import os
 import sys
 import tempfile
 import unittest
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_DIR / "solution"))
+TEST_TARGET = os.environ.get("PYTHON_TUTORIAL_TEST_TARGET", "learner")
+if TEST_TARGET not in {"learner", "solution"}:
+    raise RuntimeError(f"Unknown test target: {TEST_TARGET}")
+SOURCE_DIR = PROJECT_DIR if TEST_TARGET == "learner" else PROJECT_DIR / "solution"
+sys.path.insert(0, str(SOURCE_DIR))
 
 from secret_folder_archive import (  # noqa: E402
     build_manifest,
     compare_manifests,
+    compare_timeline_versions,
+    console,
     detect_duplicates,
     file_sha256,
     load_manifest,
+    render_timeline_difference,
     scan_folder,
     utc_timestamp,
     write_manifest,
@@ -77,6 +85,22 @@ class SecretFolderArchiveTests(unittest.TestCase):
                 "unchanged": ["same.txt"],
             },
         )
+
+    def test_timeline_diff_surfaces_conflicting_times(self):
+        drafts = PROJECT_DIR / "data" / "secret_folder" / "drafts"
+        differences = compare_timeline_versions(
+            drafts / "timeline.txt",
+            drafts / "timeline_backup.txt",
+        )
+
+        self.assertTrue(any("22:53" in line for line in differences["current"]))
+        self.assertTrue(any("23:07" in line for line in differences["backup"]))
+
+        with console.capture() as capture:
+            render_timeline_difference(differences)
+        output = capture.get()
+        self.assertIn("22:53", output)
+        self.assertIn("23:07", output)
 
     def test_write_and_load_manifest_round_trip(self):
         with tempfile.TemporaryDirectory() as tmp:

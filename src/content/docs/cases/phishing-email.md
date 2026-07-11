@@ -9,15 +9,16 @@ concepts:
   - exceptions
   - rules
   - Rich
-difficulty: "начальный+"
+difficulty: "средний"
 projectId: "case-03"
-time: "90-120 минут"
+time: "120-150 минут"
 ---
 
 <div class="case-meta">
   <p><strong>Миссия</strong> проверить шесть писем и отделить две ловушки от обычной переписки.</p>
   <p><strong>Инструменты</strong> `email`, регулярные выражения, `urllib.parse`, `ipaddress`, собственные исключения, правила и Rich.</p>
   <p><strong>Результат</strong> консольный отчет: файл, вердикт, баллы риска и понятные сигналы.</p>
+  <p><strong>Маршрут</strong> средний · 120–150 минут · Python 3.13+</p>
 </div>
 
 <div class="materials-panel">
@@ -66,6 +67,7 @@ time: "90-120 минут"
 - ссылка начинается с `http://`, а не `https://`;
 - видимый домен ссылки не совпадает с реальным адресом;
 - ссылка уводит в домен, не похожий на домен отправителя;
+- в письме необычно много ссылок;
 - вложение имеет рискованное расширение.
 
 Это не промышленный антифишинговый сканер. Но это хороший первый прибор: он не ставит один общий ярлык, а показывает, какие именно факты стоит проверить.
@@ -74,7 +76,7 @@ time: "90-120 минут"
 
 ### Подготовка окружения
 
-Создайте виртуальную среду в папке проекта.
+Создайте виртуальную среду в папке проекта. Нужен Python 3.13 или новее; перед началом проверьте `py -3 --version` на Windows или `python3 --version` на macOS и Linux.
 
 Windows PowerShell:
 
@@ -150,10 +152,11 @@ class EmailReport:
     filename: str
     subject: str
     sender: str
+    sender_domain: str
+    links: list[LinkInfo]
+    signals: list[RiskSignal]
     score: int
     verdict: str
-    signals: list[RiskSignal]
-    links: list[LinkInfo]
 ```
 
 `raw` хранит исходную ссылку, `host` - реальный хост из URL, а `display_host` - домен, который был виден в тексте ссылки. В HTML-письмах это часто разные вещи: текст может выглядеть как `support.example.org`, а `href` вести совсем в другое место.
@@ -220,35 +223,60 @@ def text_from_message(message):
 
 Код явно говорит, какие части письма он анализирует, а какие оставляет за пределами задачи. Функция возвращает одну строку: это упрощает поиск ссылок и срочных слов, но не делает вид, что анализировал вложения как файлы.
 
-### Повторяем regex: ссылки и HTML-ярлыки
+#### Промежуточная проверка: письмо читается
 
-Ссылки можно искать регулярным выражением. Для обычных URL достаточно такого шаблона:
+Сохраните файл и проверьте первый законченный маршрут: путь -> `.eml` -> объект письма -> тема. Команда импортирует функции, поэтому основной отчет пока не нужен.
 
-```python
-URL_RE = re.compile(r"https?://[^\s<>'\"\\]+", re.IGNORECASE)
+```bash
+python -c "from phishing_email import DATA_DIR, load_message; message = load_message(DATA_DIR / '01-archive-update.eml'); print(message['Subject'])"
 ```
 
-Но в HTML бывает полезно отдельно найти пару `href` + видимый текст:
+Вы должны увидеть `Обновление карточки архива`. Если вместо темы появилась ошибка пути, проверьте, что `phishing_email.py` и папка `data` лежат рядом.
+
+### Повторяем regex: ссылки и HTML-ярлыки
+
+Ссылки можно искать регулярным выражением. Первый шаблон находит обычные URL, второй - пару `href` + видимый текст в HTML. Остальные шаблоны понадобятся для очистки ярлыка и поиска домена внутри него.
 
 ```python
+TRAILING_URL_CHARS = ".,;:!?)]}"
+
+URL_RE = re.compile(r"https?://[^\s<>'\"\\]+", re.IGNORECASE)
 HTML_LINK_RE = re.compile(
     r"<a\s+[^>]*href=[\"'](?P<url>https?://[^\"']+)[\"'][^>]*>"
     r"(?P<label>.*?)</a>",
     re.IGNORECASE | re.DOTALL,
 )
+TAG_RE = re.compile(r"<[^>]+>")
+SPACE_RE = re.compile(r"\s+")
+DOMAIN_RE = re.compile(
+    r"\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b",
+    re.IGNORECASE,
+)
 ```
 
 Именованные группы `(?P<url>...)` и `(?P<label>...)` делают код чтения понятнее: мы не запоминаем, была ли ссылка первой или второй группой.
 
-### Разбор URL и IP-адресов
+### Нормализация URL и доменов
 
-[`urllib.parse.urlparse`](../../field-guide/email-url-ip/) разбирает строку URL на схему, хост, путь и параметры. [`ipaddress.ip_address`](../../field-guide/email-url-ip/) проверяет, является ли хост IP-адресом.
+Перед сравнением уберем пунктуацию после URL, HTML-теги внутри ярлыка и разницу в регистре хоста.
 
 ```python
-from urllib.parse import urlparse
-import ipaddress
+def clean_url(raw_url):
+    return raw_url.rstrip(TRAILING_URL_CHARS)
 
 
+def clean_label(raw_label):
+    without_tags = TAG_RE.sub(" ", raw_label)
+    return SPACE_RE.sub(" ", without_tags).strip()
+
+
+def normalize_host(host):
+    return host.strip().strip(".").lower()
+```
+
+[`urllib.parse.urlparse`](../../field-guide/email-url-ip/) разбирает URL на схему, хост, путь и параметры. [`ipaddress.ip_address`](../../field-guide/email-url-ip/) проверяет, является ли хост IP-адресом.
+
+```python
 def is_ip_address(host):
     if not host:
         return False
@@ -259,6 +287,36 @@ def is_ip_address(host):
     return True
 
 
+def base_domain(host):
+    host = normalize_host(host)
+    if not host or is_ip_address(host):
+        return host
+
+    labels = host.split(".")
+    if len(labels) < 2:
+        return host
+    return ".".join(labels[-2:])
+
+
+def domain_from_address(value):
+    _, address = parseaddr(value or "")
+    if "@" not in address:
+        return ""
+    return normalize_host(address.rsplit("@", 1)[1])
+
+
+def display_host_from_label(label):
+    match = DOMAIN_RE.search(label)
+    if match is None:
+        return ""
+    return normalize_host(match.group(0))
+```
+
+`base_domain()` в этом учебном наборе берет последние две части хоста. Для промышленного кода понадобился бы список публичных суффиксов, но для доменов из дела этого правила достаточно.
+
+Теперь соберем `LinkInfo` и исключим дубли: HTML-ссылка встречается и в `href`, и в общем поиске URL, но в отчете должна остаться один раз.
+
+```python
 def make_link_info(raw_url, label=""):
     parsed = urlparse(raw_url)
     host = normalize_host(parsed.hostname or "")
@@ -270,13 +328,61 @@ def make_link_info(raw_url, label=""):
         display_host=display_host_from_label(label),
         is_ip_host=is_ip_address(host),
     )
+
+
+def extract_links(text):
+    links = []
+    seen_urls = set()
+
+    for match in HTML_LINK_RE.finditer(text):
+        url = clean_url(match.group("url"))
+        label = clean_label(match.group("label"))
+        if url not in seen_urls:
+            links.append(make_link_info(url, label))
+            seen_urls.add(url)
+
+    for match in URL_RE.finditer(text):
+        url = clean_url(match.group(0))
+        if url not in seen_urls:
+            links.append(make_link_info(url))
+            seen_urls.add(url)
+
+    return links
 ```
 
 Обратите внимание: `ip_address()` бросает `ValueError`, если строка не похожа на IP. Это нормальная ситуация, а не авария. Мы перехватываем исключение и возвращаем `False`.
 
+#### Промежуточная проверка: ссылка и ее ярлык различаются
+
+```bash
+python -c "from phishing_email import DATA_DIR, extract_links, load_message, text_from_message; message = load_message(DATA_DIR / '02-lockout-warning.eml'); print([(link.host, link.display_host) for link in extract_links(text_from_message(message))])"
+```
+
+Среди пар должна быть `('198.51.100.44', 'support.example.org')`. Это именно тот факт, который позже превратится в риск-сигнал.
+
 ### Правила риска
 
-Сделаем маленькую функцию, которая добавляет сигнал только один раз:
+Слова срочности и опасные расширения тоже зададим явными шаблонами. Функция `attachment_names()` читает только имена вложений; она ничего не сохраняет и не запускает.
+
+```python
+URGENT_RE = re.compile(
+    r"срочно|немедленно|сегодня|до конца дня|последнее уведомление|urgent|immediately",
+    re.IGNORECASE,
+)
+RISKY_ATTACHMENT_RE = re.compile(r"\.(exe|js|scr|cmd|bat|vbs|ps1)$", re.IGNORECASE)
+
+
+def attachment_names(message):
+    names = []
+    for part in message.walk():
+        if part.get_content_disposition() == "attachment":
+            filename = part.get_filename()
+            if filename:
+                names.append(filename)
+    return names
+```
+
+Сделаем маленькую функцию, которая добавляет сигнал только один раз, и отдельную функцию для перевода суммы в вердикт:
 
 ```python
 def add_signal(
@@ -287,6 +393,14 @@ def add_signal(
 ):
     if all(signal.title != title for signal in signals):
         signals.append(RiskSignal(title=title, points=points, level=level))
+
+
+def risk_verdict(score):
+    if score >= 7:
+        return "высокий риск"
+    if score >= 3:
+        return "проверить вручную"
+    return "низкий риск"
 ```
 
 `add_signal()` защищает отчет от повторов. Например, если в письме пять `http`-ссылок, ученик должен увидеть один понятный сигнал "есть нешифрованные ссылки", а не пять одинаковых строк, которые раздувают отчет и балл.
@@ -318,22 +432,62 @@ def analyze_message(message, filename="<memory>"):
 
         if link.display_host and base_domain(link.display_host) != base_domain(link.host):
             add_signal(signals, "Видимый домен ссылки не совпадает с реальным", 3, "danger")
+
+        if (
+            sender_domain
+            and link.host
+            and not link.is_ip_host
+            and base_domain(link.host) != base_domain(sender_domain)
+        ):
+            add_signal(signals, "Ссылка ведет в домен, отличный от домена отправителя", 1)
+
+    if len(links) >= 4:
+        add_signal(signals, "В письме слишком много ссылок", 1)
+
+    risky_attachments = [
+        name for name in attachment_names(message) if RISKY_ATTACHMENT_RE.search(name)
+    ]
+    if risky_attachments:
+        add_signal(signals, "Есть вложение с рискованным расширением", 3, "danger")
+
+    score = sum(signal.points for signal in signals)
+    return EmailReport(
+        filename=filename,
+        subject=subject,
+        sender=sender,
+        sender_domain=sender_domain,
+        links=links,
+        signals=signals,
+        score=score,
+        verdict=risk_verdict(score),
+    )
 ```
 
-Дальше добавьте правило про домен ссылки, правило про количество ссылок, проверку расширений вложений и итоговый `EmailReport`. Эти правила используют ту же форму: нашли факт, добавили `RiskSignal`, затем сумма баллов превращается в вердикт. Полный код есть в разборе, но лучше сначала собрать этот каркас руками.
+Каждое правило использует одну форму: нашли проверяемый факт, один раз добавили `RiskSignal`, затем сумма баллов превратилась в вердикт. Границы подобраны так, чтобы один слабый сигнал не поднимал письмо наверх.
 
-### Вердикт и таблица
-
-Баллы превращаются в человеческий вердикт. Границы выбраны так, чтобы один слабый сигнал не поднимал письмо наверх, а несколько независимых признаков давали заметный результат:
+Обернем анализ одного сообщения в функции для файла и каталога:
 
 ```python
-def risk_verdict(score):
-    if score >= 7:
-        return "высокий риск"
-    if score >= 3:
-        return "проверить вручную"
-    return "низкий риск"
+def analyze_file(path):
+    return analyze_message(load_message(path), filename=path.name)
+
+
+def analyze_directory(data_dir=DATA_DIR):
+    paths = sorted(data_dir.glob("*.eml"))
+    if not paths:
+        raise EmailAnalysisError(f"No .eml files found in {data_dir}")
+    return [analyze_file(path) for path in paths]
 ```
+
+#### Промежуточная проверка: правила дают ожидаемый балл
+
+```bash
+python -c "from phishing_email import DATA_DIR, analyze_file; print(analyze_file(DATA_DIR / '02-lockout-warning.eml').score)"
+```
+
+Результат должен быть `12`. Если он меньше, распечатайте названия `report.signals` и найдите правило, которое не сработало. Затем так же проверьте `05-camera-report.eml`: его балл должен быть `8`.
+
+### Таблица и запуск
 
 Для вывода используем только две части [Rich](../../field-guide/rich/): `Console` и `Table`. `render_results()` не решает, опасно ли письмо; он только показывает готовые `EmailReport`.
 
@@ -357,6 +511,29 @@ def render_results(reports):
         )
 
     console.print(table)
+
+    highest = max(reports, key=lambda item: item.score)
+    console.print(
+        f"\n[bold]Самая рискованная версия:[/bold] {highest.filename} "
+        f"({highest.verdict}, {highest.score} баллов)."
+    )
+```
+
+Последний шаг связывает чтение каталога и вывод. Ошибку дела показываем кратко и завершаем программу с ненулевым кодом:
+
+```python
+def main():
+    try:
+        reports = analyze_directory()
+    except EmailAnalysisError as exc:
+        console.print(f"[bold red]Ошибка:[/bold red] {exc}")
+        raise SystemExit(1) from exc
+
+    render_results(reports)
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 ## Проверка
@@ -365,6 +542,12 @@ def render_results(reports):
 
 ```bash
 python phishing_email.py
+```
+
+После отчета запустите тесты из учебного набора:
+
+```bash
+python -m unittest discover -s tests
 ```
 
 Ожидаемая форма результата:
@@ -396,8 +579,9 @@ python phishing_email.py
 
 1. Добавьте список доверенных доменов и отдельный сигнал для всех остальных.
 2. Считайте количество разных доменов в письме.
-3. Разберите `Authentication-Results` и добавьте осторожный сигнал для `spf=fail` или `dkim=fail`.
-4. Сохраните отчет в JSON, чтобы его можно было сравнивать между запусками.
-5. Добавьте режим `--file path/to/message.eml` для проверки одного письма.
+3. Разберите заголовок `Authentication-Results`: в `01-archive-update.eml` находятся `spf=pass` и `dkim=pass`, а в `02-lockout-warning.eml` - `spf=fail` и `dkim=fail`. Добавьте осторожный сигнал только для второго письма и явно выберите его вес.
+4. Выведите имена вложений рядом с сигналами. Критерий готовности: только `05-camera-report.eml` показывает `camera_report.js`, остальные письма показывают пустой список.
+5. Сохраните отчет в JSON, чтобы его можно было сравнивать между запусками.
+6. Добавьте режим `--file path/to/message.eml` для проверки одного письма.
 
 Когда закончите, откройте [разбор полного решения](../phishing-email-solution/).

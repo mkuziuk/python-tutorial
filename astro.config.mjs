@@ -66,6 +66,14 @@ export default defineConfig({
               label: '05. Разбор полного решения',
               slug: 'cases/investigation-system-solution',
             },
+            {
+              label: '06. Вердикт перед открытием',
+              slug: 'cases/final-verdict',
+            },
+            {
+              label: '06. Разбор полного решения',
+              slug: 'cases/final-verdict-solution',
+            },
           ],
         },
         {

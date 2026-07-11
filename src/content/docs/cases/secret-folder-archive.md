@@ -1,6 +1,6 @@
 ---
 title: "Дело 04. Ночной сигнал архива"
-description: "Собираем индексатор папки после ночного сигнала архива: pathlib, SHA-256, JSON-манифест, временные метки и поиск изменений."
+description: "Собираем индексатор папки после ночного сигнала: SHA-256, JSON-манифест, поиск изменений и difflib для двух хронологий."
 concepts:
   - pathlib
   - file traversal
@@ -8,6 +8,7 @@ concepts:
   - JSON
   - временные метки
   - change detection
+  - difflib
   - Rich
 difficulty: "средний"
 projectId: "case-04"
@@ -15,9 +16,10 @@ time: "100-130 минут"
 ---
 
 <div class="case-meta">
-  <p><strong>Миссия</strong> проверить рабочую папку после ночного сигнала: что внутри, какие файлы совпадают и что изменилось с прошлого запуска.</p>
-  <p><strong>Инструменты</strong> `pathlib`, рекурсивный обход файлов, `hashlib`, JSON, UTC-время, сравнение двух снимков.</p>
-  <p><strong>Результат</strong> консольный индексатор, который пишет `manifest.json` и показывает изменения таблицами.</p>
+  <p><strong>Миссия</strong> проверить рабочую папку после ночного сигнала: что внутри, какие файлы совпадают и почему расходятся две хронологии.</p>
+  <p><strong>Инструменты</strong> `pathlib`, рекурсивный обход файлов, `hashlib`, `difflib`, JSON, UTC-время, сравнение снимков.</p>
+  <p><strong>Результат</strong> консольный индексатор, который пишет `manifest.json`, показывает изменения и выводит строки расхождения хронологий.</p>
+  <p><strong>Маршрут</strong> средний · 100–130 минут · Python 3.13+</p>
 </div>
 
 <div class="materials-panel">
@@ -48,7 +50,7 @@ time: "100-130 минут"
 
 ### Подготовка окружения
 
-Нужна современная версия Python 3.
+Нужен Python 3.13 или новее. Перед началом проверьте `py -3 --version` на Windows или `python3 --version` на macOS и Linux.
 
 Windows PowerShell:
 
@@ -87,7 +89,8 @@ python secret_folder_archive.py
 3. Сложить записи в манифест.
 4. Найти группы дублей по одинаковому SHA-256.
 5. Если старый `manifest.json` уже есть, сравнить его с новым снимком.
-6. Показать отчет и сохранить свежий манифест.
+6. Сравнить рабочую и резервную хронологии построчно.
+7. Показать отчет и сохранить свежий манифест.
 
 Запись одного файла будет выглядеть так:
 
@@ -96,7 +99,7 @@ python secret_folder_archive.py
     "path": "evidence/photo_index.txt",
     "size": 172,
     "sha256": "8d4c...",
-    "modified_at": "2026-07-04T18:20:10Z",
+    "modified_at": "2026-03-14T19:20:10Z",
 }
 ```
 
@@ -108,6 +111,7 @@ python secret_folder_archive.py
 
 ```python
 from datetime import datetime, timezone
+from difflib import ndiff
 import hashlib
 import json
 from pathlib import Path
@@ -117,6 +121,8 @@ from rich.table import Table
 
 DATA_DIR = Path(__file__).with_name("data") / "secret_folder"
 MANIFEST_PATH = Path(__file__).with_name("manifest.json")
+TIMELINE_PATH = DATA_DIR / "drafts" / "timeline.txt"
+TIMELINE_BACKUP_PATH = DATA_DIR / "drafts" / "timeline_backup.txt"
 console = Console()
 ```
 
@@ -180,7 +186,7 @@ def utc_timestamp(seconds=None):
     return moment.isoformat(timespec="seconds").replace("+00:00", "Z")
 ```
 
-Так мы получаем строку вида `2026-07-04T18:20:10Z`. Буква `Z` означает UTC.
+Так мы получаем строку вида `2026-03-14T19:20:10Z`. Буква `Z` означает UTC.
 
 ### Запись о файле
 
@@ -315,6 +321,27 @@ def compare_manifests(
 
 Мы считаем файл измененным только по хэшу. Если дата поменялась, но байты те же, содержимое не изменилось. Поэтому сравнение manifest-файлов опирается на `sha256`, а `modified_at` остается вспомогательной подсказкой для человека.
 
+### Сравнение двух хронологий
+
+Манифест отвечает на вопрос «одинаковы ли файлы?», но не показывает, какие строки различаются. Для двух текстовых версий используем [`difflib.ndiff()`](https://docs.python.org/3/library/difflib.html#difflib.ndiff) из стандартной библиотеки. Строки с префиксом `- ` есть только в рабочей версии, с `+ ` - только в резервной; служебные подсказки `? ` нам не нужны.
+
+```python
+def compare_timeline_versions(current_path, backup_path):
+    current_lines = current_path.read_text(encoding="utf-8").splitlines()
+    backup_lines = backup_path.read_text(encoding="utf-8").splitlines()
+    differences = {"current": [], "backup": []}
+
+    for line in ndiff(current_lines, backup_lines):
+        if line.startswith("- "):
+            differences["current"].append(line[2:])
+        elif line.startswith("+ "):
+            differences["backup"].append(line[2:])
+
+    return differences
+```
+
+Мы сохраняем направление разницы: позже отчет сможет подписать, из какой версии пришла каждая строка. В учебных файлах функция должна найти рабочую запись `22:53` и резервную запись `23:07`.
+
 ### Отчет
 
 [Rich](../../field-guide/rich/) нужен только для вывода:
@@ -374,6 +401,22 @@ def render_duplicates(manifest):
     console.print(table)
 ```
 
+Отдельная таблица делает расхождение хронологий частью основного результата дела:
+
+```python
+def render_timeline_difference(differences):
+    table = Table(title="Расхождение хронологий")
+    table.add_column("Версия")
+    table.add_column("Строка только в этой версии")
+
+    for line in differences["current"]:
+        table.add_row("Рабочая", line)
+    for line in differences["backup"]:
+        table.add_row("Резервная", line)
+
+    console.print(table)
+```
+
 ### Финальный запуск
 
 В `main()` свяжем все шаги:
@@ -386,8 +429,14 @@ def main():
 
     render_report(current, changes, previous is not None)
     render_duplicates(current)
+    timeline_differences = compare_timeline_versions(TIMELINE_PATH, TIMELINE_BACKUP_PATH)
+    render_timeline_difference(timeline_differences)
     write_manifest(current, MANIFEST_PATH)
     console.print(f"[bold green]Манифест сохранен:[/bold green] {MANIFEST_PATH}")
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 Теперь скрипт не просто смотрит на папку. Он оставляет снимок, с которым можно сравнить следующий запуск.
@@ -400,7 +449,13 @@ def main():
 python secret_folder_archive.py
 ```
 
-В первом запуске программа должна найти 6 файлов, заметить одну группу дублей и сохранить `manifest.json`.
+После отчета запустите тесты из учебного набора:
+
+```bash
+python -m unittest discover -s tests
+```
+
+В первом запуске программа должна найти 6 файлов, заметить одну группу дублей, показать расхождение хронологий `22:53` / `23:07` и сохранить `manifest.json`.
 
 Откройте любой файл в `data/secret_folder/notes/`, добавьте строку и запустите скрипт еще раз. В таблице `Изменения` у вас должен появиться один измененный файл. Потом можно удалить созданный `manifest.json` и начать проверку заново.
 
@@ -408,9 +463,10 @@ python secret_folder_archive.py
 
 ## Что мы использовали
 
-- [Установка Python](../../field-guide/install-python/) - современная версия Python 3, виртуальная среда и точная версия зависимости.
+- [Установка Python](../../field-guide/install-python/) - Python 3.13+, виртуальная среда и точная версия зависимости.
 - [pathlib.Path](../../field-guide/pathlib/) - пути, рекурсивный обход и относительные имена.
 - [hashlib.sha256()](../../field-guide/hashlib/) - надежный отпечаток содержимого файла.
+- `difflib.ndiff()` - построчная разница рабочей и резервной хронологий.
 - [JSON](../../field-guide/json/) - человекочитаемый манифест.
 - [Исключения](../../field-guide/exceptions/) - явные ошибки для отсутствующей или неправильной папки.
 - `datetime.now(timezone.utc)` и `datetime.fromtimestamp(..., tz=timezone.utc)` - временные метки без привязки к локальному часовому поясу.

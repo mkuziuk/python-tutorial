@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 import tempfile
@@ -6,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS_DIR = ROOT / "projects"
+MINIMUM_PYTHON = (3, 13)
+TEST_TARGET_VARIABLE = "PYTHON_TUTORIAL_TEST_TARGET"
 
 
 def venv_python(venv_dir: Path) -> Path:
@@ -14,8 +17,8 @@ def venv_python(venv_dir: Path) -> Path:
     return venv_dir / "bin" / "python"
 
 
-def run(command: list[str]) -> None:
-    subprocess.run(command, cwd=ROOT, check=True)
+def run(command: list[str], *, environment: dict[str, str] | None = None) -> None:
+    subprocess.run(command, cwd=ROOT, env=environment, check=True)
 
 
 def discover_cases() -> list[Path]:
@@ -40,9 +43,13 @@ def run_case_tests(project: Path) -> None:
             run([str(python), "-m", "pip", "install", "-r", str(requirements)])
 
         print(f"== {project.name}: running maintainer tests ==")
+        environment = os.environ.copy()
+        environment[TEST_TARGET_VARIABLE] = "solution"
+        environment["PYTHONDONTWRITEBYTECODE"] = "1"
         run(
             [
                 str(python),
+                "-B",
                 "-W",
                 "error::DeprecationWarning",
                 "-W",
@@ -52,11 +59,19 @@ def run_case_tests(project: Path) -> None:
                 "discover",
                 "-s",
                 str(tests),
-            ]
+            ],
+            environment=environment,
         )
 
 
 def main() -> None:
+    if sys.version_info < MINIMUM_PYTHON:
+        required = ".".join(map(str, MINIMUM_PYTHON))
+        current = ".".join(map(str, sys.version_info[:3]))
+        raise SystemExit(
+            f"Python {required}+ is required to run the case tests; found {current}."
+        )
+
     cases = discover_cases()
     if not cases:
         raise SystemExit("No case tests found under projects/case-*/tests")

@@ -4,6 +4,7 @@ description: "sorted(), key и reverse для рейтингов, отчетов
 concept: "sorting"
 usedIn:
   - "case-02"
+  - "case-06"
 order: 8
 ---
 

@@ -9,7 +9,7 @@ concepts:
   - exceptions
   - rules
   - Rich
-difficulty: "начальный+"
+difficulty: "средний"
 projectId: "case-03"
 time: "15-20 минут"
 ---

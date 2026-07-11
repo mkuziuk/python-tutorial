@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 import json
 from pathlib import Path
@@ -5,7 +7,15 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+def default_project_dir():
+    script_dir = Path(__file__).resolve().parent
+    if (script_dir / "data" / "case_seed.json").exists():
+        return script_dir
+    return script_dir.parent
+
+
+PROJECT_DIR = default_project_dir()
 DATA_DIR = PROJECT_DIR / "data"
 SEED_PATH = DATA_DIR / "case_seed.json"
 OUTPUT_PATH = PROJECT_DIR / "case_report.json"
@@ -19,6 +29,7 @@ class Evidence:
     title: str
     source: str
     body: str
+    created_at: str
     tags: list[str] = field(default_factory=list)
     reliability: int = 3
 
@@ -28,10 +39,13 @@ class Evidence:
         self.title = self.title.strip()
         self.source = self.source.strip()
         self.body = self.body.strip()
+        self.created_at = self.created_at.strip()
         self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
 
         if not self.evidence_id:
             raise ValueError("Evidence ID must not be empty")
+        if not self.created_at:
+            raise ValueError("Evidence created_at must not be empty")
         if not 1 <= self.reliability <= 5:
             raise ValueError("Evidence reliability must be between 1 and 5")
 
@@ -43,6 +57,7 @@ class Evidence:
             title=str(data["title"]),
             source=str(data["source"]),
             body=str(data["body"]),
+            created_at=str(data["created_at"]),
             tags=[str(tag) for tag in data.get("tags", [])],
             reliability=int(data.get("reliability", 3)),
         )
@@ -54,6 +69,7 @@ class Evidence:
             "title": self.title,
             "source": self.source,
             "body": self.body,
+            "created_at": self.created_at,
             "tags": self.tags,
             "reliability": self.reliability,
         }
@@ -70,6 +86,7 @@ class Evidence:
                 self.title,
                 self.source,
                 self.body,
+                self.created_at,
                 *self.tags,
             ]
         ).casefold()
@@ -212,8 +229,11 @@ class CaseRepository:
 
 
 def render_overview(investigation):
-    console.print(f"[bold cyan]{investigation.title}[/bold cyan]")
+    console.print(f"[bold cyan]Дело: {investigation.title}[/bold cyan]")
     console.print(investigation.summary)
+    console.print(f"Участников: {len(investigation.people)}")
+    console.print(f"Улик: {len(investigation.evidence)}")
+    console.print(f"Заметок: {len(investigation.notes)}")
 
     people_table = Table(title="Участники")
     people_table.add_column("ID", style="cyan")
@@ -257,11 +277,11 @@ def render_search_results(query, results):
 
 def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
     investigation = CaseRepository(seed_path).load()
-    signal_matches = investigation.find_evidence("сигнал")
+    access_matches = investigation.find_evidence("доступ")
     investigation.add_note(
         author="Доска расследования",
-        text=f"Автоматический поиск по слову 'сигнал' нашел улик: {len(signal_matches)}.",
-        created_at="2026-02-12T12:30:00",
+        text=f"Автоматический поиск по слову 'доступ' нашел улик: {len(access_matches)}.",
+        created_at="2026-03-15T08:30:00+03:00",
     )
     CaseRepository(output_path).save(investigation)
     return investigation
@@ -270,7 +290,7 @@ def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
 def main():
     investigation = build_report()
     render_overview(investigation)
-    render_search_results("сигнал", investigation.find_evidence("сигнал"))
+    render_search_results("доступ", investigation.find_evidence("доступ"))
     console.print(f"\n[green]JSON-снимок сохранен:[/green] {OUTPUT_PATH.name}")
 
 

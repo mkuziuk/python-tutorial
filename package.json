@@ -7,8 +7,11 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "build:archives": "python3 tools/build_case_archives.py",
     "test:python": "python3 tools/run_case_tests.py",
-    "verify": "pnpm test:python && pnpm build"
+    "test:archives": "python3 tools/build_case_archives.py --check",
+    "test:links": "node tools/check_internal_links.mjs",
+    "verify": "pnpm test:python && pnpm test:archives && pnpm build && pnpm test:links"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.3",

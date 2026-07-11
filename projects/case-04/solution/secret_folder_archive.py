@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from difflib import ndiff
 import hashlib
 import json
 from pathlib import Path
@@ -6,8 +7,19 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "secret_folder"
-MANIFEST_PATH = Path(__file__).resolve().parents[1] / "manifest.json"
+
+def default_project_dir():
+    script_dir = Path(__file__).resolve().parent
+    if (script_dir / "data" / "secret_folder").exists():
+        return script_dir
+    return script_dir.parent
+
+
+PROJECT_DIR = default_project_dir()
+DATA_DIR = PROJECT_DIR / "data" / "secret_folder"
+MANIFEST_PATH = PROJECT_DIR / "manifest.json"
+TIMELINE_PATH = DATA_DIR / "drafts" / "timeline.txt"
+TIMELINE_BACKUP_PATH = DATA_DIR / "drafts" / "timeline_backup.txt"
 console = Console()
 
 
@@ -136,6 +148,20 @@ def compare_manifests(previous, current):
     }
 
 
+def compare_timeline_versions(current_path, backup_path):
+    current_lines = current_path.read_text(encoding="utf-8").splitlines()
+    backup_lines = backup_path.read_text(encoding="utf-8").splitlines()
+    differences = {"current": [], "backup": []}
+
+    for line in ndiff(current_lines, backup_lines):
+        if line.startswith("- "):
+            differences["current"].append(line[2:])
+        elif line.startswith("+ "):
+            differences["backup"].append(line[2:])
+
+    return differences
+
+
 def render_report(manifest, changes, had_previous_manifest):
     summary = Table(title="Индекс секретной папки")
     summary.add_column("Показатель")
@@ -183,6 +209,19 @@ def render_duplicates(manifest):
     console.print(table)
 
 
+def render_timeline_difference(differences):
+    table = Table(title="Расхождение хронологий")
+    table.add_column("Версия")
+    table.add_column("Строка только в этой версии")
+
+    for line in differences["current"]:
+        table.add_row("Рабочая", line)
+    for line in differences["backup"]:
+        table.add_row("Резервная", line)
+
+    console.print(table)
+
+
 def main():
     previous = load_manifest(MANIFEST_PATH)
     current = build_manifest(DATA_DIR)
@@ -190,6 +229,8 @@ def main():
 
     render_report(current, changes, previous is not None)
     render_duplicates(current)
+    timeline_differences = compare_timeline_versions(TIMELINE_PATH, TIMELINE_BACKUP_PATH)
+    render_timeline_difference(timeline_differences)
     write_manifest(current, MANIFEST_PATH)
     console.print(f"[bold green]Манифест сохранен:[/bold green] {MANIFEST_PATH}")
 

@@ -8,6 +8,7 @@ usedIn:
   - "case-03"
   - "case-04"
   - "case-05"
+  - "case-06"
 order: 17
 ---
 

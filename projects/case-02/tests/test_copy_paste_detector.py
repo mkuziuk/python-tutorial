@@ -1,9 +1,14 @@
 from pathlib import Path
+import os
 import sys
 import unittest
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_DIR / "solution"))
+TEST_TARGET = os.environ.get("PYTHON_TUTORIAL_TEST_TARGET", "learner")
+if TEST_TARGET not in {"learner", "solution"}:
+    raise RuntimeError(f"Unknown test target: {TEST_TARGET}")
+SOURCE_DIR = PROJECT_DIR if TEST_TARGET == "learner" else PROJECT_DIR / "solution"
+sys.path.insert(0, str(SOURCE_DIR))
 
 from copy_paste_detector import (  # noqa: E402
     build_profile,
@@ -54,7 +59,7 @@ class CopyPasteDetectorTests(unittest.TestCase):
         self.assertGreater(float(ranking[0]["score"]), 0.25)
         self.assertEqual(
             set(ranking[1]["pair"]),
-            {"Отчет охраны", "Дневник ночного сигнала"},
+            {"Отчет охраны", "Отчет учебного стенда"},
         )
         self.assertEqual(len(ranking), 2)
 

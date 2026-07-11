@@ -11,7 +11,33 @@ permissions:
   id-token: write
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install pnpm
+        run: npm install --global pnpm@9.15.4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify lessons, archives, build, and links
+        run: pnpm verify
+
   build:
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -28,7 +54,11 @@ jobs:
       - name: Install, build, and upload site
         uses: withastro/action@v6
         with:
-          package-manager: pnpm@latest
+          node-version: 24
+          package-manager: pnpm@9.15.4
+
+      - name: Verify generated Pages links
+        run: node tools/check_internal_links.mjs
 
   deploy:
     needs: build

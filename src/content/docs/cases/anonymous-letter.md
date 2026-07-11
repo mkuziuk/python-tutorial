@@ -19,6 +19,7 @@ time: "90-120 минут"
   <p><strong>Миссия</strong> найти источник предупреждения, чтобы восстановить детали скрытой полуночной правки.</p>
   <p><strong>Инструменты</strong> виртуальная среда, строки, регулярные выражения, словари, множества, `Counter`, Rich.</p>
   <p><strong>Результат</strong> консольный инструмент с понятной таблицей кандидатов.</p>
+  <p><strong>Маршрут</strong> начальный+ · 90–120 минут · Python 3.13+</p>
 </div>
 
 <div class="materials-panel">
@@ -50,7 +51,7 @@ time: "90-120 минут"
 
 ## Подготовка окружения
 
-Перед проектом создадим виртуальную среду. Это отдельная папка с Python и библиотеками только для этого дела. Так мы не ломаем системный Python и не смешиваем зависимости разных проектов.
+Перед проектом создадим виртуальную среду. Это отдельная папка с Python и библиотеками только для этого дела. Так мы не ломаем системный Python и не смешиваем зависимости разных проектов. Нужен Python 3.13 или новее; перед началом проверьте `py -3 --version` на Windows или `python3 --version` на macOS и Linux.
 
 ### Windows PowerShell
 
@@ -95,6 +96,7 @@ python anonymous_letter.py
 Он пока ничего не выводит: это нормально. Откройте `anonymous_letter.py` и начните с путей, консоли и чтения текста:
 
 ```python
+from collections import Counter
 from pathlib import Path
 
 from rich.console import Console
@@ -181,8 +183,6 @@ def normalize_words(text):
 Теперь добавим частоты и пунктуацию.
 
 ```python
-from collections import Counter
-
 PUNCTUATION = ".,;:!?"
 
 
@@ -323,13 +323,27 @@ def render_results(results):
 ```python
 def main():
     render_results(rank_candidates())
+
+
+if __name__ == "__main__":
+    main()
 ```
+
+Последние две строки - точка входа: без них Python определит `main()`, но не вызовет его при запуске файла.
 
 ## Запуск
 
 ```bash
 python anonymous_letter.py
 ```
+
+Затем запустите тесты из учебного набора:
+
+```bash
+python -m unittest discover -s tests
+```
+
+В скачанном ZIP тесты проверяют собранный вами корневой скрипт.
 
 Ожидаемая форма результата:
 
@@ -344,7 +358,7 @@ python anonymous_letter.py
 
 ## Что мы использовали
 
-- [Установка Python](../../field-guide/install-python/) - современная версия Python 3, виртуальная среда и установка зависимостей.
+- [Установка Python](../../field-guide/install-python/) - Python 3.13+, виртуальная среда и установка зависимостей.
 - [Строки `str`](../../field-guide/str/) - исходный текст и нормализация.
 - [Regex](../../field-guide/regex/) - поиск русских слов без приклеенной пунктуации.
 - [Списки `list`](../../field-guide/list/) - последовательность найденных слов.

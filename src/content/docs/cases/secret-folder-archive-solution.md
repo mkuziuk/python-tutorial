@@ -1,6 +1,6 @@
 ---
 title: "Разбор полного решения"
-description: "Полный код четвертого дела: индексатор папки после ночного сигнала, SHA-256, JSON-манифест, дубли и изменения."
+description: "Полный код четвертого дела: SHA-256, JSON-манифест, дубли, изменения и сравнение двух хронологий."
 concepts:
   - pathlib
   - file traversal
@@ -8,6 +8,7 @@ concepts:
   - JSON
   - timestamps
   - change detection
+  - difflib
   - Rich
 difficulty: "средний"
 projectId: "case-04"
@@ -20,6 +21,7 @@ time: "20-30 минут"
 
 ```python
 from datetime import datetime, timezone
+from difflib import ndiff
 import hashlib
 import json
 from pathlib import Path
@@ -27,8 +29,19 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "secret_folder"
-MANIFEST_PATH = Path(__file__).resolve().parents[1] / "manifest.json"
+
+def default_project_dir():
+    script_dir = Path(__file__).resolve().parent
+    if (script_dir / "data" / "secret_folder").exists():
+        return script_dir
+    return script_dir.parent
+
+
+PROJECT_DIR = default_project_dir()
+DATA_DIR = PROJECT_DIR / "data" / "secret_folder"
+MANIFEST_PATH = PROJECT_DIR / "manifest.json"
+TIMELINE_PATH = DATA_DIR / "drafts" / "timeline.txt"
+TIMELINE_BACKUP_PATH = DATA_DIR / "drafts" / "timeline_backup.txt"
 console = Console()
 
 
@@ -132,10 +145,7 @@ def index_by_path(manifest):
     }
 
 
-def compare_manifests(
-    previous,
-    current,
-):
+def compare_manifests(previous, current):
     old_files = index_by_path(previous)
     new_files = index_by_path(current)
     old_paths = set(old_files)
@@ -160,11 +170,21 @@ def compare_manifests(
     }
 
 
-def render_report(
-    manifest,
-    changes,
-    had_previous_manifest,
-):
+def compare_timeline_versions(current_path, backup_path):
+    current_lines = current_path.read_text(encoding="utf-8").splitlines()
+    backup_lines = backup_path.read_text(encoding="utf-8").splitlines()
+    differences = {"current": [], "backup": []}
+
+    for line in ndiff(current_lines, backup_lines):
+        if line.startswith("- "):
+            differences["current"].append(line[2:])
+        elif line.startswith("+ "):
+            differences["backup"].append(line[2:])
+
+    return differences
+
+
+def render_report(manifest, changes, had_previous_manifest):
     summary = Table(title="Индекс секретной папки")
     summary.add_column("Показатель")
     summary.add_column("Значение", justify="right")
@@ -211,6 +231,19 @@ def render_duplicates(manifest):
     console.print(table)
 
 
+def render_timeline_difference(differences):
+    table = Table(title="Расхождение хронологий")
+    table.add_column("Версия")
+    table.add_column("Строка только в этой версии")
+
+    for line in differences["current"]:
+        table.add_row("Рабочая", line)
+    for line in differences["backup"]:
+        table.add_row("Резервная", line)
+
+    console.print(table)
+
+
 def main():
     previous = load_manifest(MANIFEST_PATH)
     current = build_manifest(DATA_DIR)
@@ -218,6 +251,8 @@ def main():
 
     render_report(current, changes, previous is not None)
     render_duplicates(current)
+    timeline_differences = compare_timeline_versions(TIMELINE_PATH, TIMELINE_BACKUP_PATH)
+    render_timeline_difference(timeline_differences)
     write_manifest(current, MANIFEST_PATH)
     console.print(f"[bold green]Манифест сохранен:[/bold green] {MANIFEST_PATH}")
 
@@ -228,9 +263,9 @@ if __name__ == "__main__":
 
 ## Как читать решение
 
-Поток данных такой: `iter_files()` находит файлы, `build_record()` собирает запись с SHA-256, `build_manifest()` делает JSON-готовый снимок, `compare_manifests()` ищет изменения, а `render_report()` и `render_duplicates()` печатают результат.
+Поток данных такой: `iter_files()` находит файлы, `build_record()` собирает запись с SHA-256, `build_manifest()` делает JSON-готовый снимок, `compare_manifests()` ищет изменения между запусками, а `compare_timeline_versions()` отдельно показывает расхождение двух уже существующих текстовых версий.
 
-Главное решение - сравнивать содержимое по хэшу, а не по имени или времени. Имя и timestamp помогают читать отчет, но решение "изменился файл или нет" принимает SHA-256.
+Главное решение - сравнивать содержимое по хэшу, а не по имени или времени. Имя и timestamp помогают читать отчет, но решение "изменился файл или нет" принимает SHA-256. Для объяснения конкретной текстовой разницы используется `difflib.ndiff()`: в отчете видны строки с `22:53` и `23:07`, а не только два разных хэша.
 
 Частые ошибки: сохранять абсолютные пути в manifest, читать большие файлы целиком, считать изменением только новую дату или забыть обработать первый запуск без `manifest.json`.
 

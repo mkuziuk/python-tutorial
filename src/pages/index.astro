@@ -21,6 +21,8 @@ const cases = [
     question: 'Кто оставил предупреждение и что он знает о ночной правке?',
     tool: 'Собираем текстовый отпечаток: слова, пунктуацию, частоты и сравнение привычек письма.',
     outcome: 'Таблица кандидатов с объяснимыми признаками текста',
+    difficulty: 'начальный+',
+    time: '90–120 минут',
     concepts: ['venv', 'regex', 'dict/set', 'Counter', 'Rich'],
     files: ['anonymous.txt', 'author_*.txt', 'anonymous_letter.py'],
     command: 'python anonymous_letter.py',
@@ -33,11 +35,13 @@ const cases = [
     title: 'Детектор текстовых совпадений',
     kicker: 'Утечки и подмены',
     copy:
-      'Два отчета почти дословно повторяют закрытую опись витрины «Северный стол». Нужно понять, это обычное совпадение темы или след утечки.',
+      'В черновике экскурсии появились фрагменты закрытой описи «Северного стола», а другая похожая пара относится к учебному стенду. Нужно отделить обычное повторное использование текста от следа утечки.',
     scene: 'В папке черновиков лежат пять отчетов: часть текста выглядит так, будто ее перенесли из закрытой описи.',
     question: 'Какие документы подозрительно похожи, а где совпадения объясняются общей темой?',
     tool: 'Режем тексты на n-граммы, сравниваем множества и сортируем пары по силе совпадения.',
     outcome: 'Рейтинг подозрительных пар с примером общей фразы',
+    difficulty: 'начальный+',
+    time: '90–120 минут',
     concepts: ['tuple', 'n-граммы', 'set', 'sorting', 'functions'],
     files: ['report_*.txt', 'copy_paste_detector.py', 'check_result.txt'],
     command: 'python copy_paste_detector.py',
@@ -55,6 +59,8 @@ const cases = [
     question: 'Что можно понять о письме, если не переходить по ссылкам и не запускать вложения?',
     tool: 'Разбираем заголовки, ссылки, домены, IP и вложения, затем считаем понятные признаки опасности.',
     outcome: 'Отчет по письмам: вердикт, баллы и причины',
+    difficulty: 'средний',
+    time: '120–150 минут',
     concepts: ['email', 'URL', 'ipaddress', 'exceptions', 'правила'],
     files: ['*.eml', 'phishing_email.py', 'правила риска'],
     command: 'python phishing_email.py',
@@ -72,6 +78,8 @@ const cases = [
     question: 'Какие файлы совпадают полностью, что изменилось и как сохранить результат сверки?',
     tool: 'Обходим папку через pathlib, считаем отпечатки SHA-256 и записываем JSON-манифест.',
     outcome: 'JSON-манифест, группы дублей и список изменений',
+    difficulty: 'средний',
+    time: '100–130 минут',
     concepts: ['pathlib', 'hashlib', 'JSON', 'время', 'изменения'],
     files: ['secret_folder/', 'manifest.json', 'secret_folder_archive.py'],
     command: 'python secret_folder_archive.py',
@@ -89,11 +97,32 @@ const cases = [
     question: 'Как собрать расследование в одну модель, чтобы завтра продолжить с того же места?',
     tool: 'Описываем дело, людей и улики классами, затем сохраняем состояние в JSON.',
     outcome: 'Доска расследования с поиском, заметками и сохранением',
+    difficulty: 'средний',
+    time: '120–150 минут',
     concepts: ['classes', 'dataclass', 'methods', 'composition', 'JSON'],
     files: ['case_seed.json', 'investigation_system.py', 'Evidence'],
     command: 'python investigation_system.py',
     color: '#9fb7ff',
     tone: '#dce4f8',
+  },
+  {
+    number: '06',
+    slug: 'final-verdict',
+    title: 'Вердикт перед открытием',
+    kicker: 'Гипотезы и решение',
+    copy:
+      'Утром все следы сходятся: нужно отделить факты от догадок, выбрать лучшую версию и решить, можно ли открывать витрину.',
+    scene: 'До открытия осталось меньше двух часов, а в пакете есть данные пяти дел и финальный аудит рабочей станции.',
+    question: 'Какая гипотеза лучше всего объясняет следы и какое решение безопасно принять?',
+    tool: 'Восстанавливаем хронологию, взвешиваем поддержку и противоречия, затем сохраняем объяснимый вердикт.',
+    outcome: 'Рейтинг гипотез, итоговая хронология и план действий',
+    difficulty: 'продвинутый',
+    time: '120–150 минут',
+    concepts: ['StrEnum', 'dataclass', 'match', 'JSON', 'взвешивание'],
+    files: ['evidence_bundle.json', 'final_verdict.py', 'verdict.json'],
+    command: 'python final_verdict.py',
+    color: '#d49cff',
+    tone: '#eadcf4',
   },
 ].map((item) => ({
   ...item,
@@ -110,7 +139,7 @@ const cases = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Проектный учебник по Python на русском: пять расследований, рабочие программы, справочник и материалы."
+      content="Проектный учебник по Python на русском: шесть связанных расследований, рабочие программы, справочник и материалы."
     />
     <title>Python-расследования</title>
     <link rel="icon" href={`${base}images/favicon.svg`} />
@@ -129,7 +158,7 @@ const cases = [
     <main>
       <section class="course-hero" aria-labelledby="home-title">
         <div class="hero-copy">
-          <p class="eyebrow">Проектный учебник · современная версия Python 3</p>
+          <p class="eyebrow">Проектный учебник · Python 3.13+</p>
           <h1 id="home-title">Изучим Python через детективную историю.</h1>
           <p>
             Городской архив готовит публичный показ «Северный стол». За ночь до открытия в рабочих материалах
@@ -196,7 +225,7 @@ const cases = [
             <div class="stage-progress">
               <span>01</span>
               <div><i></i></div>
-              <span>05</span>
+              <span>06</span>
             </div>
 
             <div class="case-visuals">
@@ -260,6 +289,10 @@ const cases = [
                   <dt>На выходе</dt>
                   <dd>{item.outcome}</dd>
                 </div>
+                <div>
+                  <dt>Маршрут</dt>
+                  <dd>{item.difficulty} · {item.time}</dd>
+                </div>
               </dl>
               <div class="concept-row" aria-label={`Темы дела ${item.number}`}>
                 {item.concepts.map((concept) => <span>{concept}</span>)}
@@ -284,6 +317,7 @@ const cases = [
               <h3>{item.title}</h3>
               <p>{item.scene}</p>
               <p class="mobile-question">{item.question}</p>
+              <p>{item.difficulty} · {item.time}</p>
               <a href={item.href}>Открыть главу</a>
             </article>
           ))}
@@ -1042,11 +1076,26 @@ const cases = [
       position: static;
       width: calc(100% - 1rem);
       margin: 0.5rem auto 0;
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0.35rem;
+      border-radius: 24px;
+      padding: 0.8rem;
       transform: none;
     }
 
     .site-header nav {
-      display: none;
+      width: 100%;
+      display: flex;
+      overflow-x: auto;
+      padding-block-end: 0.15rem;
+      scrollbar-width: thin;
+    }
+
+    .site-header nav a {
+      flex: 0 0 auto;
+      padding: 0.5rem 0.65rem;
+      font-size: 0.84rem;
     }
 
     .course-hero {

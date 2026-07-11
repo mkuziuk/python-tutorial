@@ -1,9 +1,14 @@
 from pathlib import Path
+import os
 import sys
 import unittest
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_DIR / "solution"))
+TEST_TARGET = os.environ.get("PYTHON_TUTORIAL_TEST_TARGET", "learner")
+if TEST_TARGET not in {"learner", "solution"}:
+    raise RuntimeError(f"Unknown test target: {TEST_TARGET}")
+SOURCE_DIR = PROJECT_DIR if TEST_TARGET == "learner" else PROJECT_DIR / "solution"
+sys.path.insert(0, str(SOURCE_DIR))
 
 from phishing_email import (  # noqa: E402
     EmailAnalysisError,

@@ -1,21 +1,22 @@
-From: Case Desk <training@example.org>
-To: Learner <learner@example.org>
+From: Archive Desk <updates@example.org>
+To: Archive Team <archive-team@example.org>
 Subject: Обновление карточки архива
-Date: Tue, 03 Mar 2026 09:15:00 +0000
+Date: Sat, 14 Mar 2026 18:05:00 +0300
 Message-ID: <case03-01@example.org>
+Authentication-Results: mx.example.org; spf=pass smtp.mailfrom=example.org; dkim=pass header.d=example.org
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 
 Здравствуйте!
 
-Команда архива обновила карточку третьего дела. В материалах появились
-новые письма и форма для заметок аналитика по архивному сигналу.
+Команда архива обновила рабочую карточку витрины. В материалах появились
+новые фотографии и форма для заметок дежурного аналитика.
 
 Открыть карточку можно здесь:
-https://training.example.org/cases/03
+https://archive.example.org/north-table
 
 Статус архива:
-https://status.example.org/training
+https://status.example.org/archive
 
-Если ссылка не нужна, письмо можно просто сохранить в архиве занятия.
+Если ссылка не нужна, письмо можно просто сохранить в рабочей папке.

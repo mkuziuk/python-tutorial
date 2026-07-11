@@ -24,18 +24,26 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+
+def default_data_dir():
+    script_dir = Path(__file__).resolve().parent
+    local_data = script_dir / "data"
+    if local_data.exists():
+        return local_data
+    return script_dir.parent / "data"
+
+
+DATA_DIR = default_data_dir()
 NGRAM_SIZE = 4
 TOP_EXAMPLES = 3
 
 console = Console()
 
-
 DISPLAY_NAMES = {
     "report_north_table": "Опись Северного стола",
     "report_tour_draft": "Черновик экскурсии",
-    "report_basement_route": "Карта подвального коридора",
-    "report_alarm_stand": "Дневник ночного сигнала",
+    "report_basement_route": "Служебный маршрут подвального коридора",
+    "report_alarm_stand": "Отчет учебного стенда",
     "report_guard_note": "Отчет охраны",
 }
 

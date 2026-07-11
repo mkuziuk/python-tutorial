@@ -5,6 +5,7 @@ concept: "pathlib"
 usedIn:
   - "case-04"
   - "case-05"
+  - "case-06"
 order: 11
 ---
 

@@ -18,6 +18,7 @@ time: "120-150 минут"
   <p><strong>Миссия</strong> собрать людей, улики, надежность и заметки по ночному сигналу в одну управляемую доску.</p>
   <p><strong>Инструменты</strong> классы, `dataclass`, методы, композиция, `json`, `pathlib`, Rich.</p>
   <p><strong>Результат</strong> консольная доска дела, которая загружает JSON, ищет по уликам и сохраняет обновленный снимок.</p>
+  <p><strong>Маршрут</strong> средний · 120–150 минут · Python 3.13+</p>
 </div>
 
 <div class="materials-panel">
@@ -56,7 +57,7 @@ tags = item["tags"]
 
 Мы разложим дело на [объекты и классы](../../field-guide/classes/):
 
-- `Evidence` - одна улика: ID, тип, заголовок, источник, текст, теги и надежность;
+- `Evidence` - одна улика: ID, тип, заголовок, источник, текст, дата с доступной точностью, теги и надежность;
 - `Person` - участник дела;
 - `CaseNote` - заметка расследования;
 - `Investigation` - главное дело, которое содержит списки участников, улик и заметок;
@@ -80,7 +81,7 @@ CaseRepository
 
 ## Сборка инструмента
 
-Сначала подготовьте окружение.
+Сначала подготовьте окружение. Нужен Python 3.13 или новее; перед началом проверьте `py -3 --version` на Windows или `python3 --version` на macOS и Linux.
 
 ### Windows PowerShell
 
@@ -138,6 +139,7 @@ class Evidence:
     title: str
     source: str
     body: str
+    created_at: str
     tags: list[str] = field(default_factory=list)
     reliability: int = 3
 
@@ -149,6 +151,7 @@ class Evidence:
             title=str(data["title"]),
             source=str(data["source"]),
             body=str(data["body"]),
+            created_at=str(data["created_at"]),
             tags=[str(tag) for tag in data.get("tags", [])],
             reliability=int(data.get("reliability", 3)),
         )
@@ -222,15 +225,18 @@ def __post_init__(self):
     self.title = self.title.strip()
     self.source = self.source.strip()
     self.body = self.body.strip()
+    self.created_at = self.created_at.strip()
     self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
 
     if not self.evidence_id:
         raise ValueError("Evidence ID must not be empty")
+    if not self.created_at:
+        raise ValueError("Evidence created_at must not be empty")
     if not 1 <= self.reliability <= 5:
         raise ValueError("Evidence reliability must be between 1 and 5")
 ```
 
-Здесь объект защищает свои данные: пустой ID и надежность вне шкалы от 1 до 5 не проходят. Если эту проверку оставить снаружи, любой другой участок программы сможет случайно создать сломанную улику.
+Здесь объект защищает свои данные: пустые ID и `created_at`, а также надежность вне шкалы от 1 до 5 не проходят. `created_at` остается строкой ISO 8601: точное время храним только там, где его дал источник; для EV-006 известна лишь дата и условие «до 18:00», поэтому в поле стоит `2026-03-14`, а доступная точность записана в описании.
 
 Теперь научим улику превращаться обратно в [словарь](../../field-guide/dict/):
 
@@ -242,6 +248,7 @@ def to_dict(self):
         "title": self.title,
         "source": self.source,
         "body": self.body,
+        "created_at": self.created_at,
         "tags": self.tags,
         "reliability": self.reliability,
     }
@@ -266,6 +273,7 @@ def matches(self, query):
             self.title,
             self.source,
             self.body,
+            self.created_at,
             *self.tags,
         ]
     ).casefold()
@@ -417,6 +425,46 @@ class CaseRepository:
 
 [Rich](../../field-guide/rich/) нужен только для вывода. Данные и логика остаются обычным Python.
 
+Сначала соберем обзор всего дела. Он показывает не только таблицы, но и контрольные количества: так сразу видно, все ли участники, улики и заметки загрузились из JSON.
+
+```python
+def render_overview(investigation):
+    console.print(f"[bold cyan]Дело: {investigation.title}[/bold cyan]")
+    console.print(investigation.summary)
+    console.print(f"Участников: {len(investigation.people)}")
+    console.print(f"Улик: {len(investigation.evidence)}")
+    console.print(f"Заметок: {len(investigation.notes)}")
+
+    people_table = Table(title="Участники")
+    people_table.add_column("ID", style="cyan")
+    people_table.add_column("Имя")
+    people_table.add_column("Роль")
+
+    for person in investigation.people:
+        people_table.add_row(person.person_id, person.name, person.role)
+
+    evidence_table = Table(title="Приоритетные улики")
+    evidence_table.add_column("ID", style="cyan")
+    evidence_table.add_column("Тип")
+    evidence_table.add_column("Название")
+    evidence_table.add_column("Теги")
+    evidence_table.add_column("Надежность", justify="right")
+
+    for item in investigation.priority_evidence(limit=len(investigation.evidence)):
+        evidence_table.add_row(
+            item.evidence_id,
+            item.kind,
+            item.title,
+            ", ".join(item.tags),
+            f"{item.reliability}/5",
+        )
+
+    console.print(people_table)
+    console.print(evidence_table)
+```
+
+Отдельная функция покажет результаты одного поискового запроса:
+
 ```python
 def render_search_results(query, results):
     table = Table(title=f"Поиск: {query}")
@@ -435,11 +483,11 @@ def render_search_results(query, results):
 ```python
 def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
     investigation = CaseRepository(seed_path).load()
-    signal_matches = investigation.find_evidence("сигнал")
+    access_matches = investigation.find_evidence("доступ")
     investigation.add_note(
         author="Доска расследования",
-        text=f"Автоматический поиск по слову 'сигнал' нашел улик: {len(signal_matches)}.",
-        created_at="2026-02-12T12:30:00",
+        text=f"Автоматический поиск по слову 'доступ' нашел улик: {len(access_matches)}.",
+        created_at="2026-03-15T08:30:00+03:00",
     )
     CaseRepository(output_path).save(investigation)
     return investigation
@@ -451,8 +499,12 @@ def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
 def main():
     investigation = build_report()
     render_overview(investigation)
-    render_search_results("сигнал", investigation.find_evidence("сигнал"))
+    render_search_results("доступ", investigation.find_evidence("доступ"))
     console.print(f"\n[green]JSON-снимок сохранен:[/green] {OUTPUT_PATH.name}")
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 ## Проверка
@@ -463,32 +515,38 @@ def main():
 python investigation_system.py
 ```
 
+После отчета запустите тесты из учебного набора:
+
+```bash
+python -m unittest discover -s tests
+```
+
 Ожидаемый смысл результата:
 
 ```text
-Ночной сигнал архива
-Участники: 4
-Улики: 5
+Дело: Ночной сигнал архива
+Участников: 4
+Улик: 7
+Заметок: 2
 Приоритетные улики:
-EV-001  Анонимная записка      5/5
-EV-002  Журнал ночного сигнала 5/5
-EV-004  Дубли фотоиндекса      5/5
+EV-004  Дубли фотоиндекса                  5/5
+EV-005  Фрагмент журнала доступа           5/5
+EV-006  Совпадение описи и черновика       5/5
 
-Поиск: сигнал
-EV-001
-EV-002
-EV-004
+Поиск: доступ
+EV-003
+EV-005
 
 JSON-снимок сохранен: case_report.json
 ```
 
-После запуска рядом со скриптом появится `case_report.json`. Откройте его и проверьте, что в `notes` появилась новая заметка от доски расследования.
+После запуска рядом со скриптом появится `case_report.json`. Откройте его и проверьте, что в `notes` две записи: исходная и новая заметка от доски расследования.
 
-Если поиск по слову `сигнал` ничего не находит, проверьте `Evidence.matches()` и `Investigation.find_evidence()`. Если файл не сохраняется, вернитесь к `CaseRepository.save()`.
+Если поиск по слову `доступ` не находит `EV-003` и `EV-005`, проверьте `Evidence.matches()` и `Investigation.find_evidence()`. Если файл не сохраняется, вернитесь к `CaseRepository.save()`.
 
 ## Что мы использовали
 
-- [Установка Python](../../field-guide/install-python/) - современная версия Python 3, виртуальная среда и читаемые типы.
+- [Установка Python](../../field-guide/install-python/) - Python 3.13+, виртуальная среда и читаемые типы.
 - [Списки `list`](../../field-guide/list/) - коллекции участников, улик и заметок.
 - [Словари `dict`](../../field-guide/dict/) - JSON-структура до превращения в объекты.
 - [Классы](../../field-guide/classes/) - собственные типы для предметной области.
@@ -503,7 +561,7 @@ JSON-снимок сохранен: case_report.json
 
 1. Добавьте статус дела: `open`, `waiting`, `closed`.
 2. Сделайте метод `evidence_by_tag(tag)`, который использует `tag_index()`.
-3. Добавьте поле `created_at` для улик и отсортируйте их по времени.
+3. Постройте хронологию по `created_at`: отдельно обработайте полные timestamps и значение EV-006 с точностью только до даты, не придумывая отсутствующее время.
 4. Сохраняйте отдельный `case_summary.txt` для руководителя.
 5. Добавьте командное меню: показать улики, найти по запросу, добавить заметку, сохранить.
 6. Сделайте импорт улик из нескольких JSON-файлов.
