@@ -31,6 +31,7 @@ from rich.table import Table
 
 
 def default_project_dir():
+    # Проверка расположения data позволяет запускать один текст решения из двух каталогов.
     script_dir = Path(__file__).resolve().parent
     if (script_dir / "data" / "secret_folder").exists():
         return script_dir
@@ -45,8 +46,10 @@ TIMELINE_BACKUP_PATH = DATA_DIR / "drafts" / "timeline_backup.txt"
 console = Console()
 
 
+# seconds, если передан, — Unix-время в секундах; результат всегда возвращается в UTC.
 def utc_timestamp(seconds=None):
     # Явно используем UTC, чтобы время не зависело от часового пояса компьютера.
+    # None означает время самого сканирования; для файла передаём его st_mtime.
     if seconds is None:
         moment = datetime.now(timezone.utc)
     else:
@@ -62,6 +65,7 @@ def iter_files(root):
         raise NotADirectoryError(f"Expected a folder: {root}")
 
     # rglob("*") рекурсивно проходит и вложенные каталоги.
+    # Каталоги не индексируем, а сортировка делает порядок записей воспроизводимым.
     return sorted(path for path in root.rglob("*") if path.is_file())
 
 
@@ -70,6 +74,7 @@ def relative_name(root, path):
     return path.relative_to(root).as_posix()
 
 
+# 65 536 байт — размер блока чтения, а не ограничение на размер файла.
 def file_sha256(path, chunk_size=65_536):
     digest = hashlib.sha256()
 
@@ -83,6 +88,7 @@ def file_sha256(path, chunk_size=65_536):
 
 
 def build_record(root, path):
+    # stat() читаем один раз, чтобы размер и время относились к одному наблюдению файла.
     stat = path.stat()
 
     # Хэш описывает содержимое, размер — байты, а modified_at — метаданные файловой системы.
@@ -95,11 +101,13 @@ def build_record(root, path):
 
 
 def scan_folder(root):
+    # Абсолютный root нужен только во время обхода; наружу всё равно выйдут относительные пути.
     root = root.resolve()
     return [build_record(root, path) for path in iter_files(root)]
 
 
 def detect_duplicates(records):
+    # Сначала строим индекс «хэш → пути», а уже затем оставляем только группы из нескольких файлов.
     by_hash = {}
 
     for record in records:
@@ -117,12 +125,14 @@ def detect_duplicates(records):
 
 
 def build_manifest(root):
+    # Один список records служит источником и счётчиков, и полного раздела files.
     records = scan_folder(root)
 
     return {
         "scanned_at": utc_timestamp(),
         "root": root.name,
         "file_count": len(records),
+        # total_bytes измеряется в байтах и складывается из тех же записей, что попадут в files.
         "total_bytes": sum(int(record["size"]) for record in records),
         "files": records,
         "duplicates": detect_duplicates(records),
@@ -130,9 +140,11 @@ def build_manifest(root):
 
 
 def load_manifest(path):
+    # Отсутствие манифеста означает первый запуск, а не повреждение данных.
     if not path.exists():
         return None
 
+    # JSON разбираем только после проверки существования: синтаксическая ошибка не считается первым запуском.
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(f"Manifest must contain a JSON object: {path}")
@@ -141,6 +153,7 @@ def load_manifest(path):
 
 def write_manifest(manifest, path):
     path.parent.mkdir(parents=True, exist_ok=True)
+    # Читаемый JSON облегчает ручной аудит и сравнение версий в системе контроля версий.
     text = json.dumps(manifest, ensure_ascii=False, indent=2)
     path.write_text(text + "\n", encoding="utf-8")
 
@@ -157,6 +170,7 @@ def index_by_path(manifest):
 def compare_manifests(previous, current):
     old_files = index_by_path(previous)
     new_files = index_by_path(current)
+    # Путь служит идентичностью файла: переименование будет парой «удалён + добавлен», даже при том же хэше.
     old_paths = set(old_files)
     new_paths = set(new_files)
 
@@ -167,6 +181,7 @@ def compare_manifests(previous, current):
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
             changed.append(path)
 
+    # Сохраняем и неизменившиеся пути: категории вместе описывают весь снимок.
     unchanged = sorted(
         path
         for path in old_paths & new_paths
@@ -182,6 +197,7 @@ def compare_manifests(previous, current):
 
 
 def compare_timeline_versions(current_path, backup_path):
+    # splitlines() сравнивает содержимое строк и намеренно не считает финальный перевод строки отдельной уликой.
     current_lines = current_path.read_text(encoding="utf-8").splitlines()
     backup_lines = backup_path.read_text(encoding="utf-8").splitlines()
     differences = {"current": [], "backup": []}
@@ -222,6 +238,7 @@ def render_report(manifest, changes, had_previous_manifest):
 
     for key, label in labels.items():
         paths = changes[key]
+        # В таблице показываем до четырёх имён, но количество рассчитано по полному списку.
         change_table.add_row(label, str(len(paths)), ", ".join(paths[:4]) or "-")
 
     console.print(change_table)
@@ -237,6 +254,7 @@ def render_duplicates(manifest):
     table.add_column("SHA-256", overflow="fold")
     table.add_column("Файлы")
 
+    # В таблице сокращаем только отображение хэша; в манифесте остаются все 64 символа.
     for group in groups:
         table.add_row(str(group["sha256"])[:16] + "...", "\n".join(group["paths"]))
 
@@ -266,6 +284,7 @@ def main():
     render_duplicates(current)
     timeline_differences = compare_timeline_versions(TIMELINE_PATH, TIMELINE_BACKUP_PATH)
     render_timeline_difference(timeline_differences)
+    # Перезаписываем снимок только после сравнения и отчёта, чтобы previous ещё описывал прошлый запуск.
     write_manifest(current, MANIFEST_PATH)
     console.print(f"[bold green]Манифест сохранён:[/bold green] {MANIFEST_PATH}")
 

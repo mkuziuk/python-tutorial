@@ -30,7 +30,7 @@ python -m pip install -r requirements.txt
 python investigation_system.py
 ```
 
-В стартовом файле есть только учебные ориентиры. По главе вы добавите загрузку `data/case_seed.json`, поиск по уликам, методы объектов, заметки и сохранение JSON-снимка `case_report.json`.
+Стартовый файл намеренно пуст. По главе вы добавите загрузку `data/case_seed.json`, поиск по уликам, методы объектов, заметки и сохранение JSON-снимка `case_report.json`.
 
 ## Самопроверка
 

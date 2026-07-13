@@ -46,11 +46,13 @@ def normalize_words(text):
 
 def punctuation_profile(text):
     # Counter получает только нужные знаки и сам подсчитывает их частоты.
+    # Считаем абсолютные количества здесь; к долям перейдём только при сравнении профилей.
     return Counter(char for char in text if char in PUNCTUATION)
 
 
 def build_profile(name, text):
     words = normalize_words(text)
+    # Останавливаемся до деления: у пустого текста нельзя определить среднюю длину слова.
     if not words:
         raise ValueError(f"Text for {name!r} does not contain Russian words")
 
@@ -68,6 +70,7 @@ def build_profile(name, text):
 
 
 def jaccard(left, right):
+    # Если признака нет в обоих текстах, считаем отсутствие полным совпадением, а не ошибкой.
     if not left and not right:
         return 1.0
     # «&» даёт общие слова, а «|» — все слова из обоих множеств.
@@ -76,10 +79,12 @@ def jaccard(left, right):
 
 def punctuation_similarity(left, right):
     # Единица защищает от деления на ноль, а / 2 приводит результат к диапазону 0–1.
+    # Нормируем на объём каждого текста, чтобы длинный текст не получал преимущество автоматически.
     left_total = sum(left.values()) or 1
     right_total = sum(right.values()) or 1
     distance = 0.0
 
+    # Перебираем фиксированный алфавит знаков, поэтому отсутствующий знак Counter вернёт как ноль.
     for mark in PUNCTUATION:
         distance += abs((left[mark] / left_total) - (right[mark] / right_total))
 
@@ -87,10 +92,12 @@ def punctuation_similarity(left, right):
 
 
 def compare_profiles(anonymous, candidate):
+    # В формулу входит состав частых слов; количества использовались только при отборе двенадцати.
     anonymous_words = {word for word, _ in anonymous["common_words"]}
     candidate_words = {word for word, _ in candidate["common_words"]}
     word_overlap = jaccard(anonymous_words, candidate_words)
 
+    # average_delta измеряется в буквах на слово и сравнивает одинаково определённые признаки.
     average_delta = abs(
         float(anonymous["average_word_length"]) - float(candidate["average_word_length"])
     )
@@ -107,20 +114,24 @@ def compare_profiles(anonymous, candidate):
 
 
 def display_name(path):
+    # Словарь даёт читабельные имена, а запасной вариант позволяет добавить новый файл без правки кода.
     return AUTHOR_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
 def read_text(path):
+    # Явная UTF-8 кодировка делает чтение одинаковым на Windows, macOS и Linux.
     return path.read_text(encoding="utf-8")
 
 
 def rank_candidates(data_dir=DATA_DIR):
+    # Анонимный текст строит эталон для одного запуска; его не нужно перечитывать для каждого автора.
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
     results = []
 
     # Шаблон не захватывает anonymous.txt, а сортировка фиксирует порядок обхода.
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
+        # В рейтинг кладём только имя и итоговый балл: тяжёлые профили дальше уже не нужны.
         results.append((str(profile["name"]), compare_profiles(anonymous, profile)))
 
     # sorted() стабилен: при равных баллах сохранится зафиксированный выше порядок файлов.
@@ -128,15 +139,18 @@ def rank_candidates(data_dir=DATA_DIR):
 
 
 def render_results(results):
+    # Отрисовка отделена от расчёта: тесты проверяют результаты без захвата терминала.
     table = Table(title="Вероятные авторы")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Кандидат")
     table.add_column("Сходство", justify="right")
 
+    # Нумерация начинается с единицы, потому что это место в пользовательском рейтинге.
     for position, (name, score) in enumerate(results, start=1):
         table.add_row(str(position), name, f"{score:.2f}")
 
     console.print(table)
+    # Хотя бы один кандидат — контракт учебного набора; иначе здесь нужен отдельный пустой отчёт.
     winner, score = results[0]
     console.print(
         f"\n[bold]Главная версия:[/bold] {winner} "
@@ -145,6 +159,7 @@ def render_results(results):
 
 
 def main():
+    # main связывает расчёт и вывод, не пряча дополнительную обработку между ними.
     render_results(rank_candidates())
 
 

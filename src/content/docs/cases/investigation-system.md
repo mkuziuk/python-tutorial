@@ -49,7 +49,7 @@ tags = item["tags"]
 
 Внутри:
 
-- `investigation_system.py` — стартовый файл с учебными ориентирами;
+- `investigation_system.py` — пустой стартовый файл;
 - `data/case_seed.json` — исходное дело с участниками, уликами и первой заметкой;
 - `requirements.txt` — версия Rich для таблиц;
 - `check_result.txt` — форма ожидаемого результата.
@@ -122,6 +122,9 @@ python investigation_system.py
 Пока программа ничего не выводит: это нормально. Откройте `investigation_system.py` и сначала создайте основу программы: импорты, пути, консоль и классы с полями.
 
 ```python
+# Сначала опишите один объект, затем связи между объектами и операции всего дела.
+# Проверяйте не только успешный сценарий, но и некорректные входные данные.
+# Исходный JSON остаётся источником данных, а поведение размещается в классах программы.
 from dataclasses import dataclass, field
 import json
 from pathlib import Path
@@ -129,14 +132,17 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
+# seed остаётся исходным снимком, а результат пишется отдельно — его можно безопасно пересоздать.
 DATA_DIR = Path(__file__).with_name("data")
 SEED_PATH = DATA_DIR / "case_seed.json"
 OUTPUT_PATH = Path(__file__).with_name("case_report.json")
 console = Console()
 
 
+# slots запрещает случайно создать поле с опечаткой и фиксирует заявленную структуру объекта.
 @dataclass(slots=True)
 class Evidence:
+    # evidence_id — стабильная идентичность улики; title можно менять для более ясного отображения.
     evidence_id: str
     kind: str
     title: str
@@ -145,6 +151,7 @@ class Evidence:
     created_at: str
     # default_factory даёт каждой улике свой список, а не один общий.
     tags: list[str] = field(default_factory=list)
+    # Надёжность использует учебную шкалу 1–5; середина 3 выбрана значением по умолчанию.
     reliability: int = 3
 
     @classmethod
@@ -157,6 +164,7 @@ class Evidence:
             source=str(data["source"]),
             body=str(data["body"]),
             created_at=str(data["created_at"]),
+            # Отсутствующие tags превращаются в новый пустой список, а не в общий изменяемый объект.
             tags=[str(tag) for tag in data.get("tags", [])],
             reliability=int(data.get("reliability", 3)),
         )
@@ -168,10 +176,12 @@ class Person:
     name: str
     role: str
     contact: str
+    # У каждого участника свой список заметок; изменения одного Person не затронут другого.
     notes: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data):
+        # Преобразование выполняется на границе JSON: внутри программы работаем уже с Person.
         return cls(
             person_id=str(data["person_id"]),
             name=str(data["name"]),
@@ -201,8 +211,10 @@ class Investigation:
     case_id: str
     title: str
     summary: str
+    # Композиция отражает модель дела: участники и улики принадлежат конкретному расследованию.
     people: list[Person] = field(default_factory=list)
     evidence: list[Evidence] = field(default_factory=list)
+    # Заметки дела хранятся объектами CaseNote, чтобы автор и время не потерялись рядом с текстом.
     notes: list[CaseNote] = field(default_factory=list)
 
     @classmethod
@@ -225,23 +237,24 @@ class Investigation:
 [`dataclass`](../../field-guide/dataclasses/) сам создаёт метод `__init__()`: нам не нужно вручную присваивать каждое поле. После объявления полей добавьте в `Evidence` метод `__post_init__()`. Он запускается сразу после создания объекта.
 
 ```python
-def __post_init__(self):
-    # dataclass вызывает этот метод после __init__: здесь очищаем входные данные.
-    self.evidence_id = self.evidence_id.strip()
-    self.kind = self.kind.strip()
-    self.title = self.title.strip()
-    self.source = self.source.strip()
-    self.body = self.body.strip()
-    self.created_at = self.created_at.strip()
-    # Множество убирает дубли, а casefold() выравнивает регистр тегов.
-    self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
+    def __post_init__(self):
+        # dataclass вызывает этот метод после __init__: здесь очищаем входные данные.
+        self.evidence_id = self.evidence_id.strip()
+        self.kind = self.kind.strip()
+        self.title = self.title.strip()
+        self.source = self.source.strip()
+        self.body = self.body.strip()
+        self.created_at = self.created_at.strip()
+        # Множество убирает дубли, а casefold() выравнивает регистр тегов.
+        self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
 
-    if not self.evidence_id:
-        raise ValueError("Evidence ID must not be empty")
-    if not self.created_at:
-        raise ValueError("Evidence created_at must not be empty")
-    if not 1 <= self.reliability <= 5:
-        raise ValueError("Evidence reliability must be between 1 and 5")
+        # ID и время обязательны для идентификации улики; пустые значения отбрасываем на границе загрузки.
+        if not self.evidence_id:
+            raise ValueError("Evidence ID must not be empty")
+        if not self.created_at:
+            raise ValueError("Evidence created_at must not be empty")
+        if not 1 <= self.reliability <= 5:
+            raise ValueError("Evidence reliability must be between 1 and 5")
 ```
 
 Здесь объект защищает свои данные: пустые ID и `created_at`, а также надёжность вне шкалы от 1 до 5 не проходят проверку. `created_at` остаётся строкой ISO 8601: точное время храним только там, где его указал источник. Для EV-006 известна лишь дата и условие «до 18:00», поэтому в поле стоит `2026-03-14`, а доступная точность записана в описании.
@@ -249,17 +262,18 @@ def __post_init__(self):
 Теперь научим улику превращаться обратно в [словарь](../../field-guide/dict/):
 
 ```python
-def to_dict(self):
-    return {
-        "evidence_id": self.evidence_id,
-        "kind": self.kind,
-        "title": self.title,
-        "source": self.source,
-        "body": self.body,
-        "created_at": self.created_at,
-        "tags": self.tags,
-        "reliability": self.reliability,
-    }
+    def to_dict(self):
+        # Имена ключей повторяют входную схему, поэтому объект можно сохранить и затем загрузить снова.
+        return {
+            "evidence_id": self.evidence_id,
+            "kind": self.kind,
+            "title": self.title,
+            "source": self.source,
+            "body": self.body,
+            "created_at": self.created_at,
+            "tags": self.tags,
+            "reliability": self.reliability,
+        }
 ```
 
 Метод `from_dict()` мы добавили в первом каркасе. Вместе `from_dict()` и `to_dict()` образуют мост между JSON и объектом.
@@ -273,20 +287,21 @@ def to_dict(self):
         normalized_query = query.casefold().strip()
         # Пустой запрос означает «без фильтра», поэтому подходит любая улика.
         if not normalized_query:
-        return True
+            return True
 
-    haystack = " ".join(
-        [
-            self.evidence_id,
-            self.kind,
-            self.title,
-            self.source,
-            self.body,
-            self.created_at,
-            *self.tags,
-        ]
-    ).casefold()
-    return normalized_query in haystack
+        haystack = " ".join(
+            [
+                self.evidence_id,
+                self.kind,
+                self.title,
+                self.source,
+                self.body,
+                self.created_at,
+                *self.tags,
+            ]
+        ).casefold()
+        # Это простой поиск подстроки по всем полям, а не ранжированный полнотекстовый поиск.
+        return normalized_query in haystack
 ```
 
 `casefold()` похож на `lower()`, но лучше подходит для текстового поиска: он аккуратнее нормализует регистр в разных языках.
@@ -297,9 +312,10 @@ def to_dict(self):
     def short_body(self, limit=90):
         # Сначала сжимаем пробелы, чтобы переносы строк не ломали таблицу и не расходовали лимит незаметно.
         compact = " ".join(self.body.split())
-    if len(compact) <= limit:
-        return compact
-    return f"{compact[: limit - 3].rstrip()}..."
+        # limit измеряется в символах уже после нормализации пробелов.
+        if len(compact) <= limit:
+            return compact
+        return f"{compact[: limit - 3].rstrip()}..."
 ```
 
 ### Участники и заметки
@@ -331,8 +347,9 @@ def to_dict(self):
 Можно добавить маленький метод для подписи участника:
 
 ```python
-def label(self):
-    return f"{self.name} - {self.role}"
+    def label(self):
+        # Короткая подпись предназначена для интерфейса и не заменяет стабильный person_id.
+        return f"{self.name} - {self.role}"
 ```
 
 Методы не обязаны быть большими. Главное, что они живут рядом с данными, к которым относятся.
@@ -359,12 +376,13 @@ def to_dict(self):
 Теперь добавим операции дела.
 
 ```python
-def evidence_by_id(self, evidence_id):
-    normalized_id = evidence_id.casefold()
-    for item in self.evidence:
-        if item.evidence_id.casefold() == normalized_id:
-            return item
-    return None
+    def evidence_by_id(self, evidence_id):
+        # Поиск ID нечувствителен к регистру, но возвращает исходный объект без копирования.
+        normalized_id = evidence_id.casefold()
+        for item in self.evidence:
+            if item.evidence_id.casefold() == normalized_id:
+                return item
+        return None
 ```
 
 Если совпадения нет, функция возвращает `None` — обычный способ сообщить, что ничего не найдено.
@@ -373,45 +391,50 @@ def evidence_by_id(self, evidence_id):
     def add_evidence(self, item):
         # ID сравниваются без учёта регистра: EV-01 и ev-01 — одна логическая улика.
         if self.evidence_by_id(item.evidence_id) is not None:
-        raise ValueError(f"Evidence {item.evidence_id!r} already exists")
-    self.evidence.append(item)
+            raise ValueError(f"Evidence {item.evidence_id!r} already exists")
+        # Список изменяем только после проверки, чтобы ошибка не оставила дело в промежуточном состоянии.
+        self.evidence.append(item)
 ```
 
 Так дело само следит, чтобы два объекта не получили один ID.
 
 ```python
-def add_note(self, author, text, created_at):
-    self.notes.append(CaseNote(author=author, text=text, created_at=created_at))
+    def add_note(self, author, text, created_at):
+        # Создаём CaseNote внутри метода, сохраняя единый формат добавления заметок.
+        self.notes.append(CaseNote(author=author, text=text, created_at=created_at))
 ```
 
 Поиск становится коротким, потому что подробности спрятаны внутри `Evidence.matches()`:
 
 ```python
-def find_evidence(self, query):
-    return [item for item in self.evidence if item.matches(query)]
+    def find_evidence(self, query):
+        # Investigation управляет коллекцией, а правило совпадения остаётся внутри Evidence.
+        return [item for item in self.evidence if item.matches(query)]
 ```
 
 Сделаем индекс по тегам. Это пригодится, когда улик станет больше.
 
 ```python
-def tag_index(self):
-    index = {}
-    for item in self.evidence:
-        for tag in item.tags:
-            index.setdefault(tag, []).append(item)
+    def tag_index(self):
+        # Одна улика попадёт в несколько списков, если у неё несколько тегов.
+        index = {}
+        for item in self.evidence:
+            for tag in item.tags:
+                index.setdefault(tag, []).append(item)
         # Сортируем и теги, и улики, чтобы JSON и таблицы не зависели от порядка входных данных.
         return {
             tag: sorted(items, key=lambda item: item.evidence_id)
-        for tag, items in sorted(index.items())
-    }
+            for tag, items in sorted(index.items())
+        }
 ```
 
 И оставим сортировку приоритетных улик:
 
 ```python
-def priority_evidence(self, limit=3):
-    # При равной надёжности ID служит дополнительным ключом и сохраняет стабильный порядок.
-    return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
+    def priority_evidence(self, limit=3):
+        # При равной надёжности ID служит дополнительным ключом и сохраняет стабильный порядок.
+        # Минус превращает обычную сортировку по возрастанию в порядок от надёжных улик к слабым.
+        return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
 ```
 
 ### Репозиторий JSON
@@ -419,16 +442,19 @@ def priority_evidence(self, limit=3):
 `CaseRepository` отвечает только за хранение. Он не решает, что такое улика, и не рисует таблицы. Если позже заменить JSON-файл на базу данных, менять нужно будет этот слой, а не методы `Evidence` и `Investigation`.
 
 ```python
+# Репозиторий изолирует файловый ввод-вывод от правил поиска и изменения Investigation.
 class CaseRepository:
     def __init__(self, path):
         self.path = path
 
     def load(self):
+        # Репозиторий возвращает готовый объект, чтобы остальной код не зависел от структуры JSON.
         raw_data = json.loads(self.path.read_text(encoding="utf-8"))
         return Investigation.from_dict(raw_data)
 
     def save(self, investigation):
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        # Сериализуем явную схему to_dict(), а не внутреннее устройство dataclass.
         payload = json.dumps(investigation.to_dict(), ensure_ascii=False, indent=2)
         self.path.write_text(f"{payload}\n", encoding="utf-8")
 ```
@@ -464,6 +490,7 @@ def render_overview(investigation):
     evidence_table.add_column("Теги")
     evidence_table.add_column("Надёжность", justify="right")
 
+    # Здесь limit равен числу улик: сортируем все записи, а не только обычную тройку приоритетов.
     for item in investigation.priority_evidence(limit=len(investigation.evidence)):
         evidence_table.add_row(
             item.evidence_id,
@@ -481,6 +508,7 @@ def render_overview(investigation):
 
 ```python
 def render_search_results(query, results):
+    # results уже отфильтрован: эта функция отвечает только за представление найденных объектов.
     table = Table(title=f"Поиск: {query}")
     table.add_column("ID", style="cyan")
     table.add_column("Название")
@@ -502,6 +530,7 @@ def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
     investigation.add_note(
         author="Доска расследования",
         text=f"Автоматический поиск по слову 'доступ' нашел улик: {len(access_matches)}.",
+        # Фиксированное время делает учебный JSON воспроизводимым при каждом запуске.
         created_at="2026-03-15T08:30:00+03:00",
     )
     CaseRepository(output_path).save(investigation)
@@ -512,6 +541,7 @@ def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
 
 ```python
 def main():
+    # Один и тот же объект используем для общего обзора и отдельного поискового отчёта.
     investigation = build_report()
     render_overview(investigation)
     render_search_results("доступ", investigation.find_evidence("доступ"))

@@ -30,6 +30,7 @@ from rich.table import Table
 
 
 def default_project_dir():
+    # Наличие seed-файла отличает корень проекта от каталога solution/.
     script_dir = Path(__file__).resolve().parent
     if (script_dir / "data" / "case_seed.json").exists():
         return script_dir
@@ -43,6 +44,7 @@ OUTPUT_PATH = PROJECT_DIR / "case_report.json"
 console = Console()
 
 
+# slots запрещает случайно создать поле с опечаткой и фиксирует заявленную структуру объекта.
 @dataclass(slots=True)
 class Evidence:
     evidence_id: str
@@ -66,6 +68,7 @@ class Evidence:
         # Множество убирает дубли, а casefold() выравнивает регистр тегов.
         self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
 
+        # ID и время обязательны для идентификации улики; пустые значения отбрасываем на границе загрузки.
         if not self.evidence_id:
             raise ValueError("Evidence ID must not be empty")
         if not self.created_at:
@@ -83,11 +86,13 @@ class Evidence:
             source=str(data["source"]),
             body=str(data["body"]),
             created_at=str(data["created_at"]),
+            # Отсутствующие tags превращаются в новый пустой список, а не в общий изменяемый объект.
             tags=[str(tag) for tag in data.get("tags", [])],
             reliability=int(data.get("reliability", 3)),
         )
 
     def to_dict(self):
+        # Имена ключей повторяют входную схему, поэтому объект можно сохранить и затем загрузить снова.
         return {
             "evidence_id": self.evidence_id,
             "kind": self.kind,
@@ -116,11 +121,13 @@ class Evidence:
                 *self.tags,
             ]
         ).casefold()
+        # Это простой поиск подстроки по всем полям, а не ранжированный полнотекстовый поиск.
         return normalized_query in haystack
 
     def short_body(self, limit=90):
         # Сначала сжимаем пробелы, чтобы переносы строк не ломали таблицу и не расходовали лимит незаметно.
         compact = " ".join(self.body.split())
+        # limit измеряется в символах уже после нормализации пробелов.
         if len(compact) <= limit:
             return compact
         return f"{compact[: limit - 3].rstrip()}..."
@@ -132,6 +139,7 @@ class Person:
     name: str
     role: str
     contact: str
+    # У каждого участника свой список заметок; изменения одного Person не затронут другого.
     notes: list[str] = field(default_factory=list)
 
     @classmethod
@@ -154,6 +162,7 @@ class Person:
         }
 
     def label(self):
+        # Короткая подпись предназначена для интерфейса и не заменяет стабильный person_id.
         return f"{self.name} - {self.role}"
 
 
@@ -186,6 +195,7 @@ class Investigation:
     summary: str
     people: list[Person] = field(default_factory=list)
     evidence: list[Evidence] = field(default_factory=list)
+    # Заметки дела хранятся объектами CaseNote, чтобы автор и время не потерялись рядом с текстом.
     notes: list[CaseNote] = field(default_factory=list)
 
     @classmethod
@@ -215,12 +225,15 @@ class Investigation:
         # ID сравниваются без учёта регистра: EV-01 и ev-01 — одна логическая улика.
         if self.evidence_by_id(item.evidence_id) is not None:
             raise ValueError(f"Evidence {item.evidence_id!r} already exists")
+        # Список изменяем только после проверки, чтобы ошибка не оставила дело в промежуточном состоянии.
         self.evidence.append(item)
 
     def add_note(self, author, text, created_at):
+        # Создаём CaseNote внутри метода, сохраняя единый формат добавления заметок.
         self.notes.append(CaseNote(author=author, text=text, created_at=created_at))
 
     def evidence_by_id(self, evidence_id):
+        # Поиск ID нечувствителен к регистру, но возвращает исходный объект без копирования.
         normalized_id = evidence_id.casefold()
         for item in self.evidence:
             if item.evidence_id.casefold() == normalized_id:
@@ -228,13 +241,16 @@ class Investigation:
         return None
 
     def find_evidence(self, query):
+        # Investigation управляет коллекцией, а правило совпадения остаётся внутри Evidence.
         return [item for item in self.evidence if item.matches(query)]
 
     def priority_evidence(self, limit=3):
         # При равной надёжности ID служит дополнительным ключом и сохраняет стабильный порядок.
+        # Минус превращает обычную сортировку по возрастанию в порядок от надёжных улик к слабым.
         return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
 
     def tag_index(self):
+        # Одна улика попадёт в несколько списков, если у неё несколько тегов.
         index = {}
         for item in self.evidence:
             for tag in item.tags:
@@ -246,16 +262,19 @@ class Investigation:
         }
 
 
+# Репозиторий изолирует файловый ввод-вывод от правил поиска и изменения Investigation.
 class CaseRepository:
     def __init__(self, path):
         self.path = path
 
     def load(self):
+        # Репозиторий возвращает готовый объект, чтобы остальной код не зависел от структуры JSON.
         raw_data = json.loads(self.path.read_text(encoding="utf-8"))
         return Investigation.from_dict(raw_data)
 
     def save(self, investigation):
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        # Сериализуем явную схему to_dict(), а не внутреннее устройство dataclass.
         payload = json.dumps(investigation.to_dict(), ensure_ascii=False, indent=2)
         self.path.write_text(f"{payload}\n", encoding="utf-8")
 
@@ -282,6 +301,7 @@ def render_overview(investigation):
     evidence_table.add_column("Теги")
     evidence_table.add_column("Надёжность", justify="right")
 
+    # Здесь limit равен числу улик: сортируем все записи, а не только обычную тройку приоритетов.
     for item in investigation.priority_evidence(limit=len(investigation.evidence)):
         evidence_table.add_row(
             item.evidence_id,
@@ -296,6 +316,7 @@ def render_overview(investigation):
 
 
 def render_search_results(query, results):
+    # results уже отфильтрован: эта функция отвечает только за представление найденных объектов.
     table = Table(title=f"Поиск: {query}")
     table.add_column("ID", style="cyan")
     table.add_column("Название")
@@ -314,6 +335,7 @@ def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
     investigation.add_note(
         author="Доска расследования",
         text=f"Автоматический поиск по слову 'доступ' нашел улик: {len(access_matches)}.",
+        # Фиксированное время делает учебный JSON воспроизводимым при каждом запуске.
         created_at="2026-03-15T08:30:00+03:00",
     )
     CaseRepository(output_path).save(investigation)
@@ -321,6 +343,7 @@ def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
 
 
 def main():
+    # Один и тот же объект используем для общего обзора и отдельного поискового отчёта.
     investigation = build_report()
     render_overview(investigation)
     render_search_results("доступ", investigation.find_evidence("доступ"))

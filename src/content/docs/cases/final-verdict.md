@@ -49,7 +49,7 @@ time: "120-150 минут"
 
 Ответы могут различаться. Даже без судебной уверенности в личности и мотиве можно принять безопасное операционное решение.
 
-Скачайте [case-06.zip](../../downloads/case-06.zip) или откройте `projects/case-06/` в репозитории. Стартовый набор содержит `final_verdict.py` с учебными ориентирами, пакет улик `data/evidence_bundle.json`, тесты, `requirements.txt`, README и файл ожидаемого результата. Папка `solution/` остаётся только в репозитории и не раскрывает готовый код в скачанном наборе.
+Скачайте [case-06.zip](../../downloads/case-06.zip) или откройте `projects/case-06/` в репозитории. Стартовый набор содержит пустой `final_verdict.py`, пакет улик `data/evidence_bundle.json`, тесты, `requirements.txt`, README и файл ожидаемого результата. Папка `solution/` остаётся только в репозитории и не раскрывает готовый код в скачанном наборе.
 
 ## Как читать систему баллов
 
@@ -114,6 +114,9 @@ python final_verdict.py
 Добавьте в `final_verdict.py` первый блок. `StrEnum` ограничивает словарь допустимых типов, а `frozen=True, slots=True` делает загруженные факты неизменяемыми. Если анализу понадобится другая версия улики, безопаснее создать новый объект, чем незаметно исправить старый.
 
 ```python
+# Собирайте отчёт по шагам и сверяйте каждый промежуточный результат.
+# Не подменяйте расчёт заранее известным выводом: решение должно следовать из данных.
+# Различайте установленный факт, рабочую гипотезу и итоговое решение команды.
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -124,7 +127,9 @@ from typing import Any, Self
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+# Один путь работает и для корневого скрипта ученика, и для копии внутри solution/.
 PROJECT_DIR = SCRIPT_DIR.parent if SCRIPT_DIR.name == "solution" else SCRIPT_DIR
+# Входной снимок не перезаписываем: итог всегда можно пересчитать из прежних данных.
 DATA_PATH = PROJECT_DIR / "data" / "evidence_bundle.json"
 OUTPUT_PATH = PROJECT_DIR / "verdict.json"
 
@@ -144,12 +149,14 @@ class EvidenceKind(StrEnum):
     EMAIL_AUDIT = "email_audit"
 
 
+# Stance описывает направление влияния улики; сила связи хранится отдельно в weight.
 class Stance(StrEnum):
     SUPPORT = "support"
     CONFLICT = "conflict"
 
 
 class AssessmentStatus(StrEnum):
+    # Статус сообщает категорию вывода; точные баллы поддержки и противоречий сохраняются отдельно.
     STRONGLY_SUPPORTED = "strongly_supported"
     SUPPORTED = "supported"
     UNRESOLVED = "unresolved"
@@ -165,13 +172,16 @@ class Effect:
     weight: int
 
     def __post_init__(self) -> None:
+        # Вес ограничен шкалой 1–3, чтобы одна связь не могла произвольно подавить всё дело.
         if not 1 <= self.weight <= 3:
             raise ValueError("Effect weight must be between 1 and 3")
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        # strip() не даёт пробелам создать отдельный ID или пустую формулировку версии.
         return cls(
             hypothesis_id=str(data["hypothesis_id"]).strip(),
+            # Конструктор Enum сразу отклонит неизвестное значение вместо тихого создания нового статуса.
             stance=Stance(str(data["stance"])),
             weight=int(data["weight"]),
         )
@@ -185,10 +195,12 @@ class Evidence:
     title: str
     summary: str
     source: str
+    # reliability оценивает источник по шкале 1–5, но связь с каждой версией хранится отдельно.
     reliability: int
     effects: tuple[Effect, ...]
 
     def __post_init__(self) -> None:
+        # Проверки сосредоточены в модели: некорректный объект не проходит к ранжированию.
         if not self.evidence_id:
             raise ValueError("Evidence ID must not be empty")
         if not 1 <= self.reliability <= 5:
@@ -199,6 +211,7 @@ class Evidence:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        # Преобразуем поля улики на входе, чтобы дальше ранжирование работало с едиными типами.
         return cls(
             evidence_id=str(data["evidence_id"]).strip(),
             # ISO-строку превращаем в datetime; часовой пояс проверяется выше.
@@ -208,6 +221,7 @@ class Evidence:
             summary=str(data["summary"]).strip(),
             source=str(data["source"]).strip(),
             reliability=int(data["reliability"]),
+            # tuple сохраняет набор связей неизменным после проверки входных данных.
             effects=tuple(Effect.from_dict(item) for item in data.get("effects", [])),
         )
 
@@ -237,12 +251,14 @@ class CaseBundle:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        # Время открытия и время анализа сохраняем из входного снимка, а не вычисляем при запуске.
         return cls(
             case_id=str(data["case_id"]),
             title=str(data["title"]),
             incident_date=str(data["incident_date"]),
             scheduled_opening=datetime.fromisoformat(str(data["scheduled_opening"])),
             analysis_time=datetime.fromisoformat(str(data["analysis_time"])),
+            # Гипотезы и улики становятся кортежами: загруженный CaseBundle служит неизменяемым снимком.
             hypotheses=tuple(
                 Hypothesis.from_dict(item) for item in data.get("hypotheses", [])
             ),
@@ -261,6 +277,7 @@ class HypothesisAssessment:
 
     @property
     def score(self) -> int:
+        # Итоговый балл — чистая разность поддержки и противоречий, без скрытого коэффициента.
         return self.support_points - self.conflict_points
 
     def to_dict(self, rank: int) -> dict[str, Any]:
@@ -273,6 +290,7 @@ class HypothesisAssessment:
             "score": self.score,
             "support_points": self.support_points,
             "conflict_points": self.conflict_points,
+            # В памяти ID хранятся кортежем, но JSON получает обычный массив.
             "support": list(self.support),
             "conflicts": list(self.conflicts),
         }
@@ -286,6 +304,7 @@ class HypothesisAssessment:
 
 ```python
 def load_bundle(path: Path = DATA_PATH) -> CaseBundle:
+    # После разбора словарь сразу проходит через типизированные from_dict() и их проверки.
     raw = json.loads(path.read_text(encoding="utf-8"))
     return CaseBundle.from_dict(raw)
 
@@ -295,6 +314,7 @@ def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
     ordered = sorted(evidence, key=lambda item: (item.occurred_at, item.evidence_id))
     return [
         {
+            # ISO-строка сохраняет смещение UTC, нужное для независимой проверки порядка событий.
             "occurred_at": item.occurred_at.isoformat(),
             "evidence_id": item.evidence_id,
             "kind": item.kind.value,
@@ -330,6 +350,7 @@ def classify_assessment(
     # Границы статусов — зафиксированное правило этого дела, а не универсальная шкала доказанности.
     # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
+        # Нулевые суммы означают отсутствие связей, а не равновесие доказательств.
         case 0, 0:
             return AssessmentStatus.NO_EVIDENCE
         case support, conflict if support >= 15 and support >= conflict * 2:
@@ -345,6 +366,7 @@ def classify_assessment(
 def score_hypothesis(
     hypothesis: Hypothesis, evidence: tuple[Evidence, ...]
 ) -> HypothesisAssessment:
+    # Поддержку и противоречия накапливаем отдельно, чтобы итог оставался объяснимым.
     support_points = 0
     conflict_points = 0
     support: list[str] = []
@@ -358,6 +380,7 @@ def score_hypothesis(
 
             # Баллы ранжируют проверки, но не превращаются в вероятность гипотезы.
             # Вклад зависит и от надёжности источника, и от силы его связи.
+            # Произведение соединяет надёжность источника и силу конкретной связи с гипотезой.
             points = item.reliability * effect.weight
             match effect.stance:
                 case Stance.SUPPORT:
@@ -372,6 +395,7 @@ def score_hypothesis(
         hypothesis=hypothesis,
         support_points=support_points,
         conflict_points=conflict_points,
+        # Сортируем ID внутри результата, чтобы отчёт не зависел от порядка улик во входном JSON.
         support=tuple(sorted(support)),
         conflicts=tuple(sorted(conflicts)),
         status=status,
@@ -379,6 +403,7 @@ def score_hypothesis(
 
 
 def rank_hypotheses(bundle: CaseBundle) -> list[HypothesisAssessment]:
+    # Оцениваем каждую объявленную гипотезу по одному и тому же неизменному набору улик.
     assessments = [
         score_hypothesis(hypothesis, bundle.evidence)
         for hypothesis in bundle.hypotheses
@@ -417,13 +442,16 @@ python -c "import final_verdict as f; b=f.load_bundle(); print([(a.hypothesis.hy
 ```python
 def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
     timeline = build_timeline(bundle.evidence)
+    # Рейтинг вычисляется один раз и затем одинаково используется в JSON и печатном выводе.
     assessments = rank_hypotheses(bundle)
     # Основной вывод берём из рассчитанного рейтинга, а не задаём вручную.
+    # Наличие хотя бы одной гипотезы — контракт пакета дела; первая запись уже лидер рейтинга.
     primary = assessments[0]
 
     return {
         "case_id": bundle.case_id,
         "title": bundle.title,
+        # Время берём из снимка дела, а не из now(), поэтому повторный запуск даёт тот же результат.
         "generated_at": bundle.analysis_time.isoformat(),
         "scheduled_opening": bundle.scheduled_opening.isoformat(),
         "timeline": timeline,
@@ -487,6 +515,7 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
                 ),
             ],
         },
+        # Ограничения публикуются рядом с выводом и не теряются в пояснительном тексте страницы.
         "limitations": [
             (
                 "Баллы упорядочивают проверяемые гипотезы, но не превращают "
@@ -533,6 +562,7 @@ def render_report(verdict: dict[str, Any]) -> None:
     print(f"Событий в хронологии: {len(verdict['timeline'])}")
     print("\nХронология:")
     for item in verdict["timeline"]:
+        # Парсим ISO-строку обратно только для человекочитаемого формата даты в терминале.
         moment = datetime.fromisoformat(item["occurred_at"])
         print(f"- {moment:%d.%m %H:%M}  {item['evidence_id']}: {item['title']}")
 
@@ -560,10 +590,12 @@ def render_report(verdict: dict[str, Any]) -> None:
 
 
 def main() -> None:
+    # Проверяем версию до загрузки дела: StrEnum и заявленный учебный контракт требуют Python 3.13+.
     if sys.version_info < (3, 13):
         raise SystemExit("Для дела 06 нужен Python 3.13 или новее.")
 
     bundle = load_bundle()
+    # Сначала строим один словарь вердикта, затем и экран, и JSON используют именно его.
     verdict = build_verdict(bundle)
     render_report(verdict)
     save_verdict(verdict)

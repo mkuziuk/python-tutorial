@@ -26,6 +26,7 @@ from rich.table import Table
 
 
 def default_data_dir():
+    # resolve() убирает неоднозначность относительного пути при запуске из другой папки.
     script_dir = Path(__file__).resolve().parent
     local_data = script_dir / "data"
     # После копирования рядом будет data; в solution/ она находится уровнем выше.
@@ -50,6 +51,7 @@ DISPLAY_NAMES = {
 
 
 def read_text(path):
+    # Явная UTF-8 кодировка сохраняет одинаковое чтение русского текста на разных системах.
     return path.read_text(encoding="utf-8")
 
 
@@ -58,6 +60,7 @@ def normalize_words(text):
 
     # Заменяем разделители пробелами, чтобы слова по обе стороны знака не склеились.
     for char in text.lower():
+        # isalpha() принимает буквы разных алфавитов; для этого набора это осознанная граница нормализации.
         if char.isalpha():
             cleaned.append(char)
         else:
@@ -67,6 +70,7 @@ def normalize_words(text):
 
 
 def make_ngrams(words, size=NGRAM_SIZE):
+    # Проверяем параметр сразу, чтобы отрицательный диапазон не выглядел как корректный пустой результат.
     if size < 1:
         raise ValueError("N-gram size must be positive")
 
@@ -78,6 +82,7 @@ def make_ngrams(words, size=NGRAM_SIZE):
 
 
 def display_name(path):
+    # Неизвестный stem всё равно получает читаемую подпись, поэтому новый файл не требует правки словаря.
     return DISPLAY_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
@@ -91,6 +96,7 @@ def build_profile(path, ngram_size=NGRAM_SIZE):
         "path": path,
         "title": display_name(path),
         "word_count": len(words),
+        # Это число уникальных фрагментов: повтор одной фразы внутри отчёта не увеличивает счётчик.
         "ngram_count": len(ngrams),
         "ngrams": ngrams,
     }
@@ -101,22 +107,28 @@ def overlap_score(left, right):
     if not left or not right:
         return 0.0
 
+    # Пересечение множеств оставляет только фрагменты, которые встретились в обоих отчётах.
     shared = left & right
     if not shared:
         return 0.0
 
     # Первая доля ищет вложение в меньший текст, вторая штрафует лишние n-граммы.
+    # shared не может быть больше меньшего множества, поэтому containment всегда лежит в диапазоне 0–1.
     containment = len(shared) / min(len(left), len(right))
+    # Jaccard симметрично штрафует лишние фрагменты в обоих текстах.
     jaccard = len(shared) / len(left | right)
+    # Округляем опубликованную оценку; при равенстве рейтинг дополнительно смотрит на число совпадений.
     return round(containment * 0.7 + jaccard * 0.3, 3)
 
 
 def compare_profiles(left, right):
+    # Сравнение получает готовые профили и больше не читает файлы с диска.
     left_ngrams = left["ngrams"]
     right_ngrams = right["ngrams"]
     # Сортировка делает примеры воспроизводимыми при любом порядке элементов множества.
     shared_ngrams = sorted(left_ngrams & right_ngrams)
 
+    # Результат пары хранит и числовую оценку, и данные для объяснения этой оценки в таблице.
     return {
         "pair": (str(left["title"]), str(right["title"])),
         "score": overlap_score(left_ngrams, right_ngrams),
@@ -127,6 +139,7 @@ def compare_profiles(left, right):
 
 
 def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
+    # Маска задаёт границу входа: посторонние txt-файлы в каталоге в расследование не попадут.
     paths = sorted(data_dir.glob("report_*.txt"))
     if not paths:
         raise FileNotFoundError(f"No report_*.txt files found in {data_dir}")
@@ -135,6 +148,7 @@ def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
 
 
 def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
+    # Каждый файл нормализуем один раз, а затем переиспользуем профиль во всех попарных сравнениях.
     profiles = load_profiles(data_dir, ngram_size)
     results = []
 
@@ -154,6 +168,7 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
 
 
 def format_ngram(ngram):
+    # Внутри алгоритма порядок хранит кортеж, а пользователю показываем обычную строку.
     return " ".join(ngram)
 
 
@@ -165,6 +180,7 @@ def render_results(results, limit=5):
     table.add_column("Общих n-грамм", justify="right")
     table.add_column("Пример")
 
+    # limit ограничивает только таблицу; полный рейтинг в results остаётся доступен вызывающему коду.
     for position, result in enumerate(results[:limit], start=1):
         left, right = result["pair"]
         examples = result["examples"]
@@ -180,6 +196,7 @@ def render_results(results, limit=5):
 
     console.print(table)
 
+    # Пустой рейтинг допустим: например, если ни одна пара не имеет общей n-граммы.
     if results:
         best = results[0]
         left, right = best["pair"]
@@ -190,6 +207,7 @@ def render_results(results, limit=5):
 
 
 def main():
+    # Вывод получает уже отсортированный рейтинг и не меняет результаты анализа.
     render_results(rank_overlaps())
 
 

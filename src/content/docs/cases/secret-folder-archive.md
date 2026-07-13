@@ -45,7 +45,7 @@ time: "100-130 минут"
 
 Внутри учебного набора:
 
-- `secret_folder_archive.py` — стартовый файл с учебными ориентирами;
+- `secret_folder_archive.py` — пустой стартовый файл;
 - `requirements.txt` — зависимость для удобного вывода в терминале;
 - `data/secret_folder/` — папка с заметками, журналом, копиями и хронологией;
 - `check_result.txt` — форма результата для самопроверки.
@@ -100,7 +100,9 @@ python secret_folder_archive.py
 
 ```python
 {
+    # path — переносимое имя внутри архива, а не абсолютный путь на компьютере автора.
     "path": "evidence/photo_index.txt",
+    # size хранится в байтах; sha256 описывает именно содержимое файла.
     "size": 172,
     "sha256": "8d4c...",
     "modified_at": "2026-03-14T19:20:10Z",
@@ -114,6 +116,9 @@ python secret_folder_archive.py
 Откройте `secret_folder_archive.py`. Вверху нам нужны стандартные модули и две сущности из Rich:
 
 ```python
+# Собирайте индексатор по этапам и проверяйте каждый этап отдельно.
+# Не изменяйте материалы дела: программа должна только читать и описывать их.
+# Перед повторным запуском определите, какой снимок считается предыдущим состоянием.
 from datetime import datetime, timezone
 from difflib import ndiff
 import hashlib
@@ -123,8 +128,10 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
+# Сканируем только secret_folder; manifest.json лежит рядом со скриптом и не индексирует сам себя.
 DATA_DIR = Path(__file__).with_name("data") / "secret_folder"
 MANIFEST_PATH = Path(__file__).with_name("manifest.json")
+# Обе версии хронологии входят в снимок, но дополнительно сравниваются построчно ниже.
 TIMELINE_PATH = DATA_DIR / "drafts" / "timeline.txt"
 TIMELINE_BACKUP_PATH = DATA_DIR / "drafts" / "timeline_backup.txt"
 console = Console()
@@ -144,6 +151,7 @@ def iter_files(root):
         raise NotADirectoryError(f"Expected a folder: {root}")
 
     # rglob("*") рекурсивно проходит и вложенные каталоги.
+    # Каталоги не индексируем, а сортировка делает порядок записей воспроизводимым.
     return sorted(path for path in root.rglob("*") if path.is_file())
 ```
 
@@ -166,6 +174,7 @@ def relative_name(root, path):
 Файл лучше читать кусками. Маленькие файлы можно прочитать целиком, но привычка с чанками спасает, когда архив разрастается. `file_sha256()` принимает путь и возвращает строку-хэш; именно эта строка потом решает, одинаковые ли файлы.
 
 ```python
+# 65 536 байт — размер блока чтения, а не ограничение на размер файла.
 def file_sha256(path, chunk_size=65_536):
     digest = hashlib.sha256()
 
@@ -185,8 +194,10 @@ def file_sha256(path, chunk_size=65_536):
 Для манифеста нужна предсказуемая запись времени. Не используем локальный часовой пояс: сегодня скрипт запускают в Москве, завтра на сервере в другой стране.
 
 ```python
+# seconds, если передан, — Unix-время в секундах; результат всегда возвращается в UTC.
 def utc_timestamp(seconds=None):
     # Явно используем UTC, чтобы время не зависело от часового пояса компьютера.
+    # None означает время самого сканирования; для файла передаём его st_mtime.
     if seconds is None:
         moment = datetime.now(timezone.utc)
     else:
@@ -203,6 +214,7 @@ def utc_timestamp(seconds=None):
 
 ```python
 def build_record(root, path):
+    # stat() читаем один раз, чтобы размер и время относились к одному наблюдению файла.
     stat = path.stat()
 
     # Хэш описывает содержимое, размер — байты, а modified_at — метаданные файловой системы.
@@ -210,6 +222,7 @@ def build_record(root, path):
         "path": relative_name(root, path),
         "size": stat.st_size,
         "sha256": file_sha256(path),
+        # mtime помогает аудиту, но изменение содержимого ниже определяется по SHA-256.
         "modified_at": utc_timestamp(stat.st_mtime),
     }
 ```
@@ -222,6 +235,7 @@ def build_record(root, path):
 
 ```python
 def scan_folder(root):
+    # Абсолютный root нужен только во время обхода; наружу всё равно выйдут относительные пути.
     root = root.resolve()
     return [build_record(root, path) for path in iter_files(root)]
 ```
@@ -230,6 +244,7 @@ def scan_folder(root):
 
 ```python
 def detect_duplicates(records):
+    # Сначала строим индекс «хэш → пути», а уже затем оставляем только группы из нескольких файлов.
     by_hash = {}
 
     for record in records:
@@ -254,12 +269,14 @@ def detect_duplicates(records):
 
 ```python
 def build_manifest(root):
+    # Один список records служит источником и счётчиков, и полного раздела files.
     records = scan_folder(root)
 
     return {
         "scanned_at": utc_timestamp(),
         "root": root.name,
         "file_count": len(records),
+        # total_bytes измеряется в байтах и складывается из тех же записей, что попадут в files.
         "total_bytes": sum(int(record["size"]) for record in records),
         "files": records,
         "duplicates": detect_duplicates(records),
@@ -274,13 +291,16 @@ def build_manifest(root):
 
 ```python
 def load_manifest(path):
+    # Отсутствие манифеста означает первый запуск, а не повреждение данных.
     if not path.exists():
         return None
 
+    # Синтаксическая ошибка JSON не маскируется под первый запуск и должна остановить аудит.
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def write_manifest(manifest, path):
+    # Читаемый JSON облегчает ручной аудит и сравнение версий в системе контроля версий.
     text = json.dumps(manifest, ensure_ascii=False, indent=2)
     path.write_text(text + "\n", encoding="utf-8")
 ```
@@ -310,6 +330,7 @@ def compare_manifests(
 ):
     old_files = index_by_path(previous)
     new_files = index_by_path(current)
+    # Путь служит идентичностью файла: переименование будет парой «удалён + добавлен», даже при том же хэше.
     old_paths = set(old_files)
     new_paths = set(new_files)
 
@@ -320,6 +341,7 @@ def compare_manifests(
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
             changed.append(path)
 
+    # Сохраняем и неизменившиеся пути: категории вместе описывают весь снимок.
     unchanged = sorted(
         path
         for path in old_paths & new_paths
@@ -342,6 +364,7 @@ def compare_manifests(
 
 ```python
 def compare_timeline_versions(current_path, backup_path):
+    # splitlines() сравнивает содержимое строк и намеренно не считает финальный перевод строки отдельной уликой.
     current_lines = current_path.read_text(encoding="utf-8").splitlines()
     backup_lines = backup_path.read_text(encoding="utf-8").splitlines()
     differences = {"current": [], "backup": []}
@@ -393,6 +416,7 @@ def render_report(
 
     for key, label in labels.items():
         paths = changes[key]
+        # В таблице показываем до четырёх имён, но количество рассчитано по полному списку.
         change_table.add_row(label, str(len(paths)), ", ".join(paths[:4]) or "-")
 
     console.print(change_table)
@@ -411,6 +435,7 @@ def render_duplicates(manifest):
     table.add_column("SHA-256", overflow="fold")
     table.add_column("Файлы")
 
+    # В таблице сокращаем только отображение хэша; в манифесте остаются все 64 символа.
     for group in groups:
         table.add_row(str(group["sha256"])[:16] + "...", "\n".join(group["paths"]))
 
@@ -448,6 +473,7 @@ def main():
     render_duplicates(current)
     timeline_differences = compare_timeline_versions(TIMELINE_PATH, TIMELINE_BACKUP_PATH)
     render_timeline_difference(timeline_differences)
+    # Перезаписываем снимок только после сравнения и отчёта, чтобы previous ещё описывал прошлый запуск.
     write_manifest(current, MANIFEST_PATH)
     console.print(f"[bold green]Манифест сохранён:[/bold green] {MANIFEST_PATH}")
 

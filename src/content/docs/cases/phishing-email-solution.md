@@ -33,6 +33,7 @@ from rich.table import Table
 
 
 def default_data_dir():
+    # Один и тот же пример запускается из корня проекта и из каталога solution/.
     script_dir = Path(__file__).resolve().parent
     local_data = script_dir / "data"
     if local_data.exists():
@@ -44,6 +45,7 @@ DATA_DIR = default_data_dir()
 TEXT_CONTENT_TYPES = {"text/plain", "text/html"}
 TRAILING_URL_CHARS = ".,;:!?)]}"
 
+# Регулярное выражение ищет учебное подмножество URL и не заменяет полноценный HTML-парсер браузера.
 URL_RE = re.compile(r"https?://[^\s<>'\"\\]+", re.IGNORECASE)
 HTML_LINK_RE = re.compile(
     r"<a\s+[^>]*href=[\"'](?P<url>https?://[^\"']+)[\"'][^>]*>"
@@ -69,6 +71,7 @@ class EmailAnalysisError(Exception):
     """Raised when an .eml file cannot be parsed for this case."""
 
 
+# frozen защищает уже созданный объект от случайного изменения на следующих этапах.
 @dataclass(frozen=True)
 class LinkInfo:
     raw: str
@@ -104,6 +107,7 @@ def clean_url(raw_url):
 
 
 def clean_label(raw_label):
+    # Удаляем разметку только из видимой подписи; адрес href разбирается отдельно.
     without_tags = TAG_RE.sub(" ", raw_label)
     return SPACE_RE.sub(" ", without_tags).strip()
 
@@ -112,6 +116,7 @@ def is_ip_address(host):
     if not host:
         return False
     try:
+        # Квадратные скобки допустимы вокруг IPv6 в URL, но не являются частью самого адреса.
         ipaddress.ip_address(host.strip("[]"))
     except ValueError:
         return False
@@ -119,6 +124,7 @@ def is_ip_address(host):
 
 
 def normalize_host(host):
+    # Завершающая точка и регистр не должны превращать один DNS-хост в два разных.
     return host.strip().strip(".").lower()
 
 
@@ -135,6 +141,7 @@ def base_domain(host):
 
 
 def domain_from_address(value):
+    # parseaddr отделяет отображаемое имя; существование почтового ящика эта проверка не подтверждает.
     _, address = parseaddr(value or "")
     if "@" not in address:
         return ""
@@ -142,6 +149,7 @@ def domain_from_address(value):
 
 
 def display_host_from_label(label):
+    # Берём первый домен из видимой подписи; сложная HTML-разметка остаётся ограничением эвристики.
     match = DOMAIN_RE.search(label)
     if match is None:
         return ""
@@ -149,6 +157,7 @@ def display_host_from_label(label):
 
 
 def make_link_info(raw_url, label=""):
+    # urlparse только разбирает строку и не выполняет сетевой запрос по подозрительной ссылке.
     parsed = urlparse(raw_url)
     # hostname уже отделён от схемы, порта, пути и параметров URL.
     host = normalize_host(parsed.hostname or "")
@@ -164,6 +173,7 @@ def make_link_info(raw_url, label=""):
 
 def extract_links(text):
     links = []
+    # Множество хранит уже учтённые адреса между двумя проходами по HTML и обычному тексту.
     seen_urls = set()
 
     # Сначала читаем HTML-ссылки: только так можно сравнить видимую подпись с реальным href.
@@ -192,6 +202,7 @@ def load_message(path):
     except OSError as exc:
         raise EmailAnalysisError(f"Cannot read {path}") from exc
 
+    # Без отправителя и темы правила ниже потеряют контекст, поэтому неполное письмо отклоняем сразу.
     if not message.get("From"):
         raise EmailAnalysisError(f"{path.name}: missing From header")
     if not message.get("Subject"):
@@ -207,6 +218,7 @@ def text_from_message(message):
             return content if isinstance(content, str) else ""
 
         chunks = []
+        # Обходим MIME-дерево, потому что текст может лежать глубже первого уровня письма.
         for part in message.walk():
             # walk() возвращает и multipart-контейнеры, поэтому пропускаем их и вложения.
             if part.is_multipart() or part.get_content_disposition() == "attachment":
@@ -220,6 +232,7 @@ def text_from_message(message):
         raise EmailAnalysisError("Cannot decode message body") from exc
 
 
+# Анализируем только имена вложений: содержимое файлов не открывается и не запускается.
 def attachment_names(message):
     names = []
     for part in message.walk():
@@ -237,6 +250,7 @@ def add_signal(
     level="warning",
 ):
     # Один тип риска учитываем один раз, даже если его дали несколько ссылок.
+    # Повтор усиливает наблюдение, но не должен многократно начислять один и тот же тип риска.
     if all(signal.title != title for signal in signals):
         signals.append(RiskSignal(title=title, points=points, level=level))
 
@@ -251,6 +265,7 @@ def risk_verdict(score):
 
 
 def analyze_message(message, filename="<memory>"):
+    # Сначала извлекаем наблюдаемые данные, и только затем применяем к ним правила риска.
     subject = str(message.get("Subject", "(без темы)"))
     sender = str(message.get("From", ""))
     sender_domain = domain_from_address(sender)
@@ -262,6 +277,7 @@ def analyze_message(message, filename="<memory>"):
     if reply_to_domain and base_domain(reply_to_domain) != base_domain(sender_domain):
         add_signal(signals, "Reply-To ведёт в другой домен", 2)
 
+    # Срочность ищем и в теме, и в теле: отправитель может вынести давление в любое из полей.
     if URGENT_RE.search(f"{subject}\n{body}"):
         add_signal(signals, "Есть слова срочности", 1)
 
@@ -288,6 +304,7 @@ def analyze_message(message, filename="<memory>"):
     if len(links) >= 4:
         add_signal(signals, "В письме слишком много ссылок", 1)
 
+    # Расширение — повод для проверки, а не доказательство запуска или вредоносности файла.
     risky_attachments = [
         name for name in attachment_names(message) if RISKY_ATTACHMENT_RE.search(name)
     ]
@@ -309,6 +326,7 @@ def analyze_message(message, filename="<memory>"):
 
 
 def analyze_file(path):
+    # Эта маленькая граница связывает файловый ввод с анализом уже разобранного сообщения.
     return analyze_message(load_message(path), filename=path.name)
 
 
@@ -327,6 +345,7 @@ def render_results(reports):
     table.add_column("Балл", justify="right")
     table.add_column("Сигналы")
 
+    # Сортируем только представление; исходные EmailReport остаются неизменными.
     for report in sorted(reports, key=lambda item: item.score, reverse=True):
         signals = "\n".join(
             f"{signal.title} (+{signal.points})" for signal in report.signals
@@ -340,6 +359,7 @@ def render_results(reports):
 
     console.print(table)
 
+    # При равных баллах max сохраняет первый отчёт из стабильного файлового порядка.
     highest = max(reports, key=lambda item: item.score)
     console.print(
         f"\n[bold]Самая рискованная версия:[/bold] {highest.filename} "
@@ -351,6 +371,7 @@ def main():
     try:
         reports = analyze_directory()
     except EmailAnalysisError as exc:
+        # Пользователь получает короткую причину, а ненулевой код сообщает об ошибке оболочке и CI.
         console.print(f"[bold red]Ошибка:[/bold red] {exc}")
         raise SystemExit(1) from exc
 
