@@ -1,0 +1,11 @@
+{
+  "dataset_id": "sklearn-california-housing-1990-frozen-v1",
+  "filename": "california_housing.csv",
+  "rows": 20640,
+  "columns": 9,
+  "sha256": "94ef369b909f5c725340b512b7c9a05c1550a554b6592d29303990e3ba521a1f",
+  "scikit_learn_version": "1.9.0",
+  "target": "MedHouseVal",
+  "target_unit": "100000 USD",
+  "target_cap": 5.00001
+}

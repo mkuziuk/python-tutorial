@@ -36,9 +36,34 @@ for word in ["след", "пауза", "след"]:
 print(counts)
 ```
 
+## Ещё примеры
+
+`.get()` позволяет указать значение по умолчанию, если ключа нет:
+
+```python
+record = {"file": "note.txt", "status": "checked"}
+
+owner = record.get("owner", "неизвестен")
+print(owner)
+```
+
+Через `.items()` удобно одновременно читать ключи и значения. `setdefault()` помогает собрать несколько значений под одним ключом:
+
+```python
+files = [("txt", "note.txt"), ("json", "data.json"), ("txt", "log.txt")]
+by_extension = {}
+
+for extension, filename in files:
+    by_extension.setdefault(extension, []).append(filename)
+
+for extension, names in by_extension.items():
+    print(extension, names)
+```
+
 ## Типичные ловушки
 
 - Обращение к отсутствующему ключу вызывает `KeyError`.
+- `.get()` скрывает различие между отсутствующим ключом и ключом со значением `None`; иногда нужна явная проверка `if key in record`.
 - Ключ должен быть хешируемым: строка подходит, список - нет.
 - Словарь хранит связь, но не объясняет ее смысл сам по себе. Называйте ключи ясно.
 

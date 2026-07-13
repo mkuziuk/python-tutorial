@@ -1,135 +1,38 @@
 ---
-import heroImage from '../assets/case-desk-hero.png';
+import { Image } from 'astro:assets';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
+
+import archiveDesk from '../assets/case-desk-hero.png';
+import bureauLab from '../assets/bureau-data-lab.png';
+import HomeArcStory from '../components/HomeArcStory.astro';
+import course from '../data/course.json';
+import { homeStoryDetails } from '../data/home-stories';
 
 const base = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
-const casesBase = `${base}cases/`;
-const guideLink = `${base}field-guide/`;
-const materialsLink = `${base}materials/`;
-const skillMapLink = `${base}skill-map/`;
 
-const cases = [
-  {
-    number: '01',
-    slug: 'anonymous-letter',
-    title: 'Кто оставил предупреждение?',
-    kicker: 'Текстовый отпечаток',
-    copy:
-      'В общей папке появляется anonymous.txt: кто-то предупреждает, что перед открытием витрины хронологию могут тихо поправить.',
-    scene: 'Команда готовит публичный показ «Северный стол», а безымянная записка указывает на возможную подмену в рабочих материалах.',
-    question: 'Кто оставил предупреждение и что он знает о ночной правке?',
-    tool: 'Собираем текстовый отпечаток: слова, пунктуацию, частоты и сравнение привычек письма.',
-    outcome: 'Таблица кандидатов с объяснимыми признаками текста',
-    difficulty: 'начальный+',
-    time: '90–120 минут',
-    concepts: ['venv', 'regex', 'dict/set', 'Counter', 'Rich'],
-    files: ['anonymous.txt', 'author_*.txt', 'anonymous_letter.py'],
-    command: 'python anonymous_letter.py',
-    color: '#20d3bd',
-    tone: '#f3e1b8',
-  },
-  {
-    number: '02',
-    slug: 'copy-paste-detector',
-    title: 'Детектор текстовых совпадений',
-    kicker: 'Утечки и подмены',
-    copy:
-      'В черновике экскурсии появились фрагменты закрытой описи «Северного стола», а другая похожая пара относится к учебному стенду. Нужно отделить обычное повторное использование текста от следа утечки.',
-    scene: 'В папке черновиков лежат пять отчетов: часть текста выглядит так, будто ее перенесли из закрытой описи.',
-    question: 'Какие документы подозрительно похожи, а где совпадения объясняются общей темой?',
-    tool: 'Режем тексты на n-граммы, сравниваем множества и сортируем пары по силе совпадения.',
-    outcome: 'Рейтинг подозрительных пар с примером общей фразы',
-    difficulty: 'начальный+',
-    time: '90–120 минут',
-    concepts: ['tuple', 'n-граммы', 'set', 'sorting', 'functions'],
-    files: ['report_*.txt', 'copy_paste_detector.py', 'check_result.txt'],
-    command: 'python copy_paste_detector.py',
-    color: '#f2b84b',
-    tone: '#f7e7c7',
-  },
-  {
-    number: '03',
-    slug: 'phishing-email',
-    title: 'Фишинговое письмо или нет?',
-    kicker: 'Разбор писем',
-    copy:
-      'В почте появляются письма про блокировку архива и отчет с камеры. Открывать вложения нельзя, поэтому проверяем письмо как улику.',
-    scene: 'В ящике команды шесть .eml: два письма выглядят как ловушки, остальные похожи на обычную переписку.',
-    question: 'Что можно понять о письме, если не переходить по ссылкам и не запускать вложения?',
-    tool: 'Разбираем заголовки, ссылки, домены, IP и вложения, затем считаем понятные признаки опасности.',
-    outcome: 'Отчет по письмам: вердикт, баллы и причины',
-    difficulty: 'средний',
-    time: '120–150 минут',
-    concepts: ['email', 'URL', 'ipaddress', 'exceptions', 'правила'],
-    files: ['*.eml', 'phishing_email.py', 'правила риска'],
-    command: 'python phishing_email.py',
-    color: '#ee6f5e',
-    tone: '#f4d8ce',
-  },
-  {
-    number: '04',
-    slug: 'secret-folder-archive',
-    title: 'Ночной сигнал архива',
-    kicker: 'Файлы, хеши, манифест',
-    copy:
-      'secret_folder — рабочая папка команды после ночного сигнала в комнате хранения. В ней фотоиндекс, его копия, журнал доступа и две версии хронологии.',
-    scene: 'Имена файлов похожи, но это ничего не доказывает: копию могли переименовать, а хронологию — сохранить заново.',
-    question: 'Какие файлы совпадают полностью, что изменилось и как сохранить результат сверки?',
-    tool: 'Обходим папку через pathlib, считаем отпечатки SHA-256 и записываем JSON-манифест.',
-    outcome: 'JSON-манифест, группы дублей и список изменений',
-    difficulty: 'средний',
-    time: '100–130 минут',
-    concepts: ['pathlib', 'hashlib', 'JSON', 'время', 'изменения'],
-    files: ['secret_folder/', 'manifest.json', 'secret_folder_archive.py'],
-    command: 'python secret_folder_archive.py',
-    color: '#a7d56f',
-    tone: '#e4edca',
-  },
-  {
-    number: '05',
-    slug: 'investigation-system',
-    title: 'Доска расследования',
-    kicker: 'Модель на классах',
-    copy:
-      'К финалу отдельные следы нужно собрать в одну доску: люди, файлы, письма, заметки и уверенность в каждой улике.',
-    scene: 'Записка, отчеты, письма, журнал доступа и версии участников сходятся в одно дело.',
-    question: 'Как собрать расследование в одну модель, чтобы завтра продолжить с того же места?',
-    tool: 'Описываем дело, людей и улики классами, затем сохраняем состояние в JSON.',
-    outcome: 'Доска расследования с поиском, заметками и сохранением',
-    difficulty: 'средний',
-    time: '120–150 минут',
-    concepts: ['classes', 'dataclass', 'methods', 'composition', 'JSON'],
-    files: ['case_seed.json', 'investigation_system.py', 'Evidence'],
-    command: 'python investigation_system.py',
-    color: '#9fb7ff',
-    tone: '#dce4f8',
-  },
-  {
-    number: '06',
-    slug: 'final-verdict',
-    title: 'Вердикт перед открытием',
-    kicker: 'Гипотезы и решение',
-    copy:
-      'Утром все следы сходятся: нужно отделить факты от догадок, выбрать лучшую версию и решить, можно ли открывать витрину.',
-    scene: 'До открытия осталось меньше двух часов, а в пакете есть данные пяти дел и финальный аудит рабочей станции.',
-    question: 'Какая гипотеза лучше всего объясняет следы и какое решение безопасно принять?',
-    tool: 'Восстанавливаем хронологию, взвешиваем поддержку и противоречия, затем сохраняем объяснимый вердикт.',
-    outcome: 'Рейтинг гипотез, итоговая хронология и план действий',
-    difficulty: 'продвинутый',
-    time: '120–150 минут',
-    concepts: ['StrEnum', 'dataclass', 'match', 'JSON', 'взвешивание'],
-    files: ['evidence_bundle.json', 'final_verdict.py', 'verdict.json'],
-    command: 'python final_verdict.py',
-    color: '#d49cff',
-    tone: '#eadcf4',
-  },
-].map((item) => ({
-  ...item,
-  href: `${casesBase}${item.slug}/`,
-  download: `${base}downloads/case-${item.number}.zip`,
-  solution: `${casesBase}${item.slug}-solution/`,
-}));
+const withBase = (path: string) => `${base}${path.replace(/^\//, '')}`;
+const archive = course.arcs.find((arc) => arc.id === 'part-1')!;
+const bureau = course.arcs.find((arc) => arc.id === 'part-2')!;
+
+const prepareStoryArc = (arc: (typeof course.arcs)[number]) => ({
+  ...arc,
+  cases: arc.cases.map((item) => {
+    const detail = homeStoryDetails[item.number];
+    if (!detail) throw new Error(`Missing homepage story metadata for ${item.number}`);
+    return { ...item, ...detail, href: withBase(item.route) };
+  }),
+});
+
+const archiveStory = prepareStoryArc(archive);
+const bureauStory = prepareStoryArc(bureau);
+
+const guideLink = withBase('/field-guide/');
+const materialsLink = withBase('/materials/');
+const skillMapLink = withBase('/skill-map/');
+const canonical = Astro.site ? new URL(base, Astro.site) : null;
 ---
 
 <!doctype html>
@@ -139,273 +42,235 @@ const cases = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Проектный учебник по Python на русском: шесть связанных расследований, рабочие программы, справочник и материалы."
+      content="Проектный учебник по Python и машинному обучению: две сюжетные арки, двенадцать расследований и воспроизводимые учебные проекты."
     />
-    <title>Python-расследования</title>
+    <meta name="theme-color" content="#0b0e12" />
+    <meta property="og:title" content="Python-расследования" />
+    <meta
+      property="og:description"
+      content="Сначала проверяем улики. Затем — модели. Две сюжетные арки от основ Python до аудита машинного обучения."
+    />
+    <meta property="og:type" content="website" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <title>Python-расследования · от улик к моделям</title>
     <link rel="icon" href={`${base}images/favicon.svg`} />
   </head>
-  <body>
-    <header class="site-header">
-      <a class="brand" href={base}>Python-расследования</a>
+  <body data-phase="archive">
+    <a class="skip-link" href="#course-main">К основному содержанию</a>
+
+    <header class="site-header" data-site-header>
+      <a class="header-brand" href={base} aria-current="page">Python-расследования</a>
       <nav aria-label="Основная навигация">
-        <a href={casesBase}>Дела</a>
+        <a href={withBase(archive.route)}>Часть I</a>
+        <a href={withBase(bureau.route)}>Часть II</a>
         <a href={materialsLink}>Материалы</a>
         <a href={guideLink}>Справочник</a>
-        <a href={skillMapLink}>Карта навыков</a>
       </nav>
     </header>
 
-    <main>
+    <main id="course-main">
       <section class="course-hero" aria-labelledby="home-title">
-        <div class="hero-copy">
-          <p class="eyebrow">Проектный учебник · Python 3.13+</p>
-          <h1 id="home-title">Изучим Python через детективную историю.</h1>
-          <p>
-            Городской архив готовит публичный показ «Северный стол». За ночь до открытия в рабочих материалах
-            появляются странности, и каждый скрипт помогает провести расследование.
+        <Image
+          class="hero-image"
+          src={archiveDesk}
+          widths={[768, 1280, 1680, 2200]}
+          sizes="100vw"
+          format="avif"
+          loading="eager"
+          fetchpriority="high"
+          alt="Ночной рабочий стол с ноутбуком, документами и материалами расследования"
+        />
+        <div class="hero-shade" aria-hidden="true"></div>
+        <div class="hero-content">
+          <p class="hero-kicker">Проектный учебник · Python и ML</p>
+          <h1 id="home-title">
+            <span>Python-<br />расследования</span>
+            <small>Сначала проверяем улики.<br />Затем — модели.</small>
+          </h1>
+          <p class="hero-summary">
+            Две сюжетные арки ведут от первых функций и файлов к воспроизводимому машинному обучению и осторожным решениям.
           </p>
-          <div class="hero-actions" aria-label="Быстрые действия">
-            <a class="button primary" href={cases[0].href}>Начать первое дело</a>
-            <a class="button quiet" href={materialsLink}>Скачать материалы</a>
-            <a class="button quiet" href={guideLink}>Открыть справочник</a>
+          <div class="hero-actions" aria-label="Выбрать маршрут">
+            <a class="button primary" href={withBase(archive.route)}>Начать с части I</a>
+            <a class="button glass" href={withBase(bureau.route)}>Перейти к части II</a>
           </div>
         </div>
-
-        <div class="arc-cover" aria-label="Первая арка курса">
-          <div class="cover-photo">
-            <img
-              src={heroImage.src}
-              width={heroImage.width}
-              height={heroImage.height}
-              alt="Рабочий стол с материалами расследования, ноутбуком и заметками"
-            />
-          </div>
-          <ol class="cover-list">
-            {cases.map((item) => (
-              <li style={`--case-color: ${item.color};`}>
-                <span>{item.number}</span>
-                <strong>{item.kicker}</strong>
-              </li>
-            ))}
-          </ol>
-        </div>
+        <a class="hero-scroll" href="#progression">
+          <span>Две арки · двенадцать дел</span>
+          <i aria-hidden="true"></i>
+        </a>
       </section>
 
-      <section class="story-intro" aria-labelledby="story-intro-title">
-        <div>
-          <p class="eyebrow">Сюжет первой арки</p>
-          <h2 id="story-intro-title">Что случилось в архиве</h2>
-        </div>
-        <div class="story-intro-copy">
+      <section class="progression" id="progression" aria-labelledby="progression-title">
+        <p class="section-index">Маршрут курса</p>
+        <h2 id="progression-title">Код сначала измеряет след.<br />Потом проверяет собственную модель.</h2>
+        <p>
+          Часть I дает язык Python и привычку не путать вывод с фактом. Часть II переносит ту же дисциплину в анализ данных: baseline, честный split, ошибки, ограничения и решение.
+        </p>
+      </section>
+
+      <HomeArcStory
+        id="archive-story"
+        mode="archive"
+        eyebrow="Часть I · Архив"
+        title="Северный стол"
+        description="За одну ночь рабочие материалы теряют целостность. Пока шесть программ превращают тексты, письма, папки и журналы в проверяемые следы, окно справа остается вашим рабочим столом."
+        note="Без опыта программирования · 90–150 минут на дело · Python-скрипты"
+        overviewHref={withBase(archive.route)}
+        overviewLabel="Открыть обзор первой части"
+        cases={archiveStory.cases}
+      />
+
+      <section
+        class="handoff"
+        data-arc-phase="bureau"
+        aria-labelledby="handoff-title"
+      >
+        <Image
+          class="handoff-image"
+          src={bureauLab}
+          widths={[768, 1280, 1717]}
+          sizes="100vw"
+          format="avif"
+          loading="lazy"
+          alt="Аналитик сверяет печатную таблицу с графиками и матрицей ошибок на ноутбуке"
+        />
+        <div class="handoff-shade" aria-hidden="true"></div>
+        <div class="handoff-copy">
+          <p class="section-index">Вербовка · апрель 2026</p>
+          <h2 id="handoff-title">В Бюро заметили не громкость вывода, а его границы.</h2>
           <p>
-            «Северный стол» — витрина городского архива: фотоиндексы, описания экспонатов, журнал доступа и рабочие
-            заметки. Если подмена попадет в публичную версию, команда уже не сможет уверенно сказать, где оригинал, кто
-            видел копию и когда изменилась хронология.
+            Та же привычка отделять факт от версии теперь нужна среди таблиц, изображений и слишком убедительных benchmark-отчетов.
           </p>
-          <dl>
-            <div>
-              <dt>Объект</dt>
-              <dd>витрина «Северный стол»</dd>
-            </div>
-            <div>
-              <dt>Опасность</dt>
-              <dd>подмена станет официальной версией</dd>
-            </div>
-            <div>
-              <dt>Подход</dt>
-              <dd>проверяем следы кодом</dd>
-            </div>
-          </dl>
         </div>
       </section>
 
-      <section class="case-story" data-case-story aria-label="Маршрут первой арки">
-        <div class="story-stage" aria-hidden="true">
-          <div class="stage-shell">
-            <div class="stage-progress">
-              <span>01</span>
-              <div><i></i></div>
-              <span>06</span>
-            </div>
+      <HomeArcStory
+        id="bureau-story"
+        mode="bureau"
+        eyebrow="Часть II · Бюро"
+        title="Протокол «Компас»"
+        description="Поставщик обещает безупречные метрики. Шесть notebook-расследований проверяют данные, разбиения, ошибки и границы каждого вывода."
+        note="После части I · 3–5 часов на дело · финал 6–8 часов · Jupyter Notebook"
+        overviewHref={withBase(bureau.route)}
+        overviewLabel="Открыть обзор Бюро"
+        cases={bureauStory.cases}
+      />
 
-            <div class="case-visuals">
-              {cases.map((item, index) => (
-                <article
-                  class="case-visual"
-                  data-visual-case={index}
-                  style={`--case-color: ${item.color}; --case-tone: ${item.tone};`}
-                >
-                  <div class="visual-header">
-                    <span>Дело {item.number}</span>
-                    <strong>{item.kicker}</strong>
-                  </div>
-                  <div class="visual-main">
-                    <div class="visual-file">
-                      <p>{item.files[0]}</p>
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                    <div class="visual-terminal">
-                      <code>python -m pip install -r requirements.txt</code>
-                      <code>{item.command}</code>
-                      <strong>{item.outcome}</strong>
-                    </div>
-                  </div>
-                  <div class="visual-tags">
-                    {item.concepts.slice(0, 4).map((concept) => <span>{concept}</span>)}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div class="story-steps">
-          {cases.map((item, index) => (
-            <article
-              class="case-step"
-              data-case-step
-              data-case-index={index}
-              style={`--case-color: ${item.color}; --case-tone: ${item.tone};`}
-            >
-              <p class="eyebrow">Дело {item.number} · {item.kicker}</p>
-              <h2>{item.title}</h2>
-              <p>{item.copy}</p>
-              <dl class="case-plot">
-                <div>
-                  <dt>Сцена</dt>
-                  <dd>{item.scene}</dd>
-                </div>
-                <div>
-                  <dt>Вопрос дела</dt>
-                  <dd>{item.question}</dd>
-                </div>
-                <div>
-                  <dt>Инструмент</dt>
-                  <dd>{item.tool}</dd>
-                </div>
-                <div>
-                  <dt>На выходе</dt>
-                  <dd>{item.outcome}</dd>
-                </div>
-                <div>
-                  <dt>Маршрут</dt>
-                  <dd>{item.difficulty} · {item.time}</dd>
-                </div>
-              </dl>
-              <div class="concept-row" aria-label={`Темы дела ${item.number}`}>
-                {item.concepts.map((concept) => <span>{concept}</span>)}
-              </div>
-              <p class="case-files"><strong>Материалы:</strong> {item.files.join(' · ')}</p>
-              <div class="step-actions">
-                <a class="button primary" href={item.href}>Открыть дело {item.number}</a>
-                <a class="button quiet dark" href={item.download}>Скачать набор</a>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section class="mobile-case-path" aria-labelledby="mobile-path-title">
-        <p class="eyebrow">Маршрут первой арки</p>
-        <h2 id="mobile-path-title">От текста к маленькой системе</h2>
-        <div class="mobile-cases">
-          {cases.map((item) => (
-            <article style={`--case-color: ${item.color};`}>
-              <span>Дело {item.number}</span>
-              <h3>{item.title}</h3>
-              <p>{item.scene}</p>
-              <p class="mobile-question">{item.question}</p>
-              <p>{item.difficulty} · {item.time}</p>
-              <a href={item.href}>Открыть главу</a>
-            </article>
-          ))}
+      <section class="method" aria-labelledby="method-title">
+        <p class="section-index">Один принцип</p>
+        <h2 id="method-title">Модель не выносит приговор.</h2>
+        <div class="method-flow">
+          <div><span>01</span><strong>Соберите</strong><p>Прочитайте досье и воспроизведите заявленный результат.</p></div>
+          <div><span>02</span><strong>Проверьте</strong><p>Найдите утечки, слабые разбиения и систематические ошибки.</p></div>
+          <div><span>03</span><strong>Сформулируйте</strong><p>Отделите факт, интерпретацию, ограничение и безопасное действие.</p></div>
         </div>
       </section>
 
       <section class="course-close" aria-labelledby="close-title">
-        <p class="eyebrow">Как здесь учиться</p>
-        <h2 id="close-title">Каждая глава ведет к программе, которую можно запустить локально.</h2>
-        <div class="close-steps">
-          <p><strong>1.</strong> Читаете дело и скачиваете материалы.</p>
-          <p><strong>2.</strong> Создаете venv, ставите <code>requirements.txt</code>, собираете инструмент шаг за шагом.</p>
-          <p><strong>3.</strong> Запускаете программу, сверяете форму отчета и только потом открываете полный разбор.</p>
-        </div>
-        <div class="hero-actions">
-          <a class="button primary" href={casesBase}>Открыть все дела</a>
-          <a class="button paper" href={skillMapLink}>Посмотреть карту навыков</a>
+        <p class="section-index">Выберите точку входа</p>
+        <h2 id="close-title">Новичок идет в архив.<br />Выпускник — в Бюро.</h2>
+        <div class="close-actions">
+          <a class="button paper" href={withBase(archive.route)}>Начать часть I</a>
+          <a class="button cobalt" href={withBase(bureau.route)}>Начать часть II</a>
+          <a class="text-link dark-link" href={skillMapLink}>Сравнить навыки двух частей</a>
         </div>
       </section>
     </main>
 
+    <footer>
+      <a href={base}>Python-расследования</a>
+      <nav aria-label="Ссылки в подвале">
+        <a href={materialsLink}>Материалы</a>
+        <a href={guideLink}>Справочник</a>
+        <a href={skillMapLink}>Карта навыков</a>
+      </nav>
+    </footer>
+
     <script is:inline type="module">
-      const root = document.documentElement;
-      const story = document.querySelector("[data-case-story]");
-      const steps = Array.from(document.querySelectorAll("[data-case-step]"));
-      const visuals = Array.from(document.querySelectorAll("[data-visual-case]"));
+      const body = document.body;
+      const stories = Array.from(document.querySelectorAll("[data-arc-story]"));
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
       let frame = 0;
 
       const clamp = (value, min = 0, max = 1) => Math.min(Math.max(value, min), max);
 
-      function setActive(index) {
-        root.style.setProperty("--active-case", String(index));
-        visuals.forEach((visual, visualIndex) => {
-          visual.dataset.active = visualIndex === index ? "true" : "false";
-        });
+      function setActive(story, index) {
+        const steps = Array.from(story.querySelectorAll("[data-case-step]"));
+        const visuals = Array.from(story.querySelectorAll("[data-visual-case]"));
+        const safeIndex = clamp(index, 0, Math.max(0, steps.length - 1));
+
+        story.dataset.activeIndex = String(safeIndex);
         steps.forEach((step, stepIndex) => {
-          step.dataset.active = stepIndex === index ? "true" : "false";
+          step.dataset.active = stepIndex === safeIndex ? "true" : "false";
+        });
+        visuals.forEach((visual, visualIndex) => {
+          visual.dataset.active = visualIndex === safeIndex ? "true" : "false";
         });
       }
 
-      function updateProgress() {
-        frame = 0;
-        if (!story) return;
+      function closestStepIndex(story) {
+        const steps = Array.from(story.querySelectorAll("[data-case-step]"));
+        const viewportCenter = window.innerHeight * 0.5;
+        let bestIndex = 0;
+        let bestDistance = Number.POSITIVE_INFINITY;
 
-        const scrollable = Math.max(1, story.offsetHeight - window.innerHeight);
-        const progress = reduceMotion.matches
-          ? 1
-          : clamp(-story.getBoundingClientRect().top / scrollable);
-
-        root.style.setProperty("--story-progress", progress.toFixed(4));
-      }
-
-      function requestProgress() {
-        if (frame) return;
-        frame = window.requestAnimationFrame(updateProgress);
-      }
-
-      if ("IntersectionObserver" in window && !reduceMotion.matches) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            let best = null;
-            for (const entry of entries) {
-              if (!entry.isIntersecting) continue;
-              if (!best || entry.intersectionRatio > best.intersectionRatio) {
-                best = entry;
-              }
-            }
-            if (best) setActive(Number(best.target.dataset.caseIndex));
-          },
-          {
-            rootMargin: "-36% 0px -36% 0px",
-            threshold: [0.2, 0.45, 0.7],
+        steps.forEach((step, index) => {
+          const rect = step.getBoundingClientRect();
+          const distance = Math.abs(rect.top + rect.height * 0.5 - viewportCenter);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestIndex = index;
           }
-        );
+        });
 
-        steps.forEach((step) => observer.observe(step));
+        return bestIndex;
       }
 
-      window.addEventListener("scroll", requestProgress, { passive: true });
-      window.addEventListener("resize", requestProgress);
-      reduceMotion.addEventListener("change", () => {
-        setActive(0);
-        requestProgress();
+      function updateStories() {
+        frame = 0;
+        stories.forEach((story) => {
+          const rect = story.getBoundingClientRect();
+          const scrollable = Math.max(1, story.offsetHeight - window.innerHeight);
+          const progress = clamp(-rect.top / scrollable);
+          story.style.setProperty("--story-progress", progress.toFixed(4));
+          setActive(story, closestStepIndex(story));
+        });
+      }
+
+      function requestStoryUpdate() {
+        if (frame) return;
+        frame = window.requestAnimationFrame(updateStories);
+      }
+
+      stories.forEach((story) => {
+        story.querySelectorAll("[data-case-step]").forEach((step) => {
+          const activate = () => setActive(story, Number(step.dataset.caseIndex));
+          step.addEventListener("pointerenter", activate);
+          step.addEventListener("focusin", activate);
+        });
       });
 
-      setActive(0);
-      updateProgress();
+      window.addEventListener("scroll", requestStoryUpdate, { passive: true });
+      window.addEventListener("resize", requestStoryUpdate);
+      window.addEventListener("pageshow", requestStoryUpdate);
+      reduceMotion.addEventListener("change", requestStoryUpdate);
+
+      if ("IntersectionObserver" in window) {
+        const phases = document.querySelectorAll("[data-arc-phase]");
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const visible = entries
+              .filter((entry) => entry.isIntersecting)
+              .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+            if (visible) body.dataset.phase = visible.target.dataset.arcPhase;
+          },
+          { rootMargin: "-28% 0px -48%", threshold: 0 }
+        );
+        phases.forEach((phase) => observer.observe(phase));
+      }
+
+      updateStories();
     </script>
   </body>
 </html>
@@ -413,831 +278,245 @@ const cases = [
 <style>
   :root {
     color-scheme: dark;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #0f1110;
-    color: #f5ead5;
-    --ink: #101211;
-    --paper: #f3e2bf;
-    --paper-soft: #fff4dc;
-    --muted: rgba(245, 234, 213, 0.72);
-    --line: rgba(245, 234, 213, 0.18);
+    font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --ink: #0b0e12;
+    --cream: #f6ead4;
+    --paper: #e9dbc0;
+    --paper-ink: #16120c;
     --teal: #20d3bd;
-    --story-progress: 0;
-    --active-case: 0;
+    --cobalt: #6d87ff;
+    --cobalt-deep: #101b46;
+    --line: rgba(246, 234, 212, 0.18);
+    background: var(--ink);
+    color: var(--cream);
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { min-width: 320px; margin: 0; background: #0b0e12; }
+  a { color: inherit; }
+  h1, h2, p, ol { margin: 0; }
 
-  html {
-    scroll-behavior: smooth;
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    font-weight: 850;
+    transform: translateY(-160%);
   }
-
-  body {
-    min-width: 320px;
-    margin: 0;
-    background:
-      linear-gradient(90deg, rgba(245, 234, 213, 0.035) 1px, transparent 1px),
-      linear-gradient(0deg, rgba(245, 234, 213, 0.028) 1px, transparent 1px),
-      linear-gradient(180deg, #0f1110 0%, #141613 100%);
-    background-size: 64px 64px, 64px 64px, auto;
-  }
-
-  a {
-    color: inherit;
-  }
-
-  h1,
-  h2,
-  h3,
-  p,
-  ol,
-  dl,
-  dd {
-    margin: 0;
-  }
+  .skip-link:focus { transform: translateY(0); }
 
   .site-header {
     position: fixed;
-    top: 0.85rem;
-    left: 50%;
+    inset: 0.9rem 1rem auto;
     z-index: 20;
-    width: min(72rem, calc(100% - 2rem));
+    width: min(78rem, calc(100% - 2rem));
     min-height: 3.5rem;
+    margin-inline: auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    border: 1px solid rgba(245, 234, 213, 0.16);
+    border: 1px solid rgba(255,255,255,.16);
     border-radius: 999px;
-    padding: 0.6rem 0.8rem 0.6rem 1rem;
-    background: rgba(15, 17, 16, 0.82);
-    backdrop-filter: blur(18px);
-    box-shadow: 0 1.4rem 3.5rem rgba(0, 0, 0, 0.28);
-    transform: translateX(-50%);
+    padding: 0.55rem 0.65rem 0.55rem 1rem;
+    background: rgba(9, 12, 15, 0.72);
+    backdrop-filter: blur(18px) saturate(130%);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.2);
+    transition: border-color 400ms ease, background 400ms ease;
   }
-
-  .brand {
-    font-size: 1rem;
-    font-weight: 950;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .site-header nav {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
+  body[data-phase="bureau"] .site-header { border-color: rgba(109,135,255,.45); background: rgba(9,14,28,.82); }
+  .header-brand { font-size: 1rem; font-weight: 900; text-decoration: none; white-space: nowrap; }
+  .site-header nav { display: flex; align-items: center; gap: 0.1rem; }
   .site-header nav a {
     border-radius: 999px;
-    padding: 0.62rem 0.82rem;
-    color: rgba(245, 234, 213, 0.76);
-    font-size: 0.92rem;
-    font-weight: 800;
+    padding: 0.65rem 0.82rem;
+    color: rgba(246,234,212,.72);
+    font-size: 0.9rem;
+    font-weight: 760;
     text-decoration: none;
   }
-
-  .site-header nav a:hover,
-  .site-header nav a:focus-visible {
-    background: rgba(245, 234, 213, 0.09);
-    color: #fff7e8;
-  }
+  .site-header nav a:hover, .site-header nav a:focus-visible { background: rgba(255,255,255,.09); color: #fff; }
 
   .course-hero {
+    position: relative;
     min-height: 100svh;
-    width: min(76rem, calc(100% - 2rem));
-    margin-inline: auto;
-    padding-block: 8rem 5rem;
+    overflow: hidden;
     display: grid;
-    grid-template-columns: minmax(0, 1.02fr) minmax(24rem, 0.78fr);
-    gap: 3.5rem;
-    align-items: center;
+    align-items: end;
+    padding: clamp(7rem, 12vh, 10rem) max(1rem, calc((100vw - 78rem) / 2)) clamp(5rem, 10vh, 7rem);
   }
-
-  .hero-copy h1 {
-    max-width: 10.5ch;
-    margin-block: 0.75rem 1.1rem;
-    font-size: 5.4rem;
-    line-height: 0.94;
-    letter-spacing: 0;
+  .hero-image, .hero-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero-image { object-fit: cover; object-position: 56% center; }
+  .hero-shade {
+    background:
+      linear-gradient(90deg, rgba(5,7,8,.94) 0%, rgba(5,7,8,.7) 42%, rgba(5,7,8,.14) 75%),
+      linear-gradient(0deg, rgba(5,7,8,.82) 0%, transparent 45%);
   }
-
-  .hero-copy > p:not(.eyebrow) {
-    max-width: 42rem;
-    color: var(--muted);
-    font-size: 1.22rem;
-    line-height: 1.65;
-  }
-
-  .eyebrow {
+  .hero-content { position: relative; z-index: 2; width: min(63rem, 100%); min-width: 0; }
+  .hero-kicker, .section-index {
     color: var(--teal);
-    font-size: 0.82rem;
-    font-weight: 950;
-    letter-spacing: 0;
+    font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.76rem;
+    font-weight: 760;
+    letter-spacing: .12em;
     text-transform: uppercase;
   }
-
-  .hero-actions,
-  .step-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-block-start: 1.4rem;
+  .hero-content h1 { margin-top: 0.8rem; font-weight: 850; letter-spacing: -0.055em; line-height: .83; }
+  .hero-content h1 > span { display: block; max-width: 9.7ch; font-size: clamp(4.4rem, 10vw, 9.4rem); }
+  .hero-content h1 small {
+    display: block;
+    margin-top: 1.3rem;
+    font-size: clamp(1.75rem, 3.4vw, 3.4rem);
+    font-weight: 620;
+    letter-spacing: -0.045em;
+    line-height: .98;
   }
-
+  .hero-summary { max-width: 43rem; margin-top: 1.25rem; color: rgba(246,234,212,.74); font-size: clamp(1.02rem, 1.5vw, 1.22rem); line-height: 1.6; }
+  .hero-actions, .close-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1.5rem; }
   .button {
-    min-height: 2.9rem;
+    min-height: 3rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
     border-radius: 999px;
-    padding: 0.72rem 1.05rem;
+    padding: 0.75rem 1.08rem;
+    font-weight: 850;
     text-decoration: none;
-    font-weight: 950;
-    letter-spacing: 0;
     transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
   }
-
-  .button:hover,
-  .button:focus-visible {
-    transform: translateY(-2px);
-  }
-
-  .button.primary {
-    background: var(--teal);
-    color: #06110f;
-  }
-
-  .button.quiet {
-    border-color: rgba(245, 234, 213, 0.18);
-    background: rgba(245, 234, 213, 0.08);
-    color: #fff6e4;
-  }
-
-  .button.quiet.dark {
-    border-color: rgba(16, 18, 17, 0.18);
-    background: rgba(16, 18, 17, 0.06);
-    color: var(--ink);
-  }
-
-  .button.paper {
-    border-color: rgba(16, 18, 17, 0.16);
-    background: rgba(255, 255, 255, 0.5);
-    color: var(--ink);
-  }
-
-  .arc-cover {
-    position: relative;
-    min-height: 36rem;
-    border: 1px solid var(--line);
-    border-radius: 34px;
-    padding: 1rem;
-    background: rgba(245, 234, 213, 0.07);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2rem 6rem rgba(0, 0, 0, 0.35);
-  }
-
-  .cover-photo {
-    height: 21rem;
-    overflow: hidden;
-    border-radius: 26px;
-    background: #181a17;
-  }
-
-  .cover-photo img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-  }
-
-  .cover-list {
-    list-style: none;
-    display: grid;
-    gap: 0.7rem;
-    padding: 1rem 0 0;
-  }
-
-  .cover-list li {
-    min-height: 3.85rem;
-    display: grid;
-    grid-template-columns: 2.6rem minmax(0, 1fr);
-    align-items: center;
-    gap: 0.7rem;
-    border: 1px solid rgba(245, 234, 213, 0.14);
-    border-radius: 18px;
-    padding: 0.6rem 0.75rem;
-    background: rgba(15, 17, 16, 0.72);
-  }
-
-  .cover-list span {
-    width: 2.15rem;
-    height: 2.15rem;
-    display: grid;
-    place-items: center;
-    border-radius: 999px;
-    background: var(--case-color);
-    color: #101211;
-    font-weight: 950;
-  }
-
-  .cover-list strong {
-    font-size: 1rem;
-  }
-
-  .story-intro {
-    width: min(76rem, calc(100% - 2rem));
-    margin-inline: auto;
-    padding-block: 1.5rem 3rem;
-    display: grid;
-    grid-template-columns: minmax(16rem, 0.72fr) minmax(0, 1fr);
-    gap: 3rem;
-    border-block: 1px solid rgba(245, 234, 213, 0.14);
-  }
-
-  .story-intro h2 {
-    max-width: 11ch;
-    margin-block-start: 0.6rem;
-    color: #fff4dc;
-    font-size: 3.2rem;
-    line-height: 1;
-    letter-spacing: 0;
-  }
-
-  .story-intro-copy p {
-    max-width: 52rem;
-    color: rgba(245, 234, 213, 0.76);
-    font-size: 1.08rem;
-    line-height: 1.7;
-  }
-
-  .story-intro dl {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-    margin-block-start: 1.35rem;
-  }
-
-  .story-intro dl div {
-    border-block-start: 2px solid rgba(32, 211, 189, 0.58);
-    padding-block-start: 0.75rem;
-  }
-
-  .story-intro dt {
-    color: var(--teal);
-    font-size: 0.78rem;
-    font-weight: 950;
-    text-transform: uppercase;
-  }
-
-  .story-intro dd {
-    margin-block-start: 0.25rem;
-    color: #fff4dc;
-    line-height: 1.4;
-  }
-
-  .case-story {
-    position: relative;
-    width: min(76rem, calc(100% - 2rem));
-    margin-inline: auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(25rem, 0.9fr);
-    gap: 4rem;
-    padding-block: 4rem;
-  }
-
-  .story-stage {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    display: grid;
-    align-items: center;
-    order: 2;
-  }
-
-  .stage-shell {
-    position: relative;
-    min-height: 34rem;
-    border-radius: 38px;
-    padding: 1.2rem;
-    background:
-      linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-      linear-gradient(0deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-      #151714;
-    background-size: 38px 38px, 38px 38px, auto;
-    box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.28);
-    overflow: hidden;
-  }
-
-  .stage-progress {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.7rem;
-    color: rgba(245, 234, 213, 0.68);
-    font-size: 0.78rem;
-    font-weight: 950;
-  }
-
-  .stage-progress div {
-    height: 0.28rem;
-    overflow: hidden;
-    border-radius: 999px;
-    background: rgba(245, 234, 213, 0.16);
-  }
-
-  .stage-progress i {
-    display: block;
-    width: calc(var(--story-progress) * 100%);
-    height: 100%;
-    border-radius: inherit;
-    background: var(--teal);
-  }
-
-  .case-visuals {
-    position: relative;
-    min-height: 29.5rem;
-    margin-block-start: 1rem;
-  }
-
-  .case-visual {
+  .button:hover, .button:focus-visible, .text-link:hover, .text-link:focus-visible { transform: translateY(-2px); }
+  .button.primary { background: var(--teal); color: #06120f; }
+  .button.glass { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: #fff; backdrop-filter: blur(12px); }
+  .hero-scroll {
     position: absolute;
-    inset: 0;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    gap: 1rem;
-    border: 1px solid rgba(16, 18, 17, 0.14);
-    border-radius: 30px;
-    padding: 1rem;
-    background: var(--case-tone);
-    color: var(--ink);
-    opacity: 0;
-    transform: translateY(2.4rem) scale(0.96);
-    transition: opacity 420ms ease, transform 520ms ease;
-  }
-
-  .case-visual[data-active="true"] {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  .visual-header {
+    right: max(1rem, calc((100vw - 78rem) / 2));
+    bottom: 2rem;
+    z-index: 2;
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
     align-items: center;
-    border-bottom: 1px solid rgba(16, 18, 17, 0.14);
-    padding-block-end: 0.75rem;
-  }
-
-  .visual-header span {
-    color: rgba(16, 18, 17, 0.64);
-    font-size: 0.85rem;
-    font-weight: 950;
-  }
-
-  .visual-header strong {
-    max-width: 14rem;
-    text-align: right;
-  }
-
-  .visual-main {
-    display: grid;
-    grid-template-rows: 1fr auto;
-    gap: 1rem;
-  }
-
-  .visual-file {
-    min-height: 12rem;
-    border: 1px solid rgba(16, 18, 17, 0.16);
-    border-radius: 22px;
-    padding: 1rem;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.14)),
-      var(--paper-soft);
-  }
-
-  .visual-file p {
-    color: rgba(16, 18, 17, 0.72);
-    font-weight: 950;
-  }
-
-  .visual-file span {
-    display: block;
-    height: 0.75rem;
-    margin-block-start: 0.82rem;
-    border-radius: 999px;
-    background: rgba(16, 18, 17, 0.13);
-  }
-
-  .visual-file span:nth-child(2) {
-    width: 88%;
-  }
-
-  .visual-file span:nth-child(3) {
-    width: 72%;
-  }
-
-  .visual-file span:nth-child(4) {
-    width: 54%;
-    background: var(--case-color);
-  }
-
-  .visual-terminal {
-    display: grid;
-    gap: 0.45rem;
-    border-radius: 20px;
-    padding: 0.9rem;
-    background: #101211;
-    color: #f7ead4;
-  }
-
-  .visual-terminal code {
-    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-    color: rgba(247, 234, 212, 0.72);
-    white-space: normal;
-  }
-
-  .visual-terminal strong {
-    color: var(--case-color);
-    line-height: 1.35;
-  }
-
-  .visual-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-  }
-
-  .visual-tags span,
-  .concept-row span {
-    border-radius: 999px;
-    padding: 0.44rem 0.65rem;
-    font-size: 0.82rem;
-    font-weight: 900;
-  }
-
-  .visual-tags span {
-    background: rgba(16, 18, 17, 0.1);
-  }
-
-  .story-steps {
-    order: 1;
-  }
-
-  .case-step {
-    min-height: 94svh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-block: 4rem;
-    opacity: 0.54;
-    transform: translateY(1.8rem);
-    transition: opacity 320ms ease, transform 420ms ease;
-  }
-
-  .case-step[data-active="true"] {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .case-step h2 {
-    max-width: 13.5ch;
-    margin-block: 0.72rem 1rem;
-    color: #fff4dc;
-    font-size: 4.2rem;
-    line-height: 0.96;
-    letter-spacing: 0;
-  }
-
-  .case-step > p:not(.eyebrow):not(.case-files) {
-    max-width: 38rem;
-    color: rgba(245, 234, 213, 0.74);
-    font-size: 1.08rem;
-    line-height: 1.65;
-  }
-
-  .concept-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-block: 1.15rem;
-  }
-
-  .concept-row span {
-    background: rgba(245, 234, 213, 0.1);
-    color: #fff4dc;
-  }
-
-  .case-plot {
-    display: grid;
-    gap: 0;
-    max-width: 42rem;
-    margin-block-start: 1.25rem;
-    border-block: 1px solid rgba(245, 234, 213, 0.16);
-  }
-
-  .case-plot div {
-    display: grid;
-    grid-template-columns: 7.25rem minmax(0, 1fr);
-    gap: 1rem;
-    padding-block: 0.72rem;
-  }
-
-  .case-plot div + div {
-    border-block-start: 1px solid rgba(245, 234, 213, 0.12);
-  }
-
-  .case-plot dt {
-    color: var(--case-color);
-    font-size: 0.82rem;
-    font-weight: 950;
+    gap: 0.75rem;
+    color: rgba(246,234,212,.68);
+    font-family: "JetBrains Mono Variable", "JetBrains Mono", monospace;
+    font-size: .72rem;
+    text-decoration: none;
     text-transform: uppercase;
   }
+  .hero-scroll i { width: 3.5rem; height: 1px; background: var(--teal); transform-origin: left; animation: scan 2.4s ease-in-out infinite; }
 
-  .case-plot dd {
-    color: rgba(245, 234, 213, 0.78);
-    line-height: 1.45;
-  }
+  .hero-kicker { animation: enter .7s .08s both; }
+  .hero-content h1 { animation: enter .9s .16s both; }
+  .hero-summary { animation: enter .9s .28s both; }
+  .hero-actions { animation: enter .9s .38s both; }
+  @keyframes enter { from { opacity: 0; transform: translateY(2rem); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes scan { 0%,100% { transform: scaleX(.25); opacity: .35; } 50% { transform: scaleX(1); opacity: 1; } }
 
-  .case-files {
-    max-width: 38rem;
-    color: rgba(245, 234, 213, 0.68);
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  .case-files strong {
-    color: #fff4dc;
-  }
-
-  .mobile-case-path {
-    display: none;
-  }
-
-  .course-close {
-    --paper-ink: #17120a;
-    --paper-muted: #3b3325;
-    --paper-soft-line: rgba(23, 18, 10, 0.2);
-    width: min(76rem, calc(100% - 2rem));
+  .progression {
+    width: min(78rem, calc(100% - 2rem));
     margin-inline: auto;
-    border-radius: 38px 38px 0 0;
-    padding: 5rem 3rem 6rem;
-    background: #ece0c7;
-    color: var(--paper-ink);
-  }
-
-  .course-close .eyebrow {
-    color: #05645d;
-  }
-
-  .course-close h2 {
-    max-width: 14ch;
-    margin-block: 0.75rem 1.4rem;
-    color: #14110b;
-    font-size: 4.4rem;
-    line-height: 0.98;
-    letter-spacing: 0;
-  }
-
-  .close-steps {
+    padding: clamp(5rem, 9vw, 9rem) 0;
     display: grid;
-    gap: 0.8rem;
-    max-width: 50rem;
-    color: var(--paper-muted);
-    font-size: 1.05rem;
-    line-height: 1.55;
+    grid-template-columns: minmax(8rem,.42fr) minmax(0,1.25fr) minmax(18rem,.68fr);
+    gap: clamp(1.5rem,4vw,4rem);
+    align-items: start;
   }
+  .progression h2, .method h2, .course-close h2 { font-size: clamp(2.7rem, 6vw, 6.2rem); line-height: .93; letter-spacing: -.055em; }
+  .progression p:last-child { color: rgba(246,234,212,.7); font-size: 1.05rem; line-height: 1.7; }
 
-  .close-steps strong {
-    color: #05645d;
+  .text-link { display: inline-flex; gap: .55rem; font-weight: 850; text-underline-offset: .25em; transition: transform 180ms ease; }
+
+  .handoff {
+    position: relative;
+    min-height: min(86svh, 52rem);
+    overflow: hidden;
+    display: grid;
+    align-items: end;
+    padding: clamp(5rem, 10vw, 9rem) max(1rem, calc((100vw - 78rem) / 2));
+    background: #090f22;
+    color: #f3f4ff;
   }
-
-  .close-steps code {
-    border: 1px solid rgba(23, 18, 10, 0.14);
-    border-radius: 8px;
-    padding: 0.1rem 0.34rem;
-    background: rgba(255, 250, 238, 0.62);
-    color: #15110a;
-    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-    font-weight: 850;
+  .handoff-image,
+  .handoff-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .handoff-image { object-fit: cover; object-position: center; }
+  .handoff-shade {
+    background:
+      linear-gradient(90deg, rgba(5,9,22,.93) 0%, rgba(5,9,22,.68) 52%, rgba(5,9,22,.18) 82%),
+      linear-gradient(0deg, rgba(5,9,22,.86), transparent 58%);
   }
+  .handoff-copy { position: relative; z-index: 2; width: min(56rem, 100%); }
+  .handoff .section-index { color: #aebaff; }
+  .handoff h2 { max-width: 15ch; margin: .85rem 0 0; font-size: clamp(3rem, 7vw, 7rem); line-height: .91; letter-spacing: -.06em; }
+  .handoff-copy > p:last-child { max-width: 40rem; margin-top: 1.25rem; color: rgba(239,242,255,.72); font-size: 1.08rem; line-height: 1.65; }
 
-  .course-close .button.primary {
-    background: #06786e;
-    color: #fff8e8;
-  }
+  .method { padding: clamp(5rem,10vw,10rem) max(1rem, calc((100vw - 78rem) / 2)); background: #090c12; }
+  .method h2 { max-width: 12ch; margin-top: .9rem; }
+  .method-flow { margin-top: clamp(3rem,7vw,7rem); display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-top: 1px solid var(--line); }
+  .method-flow div { min-height: 15rem; padding: 1.2rem 1.5rem 1.5rem 0; border-bottom: 1px solid var(--line); }
+  .method-flow div + div { border-left: 1px solid var(--line); padding-left: 1.5rem; }
+  .method-flow span { display: block; color: var(--teal); font-family: "JetBrains Mono Variable", "JetBrains Mono", monospace; font-size: .75rem; }
+  .method-flow strong { display: block; margin-top: 4rem; font-size: 1.55rem; }
+  .method-flow p { max-width: 25rem; margin-top: .55rem; color: rgba(246,234,212,.64); line-height: 1.55; }
 
-  .course-close .button.primary:hover,
-  .course-close .button.primary:focus-visible {
-    background: #055f58;
-  }
+  .course-close { padding: clamp(5rem,10vw,10rem) max(1rem, calc((100vw - 78rem) / 2)); background: #e8dcc6; color: #16120c; }
+  .course-close .section-index { color: #334ba9; }
+  .course-close h2 { margin-top: .9rem; }
+  .button.paper { background: #18140e; color: #fff6e5; }
+  .button.cobalt { background: #526ee8; color: #fff; }
+  .dark-link { margin-left: .35rem; color: #2c3976; }
 
-  .course-close .button.paper {
-    border-color: var(--paper-soft-line);
-    background: #fff8e8;
-    color: #15110a;
-  }
+  footer { display: flex; justify-content: space-between; gap: 2rem; padding: 2rem max(1rem, calc((100vw - 78rem) / 2)); background: #07090d; color: rgba(246,234,212,.66); }
+  footer > a { color: #fff; font-weight: 850; text-decoration: none; }
+  footer nav { display: flex; flex-wrap: wrap; gap: 1.2rem; }
+  footer nav a { text-underline-offset: .2em; }
 
-  .course-close .button.paper:hover,
-  .course-close .button.paper:focus-visible {
-    background: #ffffff;
-  }
+  :focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+  .course-close :focus-visible { outline-color: #16120c; }
 
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-      transition-duration: 1ms !important;
-      animation-duration: 1ms !important;
-      animation-iteration-count: 1 !important;
-    }
-
-    .case-step {
-      opacity: 1;
-      transform: none;
-    }
-
-    .case-visual[data-visual-case="0"] {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  @media (max-width: 920px) {
-    .site-header {
-      position: static;
-      width: calc(100% - 1rem);
-      margin: 0.5rem auto 0;
-      align-items: stretch;
-      flex-direction: column;
-      gap: 0.35rem;
-      border-radius: 24px;
-      padding: 0.8rem;
-      transform: none;
-    }
-
-    .site-header nav {
-      width: 100%;
-      display: flex;
-      overflow-x: auto;
-      padding-block-end: 0.15rem;
-      scrollbar-width: thin;
-    }
-
-    .site-header nav a {
-      flex: 0 0 auto;
-      padding: 0.5rem 0.65rem;
-      font-size: 0.84rem;
-    }
-
-    .course-hero {
-      min-height: auto;
-      grid-template-columns: 1fr;
-      gap: 2rem;
-      padding-block: 3rem 2rem;
-    }
-
-    .hero-copy h1 {
-      max-width: 11ch;
-      font-size: 3.35rem;
-    }
-
-    .hero-copy > p:not(.eyebrow) {
-      font-size: 1.05rem;
-    }
-
-    .arc-cover {
-      min-height: auto;
-    }
-
-    .cover-photo {
-      height: 15rem;
-    }
-
-    .story-intro {
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
-      padding-block: 2rem 2.5rem;
-    }
-
-    .story-intro h2 {
-      max-width: 12ch;
-      font-size: 2.45rem;
-    }
-
-    .story-intro-copy p {
-      font-size: 1rem;
-    }
-
-    .story-intro dl {
-      grid-template-columns: 1fr;
-      gap: 0.8rem;
-    }
-
-    .case-story {
-      display: none;
-    }
-
-    .mobile-case-path {
-      display: block;
-      width: min(76rem, calc(100% - 2rem));
-      margin-inline: auto;
-      padding-block: 2rem 3rem;
-    }
-
-    .mobile-case-path h2 {
-      max-width: 12ch;
-      margin-block: 0.55rem 1.2rem;
-      color: #fff4dc;
-      font-size: 2.7rem;
-      line-height: 1;
-      letter-spacing: 0;
-    }
-
-    .mobile-cases {
-      display: grid;
-      gap: 0.85rem;
-    }
-
-    .mobile-cases article {
-      border: 1px solid rgba(245, 234, 213, 0.16);
-      border-radius: 24px;
-      padding: 1.05rem;
-      background: rgba(245, 234, 213, 0.08);
-    }
-
-    .mobile-cases span {
-      color: var(--case-color);
-      font-size: 0.8rem;
-      font-weight: 950;
-      text-transform: uppercase;
-    }
-
-    .mobile-cases h3 {
-      margin-block: 0.35rem 0.5rem;
-      color: #fff4dc;
-      font-size: 1.45rem;
-      line-height: 1.08;
-      letter-spacing: 0;
-    }
-
-    .mobile-cases p {
-      color: rgba(245, 234, 213, 0.72);
-      line-height: 1.5;
-    }
-
-    .mobile-cases .mobile-question {
-      margin-block-start: 0.45rem;
-      color: rgba(245, 234, 213, 0.86);
-      font-weight: 800;
-    }
-
-    .mobile-cases a {
-      display: inline-flex;
-      margin-block-start: 0.75rem;
-      color: var(--case-color);
-      font-weight: 950;
-      text-decoration-thickness: 0.12em;
-      text-underline-offset: 0.18em;
-    }
-
-    .course-close {
-      width: 100%;
-      border-radius: 28px 28px 0 0;
-      padding: 3rem 1rem 4rem;
-    }
-
-    .course-close h2 {
-      max-width: 13ch;
-      font-size: 2.55rem;
-    }
+  @media (max-width: 900px) {
+    .site-header { position: absolute; align-items: flex-start; flex-direction: column; border-radius: 1.2rem; }
+    .site-header nav { width: 100%; overflow-x: auto; padding-bottom: .1rem; }
+    .site-header nav a { flex: 0 0 auto; padding-inline: .6rem; }
+    .course-hero { min-height: 46rem; padding-top: 9.5rem; }
+    .hero-image { object-position: 64% center; }
+    .hero-content h1 > span { font-size: clamp(3.8rem,15vw,7rem); }
+    .hero-scroll { display: none; }
+    .progression { grid-template-columns: 1fr; }
+    .progression h2 { max-width: 13ch; }
+    .method-flow { grid-template-columns: 1fr; }
+    .method-flow div { min-height: auto; padding: 1.2rem 0 2rem; }
+    .method-flow div + div { border-left: 0; padding-left: 0; }
+    .method-flow strong { margin-top: 2rem; }
   }
 
   @media (max-width: 560px) {
-    .hero-copy h1 {
-      font-size: 2.95rem;
+    .course-hero { min-height: 42rem; }
+    .site-header nav {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: visible;
+      padding-bottom: 0;
     }
+    .site-header nav a { text-align: center; }
+    .hero-shade { background: linear-gradient(90deg,rgba(5,7,8,.94),rgba(5,7,8,.64)), linear-gradient(0deg,rgba(5,7,8,.88),transparent); }
+    .hero-content h1 > span { font-size: clamp(2.3rem,11.5vw,4.25rem); }
+    .hero-content h1 small { font-size: 1.55rem; }
+    .hero-actions, .close-actions { align-items: stretch; flex-direction: column; }
+    .button { width: 100%; }
+    .dark-link { margin: .4rem 0 0; justify-content: center; }
+    .handoff { min-height: 42rem; }
+    .handoff-image { object-position: 58% center; }
+    .handoff-shade { background: linear-gradient(90deg,rgba(5,9,22,.94),rgba(5,9,22,.62)), linear-gradient(0deg,rgba(5,9,22,.9),transparent); }
+    footer { align-items: flex-start; flex-direction: column; }
+  }
 
-    .hero-actions,
-    .step-actions {
-      align-items: stretch;
-      flex-direction: column;
-    }
-
-    .button {
-      width: 100%;
-    }
-
-    .cover-list li {
-      grid-template-columns: 2.35rem minmax(0, 1fr);
-    }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
   }
 </style>

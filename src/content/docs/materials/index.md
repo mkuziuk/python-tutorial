@@ -1,11 +1,53 @@
 ---
 title: Материалы
-description: Данные, стартовые файлы и команды для проектных глав.
+description: Архивы, данные, notebooks и команды для обеих частей курса.
 ---
 
-На этой странице собраны рабочие папки первой арки — от первых операций со строками до объектной модели и итогового вердикта. Дела расположены по возрастанию сложности: начните с дела 01 и двигайтесь по порядку. В каждом архиве лежат файлы ученика: README, данные, пустой стартовый скрипт, `requirements.txt`, пример формы вывода и папка `tests/` для самопроверки. Полные решения открываются отдельно в главах разбора.
+На этой странице собраны самостоятельные рабочие наборы двух арок. В Части I это скрипты, данные и тесты; в Части II — learner notebook, README, фиксированные зависимости и необходимые локальные данные. Каждый ZIP можно запустить отдельно, даже если учебные понятия продолжают предыдущее дело.
 
-Если во время работы нужно быстро вспомнить `list`, `dict`, функции, `pathlib`, JSON или другой инструмент, возвращайтесь в [Справочник следователя](../field-guide/): ссылки на нужные страницы также есть в начале каждого дела.
+Если нужно быстро вспомнить Python, pandas, метрики или другой инструмент, возвращайтесь в [Справочник](../field-guide/): ссылки на нужные страницы также есть в начале каждого дела.
+
+## Быстрый выбор справки
+
+Необязательно читать справочник подряд. Начните с действия, которое сейчас мешает продолжить:
+
+| Нужно сделать | Открыть сначала | Минимальный результат |
+| --- | --- | --- |
+| прочитать текстовый файл и пройти по строкам | [Файлы](../field-guide/file-io/) и [циклы](../field-guide/control-flow/) | получить `list[str]` и обработать каждую строку |
+| посчитать частоты или собрать запись по ключам | [Counter](../field-guide/counter/) и [dict](../field-guide/dict/) | получить воспроизводимую таблицу частот или словарь фактов |
+| безопасно работать с путями и JSON | [pathlib](../field-guide/pathlib/) и [JSON](../field-guide/json/) | прочитать вход и сохранить проверяемый отчет |
+| понять форму ML-данных | [математический словарь и NumPy](../field-guide/numpy/#math-vocabulary), затем [pandas](../field-guide/pandas/) | назвать, что означает каждая строка, колонка и ось |
+| отделить обучение от проверки | [Постановка ML-задачи](../field-guide/ml-framing/) и [утечка](../field-guide/leakage-pipelines/) | зафиксировать `X`, `y`, train и holdout до обучения |
+| выбрать и объяснить метрику | [Классификационные метрики](../field-guide/classification-metrics/) или [регрессия](../field-guide/regression/) | посчитать показатель и назвать его знаменатель или единицы |
+| проверить новые источники, районы или партии | [Групповая валидация](../field-guide/grouped-validation/) | определить независимую единицу и исключить пересечение групп |
+
+Два маленьких примера показывают переход между арками. В Python-деле один файл превращается в коллекцию, которую можно проверить:
+
+```python
+from pathlib import Path
+
+lines = Path("data/report.txt").read_text(encoding="utf-8").splitlines()  # подставьте файл дела
+non_empty = [line for line in lines if line.strip()]
+print(f"Непустых строк: {len(non_empty)}")
+```
+
+В ML-деле несколько объектов превращаются в матрицу признаков `X`, а ожидаемые ответы — в вектор `y`:
+
+```python
+import numpy as np
+
+X = np.array([[5.1, 3.5], [6.7, 3.1]])  # 2 объекта × 2 признака
+y = np.array([0, 1])                    # по одному ответу на объект
+
+assert X.shape == (2, 2)
+assert y.shape == (2,)
+```
+
+Здесь **вектор** — просто упорядоченный одномерный список чисел, а **матрица** — прямоугольная таблица чисел. Геометрический смысл появится только там, где он нужен алгоритму; остальные обозначения собраны в [коротком математическом словаре](../field-guide/numpy/#math-vocabulary).
+
+## Часть I · Архив
+
+В каждом архиве первой части лежат README, данные, пустой стартовый скрипт, `requirements.txt`, пример формы вывода и `tests/` для самопроверки. Полные решения открываются отдельно в главах разбора.
 
 ## Дело 01. Кто оставил предупреждение?
 
@@ -140,3 +182,80 @@ python -m pip install -r requirements.txt
 python final_verdict.py
 python -m unittest discover -s tests
 ```
+
+## Часть II · Бюро
+
+Для notebook-дел нужен Python 3.12 или 3.13. Локально распакуйте ZIP, откройте папку дела и выполните:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+jupyter lab
+```
+
+В Windows используйте `py -3.12 -m venv .venv` (или `py -3.13 -m venv .venv`) и `.\.venv\Scripts\Activate.ps1`. Затем откройте `case-0N.ipynb` и выполните **Restart Kernel and Run All**. Ссылка Colab запускает тот же learner notebook; bootstrap-ячейка получает ZIP и проверяет контрольную сумму.
+
+Начинайте с learner notebook в корне архива. `check_result.md` задаёт не единственное правильное число, а обязательную форму проверки: split, диапазоны метрик, диагностические графики и структуру вывода. Папка `solution/` остаётся в репозитории для дебрифа и не входит в самостоятельный ZIP.
+
+### II-01 · Ирисовый экзамен
+
+<div class="materials-panel">
+  <p><strong>Проект:</strong> <code>projects/part-2/case-01/</code></p>
+  <p><strong>Данные:</strong> <code>sklearn-iris</code>, встроенный offline loader</p>
+  <p><strong>Архив:</strong> <a href="../downloads/part-2-case-01.zip">part-2-case-01.zip</a></p>
+  <p><strong>Notebook:</strong> <code>case-01.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-01/case-01.ipynb">Open in Colab</a></p>
+  <p><strong>Главы:</strong> <a href="../bureau/iris-exam/">брифинг</a> · <a href="../bureau/iris-exam-solution/">дебриф</a></p>
+</div>
+
+### II-02 · Пассажиры после факта
+
+<div class="materials-panel">
+  <p><strong>Проект:</strong> <code>projects/part-2/case-02/</code></p>
+  <p><strong>Данные:</strong> <code>openml-titanic-40945-frozen</code>, локальный snapshot с provenance и SHA-256</p>
+  <p><strong>Архив:</strong> <a href="../downloads/part-2-case-02.zip">part-2-case-02.zip</a></p>
+  <p><strong>Notebook:</strong> <code>case-02.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-02/case-02.ipynb">Open in Colab</a></p>
+  <p><strong>Главы:</strong> <a href="../bureau/passengers-after-the-fact/">брифинг</a> · <a href="../bureau/passengers-after-the-fact-solution/">дебриф</a></p>
+</div>
+
+### II-03 · Цена одной ошибки
+
+<div class="materials-panel">
+  <p><strong>Проект:</strong> <code>projects/part-2/case-03/</code></p>
+  <p><strong>Данные:</strong> <code>openml-titanic-40945-frozen</code>, тот же замороженный Titanic; честный pipeline вложен, предыдущее дело не требуется на диске</p>
+  <p><strong>Архив:</strong> <a href="../downloads/part-2-case-03.zip">part-2-case-03.zip</a></p>
+  <p><strong>Notebook:</strong> <code>case-03.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-03/case-03.ipynb">Open in Colab</a></p>
+  <p><strong>Главы:</strong> <a href="../bureau/cost-of-one-error/">брифинг</a> · <a href="../bureau/cost-of-one-error-solution/">дебриф</a></p>
+</div>
+
+### II-04 · Карта дорогих ошибок
+
+<div class="materials-panel">
+  <p><strong>Проект:</strong> <code>projects/part-2/case-04/</code></p>
+  <p><strong>Данные:</strong> <code>sklearn-california-housing-1990-frozen-v1</code>, локальный snapshot с provenance и SHA-256</p>
+  <p><strong>Архив:</strong> <a href="../downloads/part-2-case-04.zip">part-2-case-04.zip</a></p>
+  <p><strong>Notebook:</strong> <code>case-04.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-04/case-04.ipynb">Open in Colab</a></p>
+  <p><strong>Главы:</strong> <a href="../bureau/map-of-costly-errors/">брифинг</a> · <a href="../bureau/map-of-costly-errors-solution/">дебриф</a></p>
+</div>
+
+### II-05 · Знакомый почерк
+
+<div class="materials-panel">
+  <p><strong>Проект:</strong> <code>projects/part-2/case-05/</code></p>
+  <p><strong>Данные:</strong> <code>sklearn-digits-8x8-v1</code>, встроенный offline loader</p>
+  <p><strong>Архив:</strong> <a href="../downloads/part-2-case-05.zip">part-2-case-05.zip</a></p>
+  <p><strong>Notebook:</strong> <code>case-05.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-05/case-05.ipynb">Open in Colab</a></p>
+  <p><strong>Главы:</strong> <a href="../bureau/familiar-handwriting/">брифинг</a> · <a href="../bureau/familiar-handwriting-solution/">дебриф</a></p>
+</div>
+
+### II-06 · Экзамен для «Компаса»
+
+<div class="materials-panel">
+  <p><strong>Проект:</strong> <code>projects/part-2/case-06/</code></p>
+  <p><strong>Данные:</strong> <code>compass-digits-synthetic-captures-v1</code>, документированный синтетический стресс-тест</p>
+  <p><strong>Архив:</strong> <a href="../downloads/part-2-case-06.zip">part-2-case-06.zip</a></p>
+  <p><strong>Notebook:</strong> <code>case-06.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-06/case-06.ipynb">Open in Colab</a></p>
+  <p><strong>Главы:</strong> <a href="../bureau/compass-exam/">брифинг</a> · <a href="../bureau/compass-exam-solution/">финальный дебриф</a></p>
+</div>
+
+Готовые notebooks лежат в `solution/` каждого проекта и связаны со страницами дебрифа. Не заменяйте ими learner notebook до собственной попытки: ценность расследования — в выборе процедуры и письменном обосновании, а не только в выполненном коде.

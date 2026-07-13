@@ -7,14 +7,20 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "build:notebooks": "python3 tools/build_part2_notebooks.py",
     "build:archives": "python3 tools/build_case_archives.py",
     "test:python": "python3 tools/run_case_tests.py",
+    "test:notebooks": "python3 tools/build_part2_notebooks.py --check && python3 tools/run_part2_notebooks.py",
+    "test:manifest": "python3 tools/check_course_manifest.py",
     "test:archives": "python3 tools/build_case_archives.py --check",
     "test:links": "node tools/check_internal_links.mjs",
-    "verify": "pnpm test:python && pnpm test:archives && pnpm build && pnpm test:links"
+    "verify": "pnpm test:python && pnpm test:notebooks && pnpm test:manifest && pnpm test:archives && pnpm build && pnpm test:links"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.3",
-    "astro": "^7.0.6"
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "astro": "^7.0.6",
+    "sharp": "0.35.3"
   }
 }

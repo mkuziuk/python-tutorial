@@ -1,0 +1,15 @@
+{
+  "dataset_id": "compass-digits-synthetic-captures-v1",
+  "instructional_synthetic_stress_test": true,
+  "source_dataset": "sklearn-digits-8x8-v1",
+  "random_state": 42,
+  "rows": 5838,
+  "sources": 1797,
+  "pixel_columns": 64,
+  "sha256": "5ea690b56529737c37c05400671394b17fdbd2b5c5e6c50026a03e76e4e386ed",
+  "vendor_macro_f1": 1.0,
+  "grouped_macro_f1": 0.8877849477326102,
+  "batch_c_macro_f1": 0.6472946398986462,
+  "vendor_to_grouped_gap": 0.11221505226738981,
+  "grouped_to_batch_c_gap": 0.24049030783396397
+}

@@ -31,9 +31,33 @@ letters = Counter("расследование")
 print(letters.most_common(3))
 ```
 
+## Ещё примеры
+
+Счётчик можно пополнять частями — удобно при чтении нескольких файлов:
+
+```python
+from collections import Counter
+
+word_counts = Counter()
+word_counts.update(["архив", "ночь", "архив"])
+word_counts.update(["след", "ночь"])
+
+for word, count in word_counts.most_common():
+    print(word, count)
+```
+
+Частоту иногда полезнее выразить долей от общего числа наблюдений:
+
+```python
+total = word_counts.total()
+night_share = word_counts["ночь"] / total if total else 0
+print(f"доля слова 'ночь': {night_share:.1%}")
+```
+
 ## Типичные ловушки
 
 - `Counter` считает точные значения: `"След"` и `"след"` разные строки.
+- Обращение к отсутствующему элементу возвращает `0`, а не вызывает `KeyError`.
 - `most_common()` сортирует по частоте, но равные частоты могут идти в порядке первого появления.
 - Для долей и процентов все равно нужно делить на общее количество элементов.
 

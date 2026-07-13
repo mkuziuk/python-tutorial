@@ -1,0 +1,10 @@
+OpenML metadata for dataset 40945 version 1 labels the licence as "Public".
+
+Attribution retained from the dataset card:
+Frank E. Harrell Jr. and Thomas Cason; Vanderbilt Biostatistics and
+Encyclopedia Titanica source material.
+
+This repository redistributes the frozen snapshot for educational auditing and
+reproducibility. The metadata label is reproduced as supplied by OpenML; it is
+not a new licence grant by the course authors. Preserve SOURCE.md and this file
+when redistributing the snapshot.

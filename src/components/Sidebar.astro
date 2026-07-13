@@ -1,0 +1,89 @@
+---
+import DefaultSidebar from '@astrojs/starlight/components/Sidebar.astro';
+---
+
+<DefaultSidebar />
+
+<script>
+	/**
+	 * Starlight 0.41.3 listens for `pageHide` instead of the browser's lowercase
+	 * `pagehide` event. Save the exact desktop sidebar state before navigation so
+	 * its built-in pre-paint restorer does not fall back to an older position.
+	 */
+	const storageKey = 'sl-sidebar-state';
+	let pendingNavigationState: SidebarState | null = null;
+
+	interface SidebarState {
+		hash: string;
+		open: Array<boolean | null>;
+		scroll: number;
+	}
+
+	const readSidebarState = (): SidebarState | null => {
+		if (!matchMedia('(min-width: 50em)').matches) return null;
+
+		const scroller = document.getElementById('starlight__sidebar');
+		const persister = scroller?.querySelector<HTMLElement>('sl-sidebar-state-persist');
+		if (!scroller || !persister) return null;
+
+		const open: SidebarState['open'] = [];
+		persister.querySelectorAll<HTMLElement>('sl-sidebar-restore[data-index]').forEach((marker) => {
+			const index = Number.parseInt(marker.dataset.index ?? '', 10);
+			const details = marker.closest('details');
+			if (!Number.isNaN(index) && details) open[index] = details.open;
+		});
+
+		return {
+			hash: persister.dataset.hash ?? '',
+			open,
+			scroll: scroller.scrollTop,
+		};
+	};
+
+	const storeSidebarState = (state: SidebarState | null) => {
+		if (!state) return;
+		try {
+			sessionStorage.setItem(storageKey, JSON.stringify(state));
+		} catch {
+			// Storage can be unavailable in privacy modes; navigation must still work.
+		}
+	};
+
+	const isSameTabNavigation = (event: MouseEvent, link: HTMLAnchorElement) => {
+		if (
+			event.button !== 0 ||
+			event.metaKey ||
+			event.ctrlKey ||
+			event.altKey ||
+			event.shiftKey ||
+			link.hasAttribute('download') ||
+			(link.target && link.target !== '_self')
+		) {
+			return false;
+		}
+
+		const destination = new URL(link.href, location.href);
+		return (
+			destination.origin === location.origin &&
+			(destination.pathname !== location.pathname || destination.search !== location.search)
+		);
+	};
+
+	document.addEventListener(
+		'click',
+		(event) => {
+			if (!(event instanceof MouseEvent) || !(event.target instanceof Element)) return;
+			const link = event.target.closest<HTMLAnchorElement>('#starlight__sidebar a[href]');
+			if (!link || !isSameTabNavigation(event, link)) return;
+
+			pendingNavigationState = readSidebarState();
+			storeSidebarState(pendingNavigationState);
+		},
+		true,
+	);
+
+	addEventListener('pagehide', () => {
+		storeSidebarState(pendingNavigationState ?? readSidebarState());
+		pendingNavigationState = null;
+	});
+</script>

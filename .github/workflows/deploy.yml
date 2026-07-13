@@ -11,6 +11,23 @@ permissions:
   id-token: write
 
 jobs:
+  notebook-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12 for Colab compatibility
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Check generated learner notebooks
+        run: python tools/build_part2_notebooks.py --check
+
+      - name: Execute Part II solution notebooks
+        run: python tools/run_part2_notebooks.py
+
   quality:
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +54,7 @@ jobs:
         run: pnpm verify
 
   build:
-    needs: quality
+    needs: [quality, notebook-compat]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

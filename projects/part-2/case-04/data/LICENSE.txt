@@ -1,0 +1,17 @@
+CALIFORNIA HOUSING DATA NOTICE
+
+The snapshot is derived from 1990 United States Census data and was obtained
+through scikit-learn's California Housing loader, which credits the StatLib
+repository and Pace & Barry (1997). scikit-learn is distributed under the
+BSD 3-Clause license. Its dataset documentation does not state a separate
+license for this historical StatLib dataset.
+
+This repository redistributes the frozen snapshot for reproducible educational
+analysis with full attribution. Do not infer that the scikit-learn software
+license grants additional rights in the underlying dataset. If your reuse
+requires an explicit dataset license, consult the original source and your
+institution's policy.
+
+Sources:
+https://scikit-learn.org/stable/datasets/real_world.html#california-housing-dataset
+https://www.dcc.fc.up.pt/~ltorgo/Regression/cal_housing.html

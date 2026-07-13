@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "arcs": [
+    {
+      "id": "part-1",
+      "title": "Часть I · Архив",
+      "route": "/cases/",
+      "theme": "archive-teal",
+      "prerequisite": "Базовое владение компьютером; опыт программирования не требуется.",
+      "cases": [
+        {
+          "number": "I-01",
+          "slug": "anonymous-letter",
+          "title": "Кто оставил предупреждение?",
+          "time": "90–120 минут",
+          "format": "Python-скрипт",
+          "concepts": ["строки", "регулярные выражения", "Counter", "функции"],
+          "route": "/cases/anonymous-letter/",
+          "solutionRoute": "/cases/anonymous-letter-solution/",
+          "projectPath": "projects/case-01",
+          "archive": "public/downloads/case-01.zip",
+          "notebooks": { "learner": null, "solution": null },
+          "datasetIds": ["archive-authorship-samples"]
+        },
+        {
+          "number": "I-02",
+          "slug": "copy-paste-detector",
+          "title": "Детектор текстовых совпадений",
+          "time": "90–120 минут",
+          "format": "Python-скрипт",
+          "concepts": ["кортежи", "n-граммы", "множества", "сортировка"],
+          "route": "/cases/copy-paste-detector/",
+          "solutionRoute": "/cases/copy-paste-detector-solution/",
+          "projectPath": "projects/case-02",
+          "archive": "public/downloads/case-02.zip",
+          "notebooks": { "learner": null, "solution": null },
+          "datasetIds": ["archive-report-corpus"]
+        },
+        {
+          "number": "I-03",
+          "slug": "phishing-email",
+          "title": "Фишинговое письмо или нет?",
+          "time": "120–150 минут",
+          "format": "Python-скрипт",
+          "concepts": ["email", "URL", "IP", "исключения"],
+          "route": "/cases/phishing-email/",
+          "solutionRoute": "/cases/phishing-email-solution/",
+          "projectPath": "projects/case-03",
+          "archive": "public/downloads/case-03.zip",
+          "notebooks": { "learner": null, "solution": null },
+          "datasetIds": ["archive-email-corpus"]
+        },
+        {
+          "number": "I-04",
+          "slug": "secret-folder-archive",
+          "title": "Ночной сигнал архива",
+          "time": "100–130 минут",
+          "format": "Python-скрипт",
+          "concepts": ["pathlib", "hashlib", "JSON", "даты"],
+          "route": "/cases/secret-folder-archive/",
+          "solutionRoute": "/cases/secret-folder-archive-solution/",
+          "projectPath": "projects/case-04",
+          "archive": "public/downloads/case-04.zip",
+          "notebooks": { "learner": null, "solution": null },
+          "datasetIds": ["archive-secret-folder"]
+        },
+        {
+          "number": "I-05",
+          "slug": "investigation-system",
+          "title": "Доска расследования",
+          "time": "120–150 минут",
+          "format": "Python-скрипт",
+          "concepts": ["классы", "dataclass", "композиция", "JSON"],
+          "route": "/cases/investigation-system/",
+          "solutionRoute": "/cases/investigation-system-solution/",
+          "projectPath": "projects/case-05",
+          "archive": "public/downloads/case-05.zip",
+          "notebooks": { "learner": null, "solution": null },
+          "datasetIds": ["archive-case-seed"]
+        },
+        {
+          "number": "I-06",
+          "slug": "final-verdict",
+          "title": "Вердикт перед открытием",
+          "time": "120–150 минут",
+          "format": "Python-скрипт",
+          "concepts": ["хронология", "StrEnum", "match", "вердикт"],
+          "route": "/cases/final-verdict/",
+          "solutionRoute": "/cases/final-verdict-solution/",
+          "projectPath": "projects/case-06",
+          "archive": "public/downloads/case-06.zip",
+          "notebooks": { "learner": null, "solution": null },
+          "datasetIds": ["archive-evidence-bundle"]
+        }
+      ]
+    },
+    {
+      "id": "part-2",
+      "title": "Часть II · Бюро",
+      "route": "/bureau/",
+      "theme": "bureau-cobalt",
+      "prerequisite": "Пройдена Часть I или есть уверенное владение функциями, коллекциями, файлами и виртуальным окружением Python.",
+      "cases": [
+        {
+          "number": "II-01",
+          "slug": "iris-exam",
+          "title": "Ирисовый экзамен",
+          "time": "3–4 часа",
+          "format": "Jupyter Notebook",
+          "concepts": ["DataFrame", "train/test split", "масштабирование", "k-NN", "confusion matrix"],
+          "route": "/bureau/iris-exam/",
+          "solutionRoute": "/bureau/iris-exam-solution/",
+          "projectPath": "projects/part-2/case-01",
+          "archive": "public/downloads/part-2-case-01.zip",
+          "notebooks": {
+            "learner": "projects/part-2/case-01/case-01.ipynb",
+            "solution": "projects/part-2/case-01/solution/case-01-solution.ipynb"
+          },
+          "datasetIds": ["sklearn-iris"]
+        },
+        {
+          "number": "II-02",
+          "slug": "passengers-after-the-fact",
+          "title": "Пассажиры после факта",
+          "time": "4–5 часов",
+          "format": "Jupyter Notebook",
+          "concepts": ["пропуски", "категории", "утечка цели", "ColumnTransformer", "логистическая регрессия"],
+          "route": "/bureau/passengers-after-the-fact/",
+          "solutionRoute": "/bureau/passengers-after-the-fact-solution/",
+          "projectPath": "projects/part-2/case-02",
+          "archive": "public/downloads/part-2-case-02.zip",
+          "notebooks": {
+            "learner": "projects/part-2/case-02/case-02.ipynb",
+            "solution": "projects/part-2/case-02/solution/case-02-solution.ipynb"
+          },
+          "datasetIds": ["openml-titanic-40945-frozen"]
+        },
+        {
+          "number": "II-03",
+          "slug": "cost-of-one-error",
+          "title": "Цена одной ошибки",
+          "time": "4–5 часов",
+          "format": "Jupyter Notebook",
+          "concepts": ["cross-validation", "precision", "recall", "F1", "порог", "срезы"],
+          "route": "/bureau/cost-of-one-error/",
+          "solutionRoute": "/bureau/cost-of-one-error-solution/",
+          "projectPath": "projects/part-2/case-03",
+          "archive": "public/downloads/part-2-case-03.zip",
+          "notebooks": {
+            "learner": "projects/part-2/case-03/case-03.ipynb",
+            "solution": "projects/part-2/case-03/solution/case-03-solution.ipynb"
+          },
+          "datasetIds": ["openml-titanic-40945-frozen"]
+        },
+        {
+          "number": "II-04",
+          "slug": "map-of-costly-errors",
+          "title": "Карта дорогих ошибок",
+          "time": "4–5 часов",
+          "format": "Jupyter Notebook",
+          "concepts": ["регрессия", "MAE", "RMSE", "R²", "остатки", "географический holdout"],
+          "route": "/bureau/map-of-costly-errors/",
+          "solutionRoute": "/bureau/map-of-costly-errors-solution/",
+          "projectPath": "projects/part-2/case-04",
+          "archive": "public/downloads/part-2-case-04.zip",
+          "notebooks": {
+            "learner": "projects/part-2/case-04/case-04.ipynb",
+            "solution": "projects/part-2/case-04/solution/case-04-solution.ipynb"
+          },
+          "datasetIds": ["sklearn-california-housing-1990-frozen-v1"]
+        },
+        {
+          "number": "II-05",
+          "slug": "familiar-handwriting",
+          "title": "Знакомый почерк",
+          "time": "4–5 часов",
+          "format": "Jupyter Notebook",
+          "concepts": ["изображения 8×8", "k-NN", "RBF SVM", "GridSearchCV", "macro-F1"],
+          "route": "/bureau/familiar-handwriting/",
+          "solutionRoute": "/bureau/familiar-handwriting-solution/",
+          "projectPath": "projects/part-2/case-05",
+          "archive": "public/downloads/part-2-case-05.zip",
+          "notebooks": {
+            "learner": "projects/part-2/case-05/case-05.ipynb",
+            "solution": "projects/part-2/case-05/solution/case-05-solution.ipynb"
+          },
+          "datasetIds": ["sklearn-digits-8x8-v1"]
+        },
+        {
+          "number": "II-06",
+          "slug": "compass-exam",
+          "title": "Экзамен для «Компаса»",
+          "time": "6–8 часов",
+          "format": "Jupyter Notebook",
+          "concepts": ["групповая валидация", "связанные наблюдения", "distribution shift", "bootstrap", "model card"],
+          "route": "/bureau/compass-exam/",
+          "solutionRoute": "/bureau/compass-exam-solution/",
+          "projectPath": "projects/part-2/case-06",
+          "archive": "public/downloads/part-2-case-06.zip",
+          "notebooks": {
+            "learner": "projects/part-2/case-06/case-06.ipynb",
+            "solution": "projects/part-2/case-06/solution/case-06-solution.ipynb"
+          },
+          "datasetIds": ["compass-digits-synthetic-captures-v1"]
+        }
+      ]
+    }
+  ]
+}

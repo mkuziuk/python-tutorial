@@ -30,9 +30,35 @@ unique_words = set(words)
 print(len(unique_words))
 ```
 
+## Ещё примеры
+
+Операции над множествами отвечают на разные вопросы:
+
+```python
+expected = {"manifest.json", "timeline.txt", "access.log"}
+found = {"manifest.json", "access.log", "draft.txt"}
+
+missing = expected - found       # ожидали, но не нашли
+unexpected = found - expected    # нашли, но не ожидали
+all_names = expected | found     # встретились хотя бы в одном наборе
+
+print(missing)
+print(unexpected)
+print(all_names)
+```
+
+Проверка принадлежности читается почти как обычная фраза:
+
+```python
+risky_extensions = {".exe", ".scr", ".js"}
+if ".exe" in risky_extensions:
+    print("нужна дополнительная проверка")
+```
+
 ## Типичные ловушки
 
 - Множество не хранит порядок.
+- Вывод множества может идти в разном порядке между запусками; сортируйте его только для отчёта: `sorted(values)`.
 - Одинаковые элементы остаются в одном экземпляре.
 - Как и ключи словаря, элементы множества должны быть хешируемыми.
 

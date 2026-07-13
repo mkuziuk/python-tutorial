@@ -1,3 +1,6 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
 :root {
   --sl-color-accent-low: #173b38;
   --sl-color-accent: #2bb3a3;
@@ -10,8 +13,15 @@
   --sl-color-gray-5: #3b3834;
   --sl-color-gray-6: #242526;
   --sl-color-black: #111416;
-  --sl-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --sl-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --sl-font: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sl-font-mono: "JetBrains Mono Variable", "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+:root:has(.bureau-brief),
+:root:has(.bureau-page-scope) {
+  --sl-color-accent-low: #1a285c;
+  --sl-color-accent: #7189ff;
+  --sl-color-accent-high: #e3e8ff;
 }
 
 :root[data-theme='light'] {
@@ -27,6 +37,13 @@
   --sl-color-gray-6: #f2ede4;
   --sl-color-gray-7: #faf8f3;
   --sl-color-black: #ffffff;
+}
+
+:root[data-theme='light']:has(.bureau-brief),
+:root[data-theme='light']:has(.bureau-page-scope) {
+  --sl-color-accent-low: #e6ebff;
+  --sl-color-accent: #3656d4;
+  --sl-color-accent-high: #17285f;
 }
 
 .sl-markdown-content h2 {
@@ -87,4 +104,46 @@
 
 .materials-panel p {
   margin: 0;
+}
+
+.bureau-brief {
+  --bureau-accent: #5f7cff;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bureau-accent) 15%, transparent), transparent 62%),
+    color-mix(in srgb, var(--sl-color-gray-6) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bureau-accent) 55%, var(--sl-color-gray-5));
+  border-radius: 18px;
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--bureau-accent) 82%, transparent);
+  display: grid;
+  gap: 0.65rem;
+  margin-block: 1.25rem 2rem;
+  padding: clamp(1rem, 3vw, 1.4rem);
+}
+
+.bureau-brief p {
+  margin: 0;
+}
+
+.bureau-brief strong {
+  color: color-mix(in srgb, var(--bureau-accent) 65%, var(--sl-color-white));
+}
+
+.bureau-kicker {
+  color: color-mix(in srgb, var(--bureau-accent) 72%, var(--sl-color-white));
+  font-family: var(--sl-font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bureau-actions {
+  border-color: color-mix(in srgb, #5f7cff 44%, var(--sl-color-gray-5));
+}
+
+:root[data-theme='light'] .bureau-brief {
+  --bureau-accent: #244dd8;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bureau-accent) 9%, transparent), transparent 64%),
+    color-mix(in srgb, var(--sl-color-gray-7) 92%, transparent);
 }

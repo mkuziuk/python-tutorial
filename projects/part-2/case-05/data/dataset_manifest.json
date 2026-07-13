@@ -1,0 +1,10 @@
+{
+  "dataset_id": "sklearn-digits-8x8-v1",
+  "loader": "sklearn.datasets.load_digits",
+  "scikit_learn_version": "1.9.0",
+  "rows": 1797,
+  "features": 64,
+  "classes": 10,
+  "content_hash_method": "sha256(float64-le X bytes + int64-le y bytes, C order)",
+  "sha256": "f6d9e39f37dc45d327f6db33428ee58970ccceabb2535a5c179de35886b70443"
+}
