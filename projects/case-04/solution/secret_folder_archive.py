@@ -44,12 +44,14 @@ def iter_files(root):
 
 
 def relative_name(root, path):
+    # В манифест пишем переносимый относительный путь, а не адрес конкретного компьютера.
     return path.relative_to(root).as_posix()
 
 
 def file_sha256(path, chunk_size=65_536):
     digest = hashlib.sha256()
 
+    # Чтение частями ограничивает расход памяти независимо от размера файла.
     with path.open("rb") as file:
         # Оператор := сохраняет блок и сразу проверяет, не закончился ли файл.
         while chunk := file.read(chunk_size):
@@ -61,6 +63,7 @@ def file_sha256(path, chunk_size=65_536):
 def build_record(root, path):
     stat = path.stat()
 
+    # Хэш описывает содержимое, размер — байты, а modified_at — метаданные файловой системы.
     return {
         "path": relative_name(root, path),
         "size": stat.st_size,
@@ -84,6 +87,7 @@ def detect_duplicates(records):
 
     groups = []
     for digest, paths in sorted(by_hash.items()):
+        # Равный SHA-256 группирует байтовые дубли независимо от имени и каталога.
         if len(paths) > 1:
             groups.append({"sha256": digest, "paths": sorted(paths)})
 
@@ -120,6 +124,7 @@ def write_manifest(manifest, path):
 
 
 def index_by_path(manifest):
+    # Для сравнения берём только файлы: scanned_at меняется при каждом запуске и не является изменением архива.
     return {
         str(record["path"]): record
         for record in manifest.get("files", [])
@@ -136,6 +141,7 @@ def compare_manifests(previous, current):
     # Пересечение — общие пути; разности множеств — добавленные и удалённые.
     changed = []
     for path in sorted(old_paths & new_paths):
+        # Изменением считаем новое содержимое; один лишь mtime не создаёт ложную тревогу.
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
             changed.append(path)
 
@@ -239,7 +245,7 @@ def main():
     timeline_differences = compare_timeline_versions(TIMELINE_PATH, TIMELINE_BACKUP_PATH)
     render_timeline_difference(timeline_differences)
     write_manifest(current, MANIFEST_PATH)
-    console.print(f"[bold green]Манифест сохранен:[/bold green] {MANIFEST_PATH}")
+    console.print(f"[bold green]Манифест сохранён:[/bold green] {MANIFEST_PATH}")
 
 
 if __name__ == "__main__":

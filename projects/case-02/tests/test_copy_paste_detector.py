@@ -59,7 +59,7 @@ class CopyPasteDetectorTests(unittest.TestCase):
         self.assertGreater(float(ranking[0]["score"]), 0.25)
         self.assertEqual(
             set(ranking[1]["pair"]),
-            {"Отчет охраны", "Отчет учебного стенда"},
+            {"Отчёт охраны", "Отчёт учебного стенда"},
         )
         self.assertEqual(len(ranking), 2)
 

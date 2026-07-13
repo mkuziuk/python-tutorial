@@ -24,6 +24,7 @@ from copy_paste_detector import make_ngrams
 
 class NgramTests(unittest.TestCase):
     def test_builds_pairs(self):
+        # Подготавливаем небольшой вход, выполняем действие и проверяем результат.
         result = make_ngrams(["ночной", "сигнал", "архива"], size=2)
         self.assertEqual(
             result,

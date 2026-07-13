@@ -80,6 +80,7 @@ class Evidence:
 
     def matches(self, query):
         normalized_query = query.casefold().strip()
+        # Пустой запрос означает «без фильтра», поэтому подходит любая улика.
         if not normalized_query:
             return True
 
@@ -97,6 +98,7 @@ class Evidence:
         return normalized_query in haystack
 
     def short_body(self, limit=90):
+        # Сначала сжимаем пробелы, чтобы переносы строк не ломали таблицу и не расходовали лимит незаметно.
         compact = " ".join(self.body.split())
         if len(compact) <= limit:
             return compact
@@ -189,6 +191,7 @@ class Investigation:
         }
 
     def add_evidence(self, item):
+        # ID сравниваются без учёта регистра: EV-01 и ev-01 — одна логическая улика.
         if self.evidence_by_id(item.evidence_id) is not None:
             raise ValueError(f"Evidence {item.evidence_id!r} already exists")
         self.evidence.append(item)
@@ -207,6 +210,7 @@ class Investigation:
         return [item for item in self.evidence if item.matches(query)]
 
     def priority_evidence(self, limit=3):
+        # При равной надёжности ID служит дополнительным ключом и сохраняет стабильный порядок.
         return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
 
     def tag_index(self):
@@ -214,6 +218,7 @@ class Investigation:
         for item in self.evidence:
             for tag in item.tags:
                 index.setdefault(tag, []).append(item)
+        # Сортируем и теги, и улики, чтобы JSON и таблицы не зависели от порядка входных данных.
         return {
             tag: sorted(items, key=lambda item: item.evidence_id)
             for tag, items in sorted(index.items())
@@ -254,7 +259,7 @@ def render_overview(investigation):
     evidence_table.add_column("Тип")
     evidence_table.add_column("Название")
     evidence_table.add_column("Теги")
-    evidence_table.add_column("Надежность", justify="right")
+    evidence_table.add_column("Надёжность", justify="right")
 
     for item in investigation.priority_evidence(limit=len(investigation.evidence)):
         evidence_table.add_row(
@@ -282,6 +287,7 @@ def render_search_results(query, results):
 
 
 def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
+    # Читаем seed, а пишем в отдельный файл, чтобы исходная версия дела оставалась неизменной.
     investigation = CaseRepository(seed_path).load()
     access_matches = investigation.find_evidence("доступ")
     investigation.add_note(
@@ -297,7 +303,7 @@ def main():
     investigation = build_report()
     render_overview(investigation)
     render_search_results("доступ", investigation.find_evidence("доступ"))
-    console.print(f"\n[green]JSON-снимок сохранен:[/green] {OUTPUT_PATH.name}")
+    console.print(f"\n[green]JSON-снимок сохранён:[/green] {OUTPUT_PATH.name}")
 
 
 if __name__ == "__main__":

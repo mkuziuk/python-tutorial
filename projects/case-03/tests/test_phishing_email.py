@@ -51,8 +51,8 @@ class PhishingEmailTests(unittest.TestCase):
         report = analyze_file(PROJECT_DIR / "data" / "02-lockout-warning.eml")
         titles = {signal.title for signal in report.signals}
         self.assertEqual(report.verdict, "высокий риск")
-        self.assertIn("Reply-To ведет в другой домен", titles)
-        self.assertIn("Ссылка ведет на IP-адрес вместо домена", titles)
+        self.assertIn("Reply-To ведёт в другой домен", titles)
+        self.assertIn("Ссылка ведёт на IP-адрес вместо домена", titles)
         self.assertIn("Видимый домен ссылки не совпадает с реальным", titles)
 
     def test_camera_report_uses_different_risk_pattern(self):
@@ -61,7 +61,7 @@ class PhishingEmailTests(unittest.TestCase):
         self.assertEqual(report.verdict, "высокий риск")
         self.assertIn("Есть вложение с рискованным расширением", titles)
         self.assertIn("Видимый домен ссылки не совпадает с реальным", titles)
-        self.assertNotIn("Ссылка ведет на IP-адрес вместо домена", titles)
+        self.assertNotIn("Ссылка ведёт на IP-адрес вместо домена", titles)
 
     def test_safe_messages_stay_low_risk(self):
         reports = {

@@ -14,7 +14,7 @@ projectId: "case-01"
 time: "15-20 минут"
 ---
 
-Эта страница нужна после того, как вы уже собрали `anonymous_letter.py` по главе. Если открыть ее раньше, дело потеряет половину смысла.
+Обращайтесь к этой странице после самостоятельной сборки `anonymous_letter.py`. Если открыть её раньше, значительная часть учебной задачи потеряет смысл.
 
 ## Полный код
 
@@ -40,6 +40,7 @@ AUTHOR_NAMES = {
 
 
 def normalize_words(text):
+    # Список сохраняет повторы: они нужны и для частот, и для средней длины слов.
     return WORD_RE.findall(text.lower())
 
 
@@ -53,7 +54,9 @@ def build_profile(name, text):
     if not words:
         raise ValueError(f"Text for {name!r} does not contain Russian words")
 
+    # Длину измеряем в буквах, поэтому пробелы и знаки препинания в среднее не попадают.
     total_letters = sum(len(word) for word in words)
+    # Берём 12 самых частых слов, чтобы единичная редкая лексика не влияла сильнее устойчивых привычек.
     return {
         "name": name,
         "word_count": len(words),
@@ -91,6 +94,7 @@ def compare_profiles(anonymous, candidate):
     average_delta = abs(
         float(anonymous["average_word_length"]) - float(candidate["average_word_length"])
     )
+    # Разница в три буквы обнуляет эту часть оценки: это явная граница эвристики.
     length_score = max(0.0, 1.0 - average_delta / 3)
 
     punctuation_score = punctuation_similarity(
@@ -114,10 +118,12 @@ def rank_candidates(data_dir=DATA_DIR):
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
     results = []
 
+    # Шаблон не захватывает anonymous.txt, а сортировка фиксирует порядок обхода.
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
         results.append((str(profile["name"]), compare_profiles(anonymous, profile)))
 
+    # sorted() стабилен: при равных баллах сохранится зафиксированный выше порядок файлов.
     return sorted(results, key=lambda item: item[1], reverse=True)
 
 
@@ -148,9 +154,9 @@ if __name__ == "__main__":
 
 ## Как читать решение
 
-Поток данных такой: файлы превращаются в строки, `normalize_words()` делает список слов, `build_profile()` собирает словарь признаков, `compare_profiles()` выдает оценку, а `render_results()` только печатает таблицу.
+Данные проходят несколько этапов: файлы превращаются в строки, `normalize_words()` составляет список слов, `build_profile()` собирает словарь признаков, `compare_profiles()` вычисляет оценку, а `render_results()` только печатает таблицу.
 
-Главное решение - держать анализ и вывод отдельно. Если результат неверный, сначала проверяйте профиль и формулу, а не Rich-таблицу.
+Главное решение — отделить анализ от вывода. Если результат неверен, сначала проверяйте профиль и формулу, а не таблицу Rich.
 
 Частые ошибки: забыть `ё` в regex, сравнивать все слова вместо частых слов, делить пунктуацию на ноль или считать итоговую оценку без округления.
 
@@ -158,7 +164,7 @@ if __name__ == "__main__":
 
 ## Что важно заметить
 
-`Rich` подключен только в двух местах: `Console` печатает, `Table` рисует таблицу. Анализ текста остается на стандартной библиотеке Python.
+`Rich` подключён только в двух местах: `Console` печатает, а `Table` строит таблицу. Анализ текста остаётся на стандартной библиотеке Python.
 
 `WORD_RE.findall(text.lower())` возвращает список слов, а не итератор совпадений. Для первого проекта это проще читать, чем `finditer()`.
 

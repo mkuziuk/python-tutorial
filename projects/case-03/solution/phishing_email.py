@@ -78,6 +78,7 @@ class EmailReport:
 
 
 def clean_url(raw_url):
+    # Убираем только знаки, которыми URL обычно заканчивается в прозе; путь и параметры не меняем.
     return raw_url.rstrip(TRAILING_URL_CHARS)
 
 
@@ -144,6 +145,7 @@ def extract_links(text):
     links = []
     seen_urls = set()
 
+    # Сначала читаем HTML-ссылки: только так можно сравнить видимую подпись с реальным href.
     for match in HTML_LINK_RE.finditer(text):
         url = clean_url(match.group("url"))
         label = clean_label(match.group("label"))
@@ -214,6 +216,7 @@ def add_signal(signals, title, points, level="warning"):
 
 
 def risk_verdict(score):
+    # Пороги — учебная шкала триажа, а не оценка вероятности взлома.
     if score >= 7:
         return "высокий риск"
     if score >= 3:
@@ -231,14 +234,15 @@ def analyze_message(message, filename="<memory>"):
     signals = []
 
     if reply_to_domain and base_domain(reply_to_domain) != base_domain(sender_domain):
-        add_signal(signals, "Reply-To ведет в другой домен", 2)
+        add_signal(signals, "Reply-To ведёт в другой домен", 2)
 
     if URGENT_RE.search(f"{subject}\n{body}"):
         add_signal(signals, "Есть слова срочности", 1)
 
     for link in links:
+        # Одна ссылка может нарушать несколько независимых правил, поэтому проверки не связаны через elif.
         if link.is_ip_host:
-            add_signal(signals, "Ссылка ведет на IP-адрес вместо домена", 3, "danger")
+            add_signal(signals, "Ссылка ведёт на IP-адрес вместо домена", 3, "danger")
 
         if link.scheme == "http":
             add_signal(signals, "Ссылка использует http без шифрования", 2)
@@ -253,7 +257,7 @@ def analyze_message(message, filename="<memory>"):
             and not link.is_ip_host
             and base_domain(link.host) != base_domain(sender_domain)
         ):
-            add_signal(signals, "Ссылка ведет в домен, отличный от домена отправителя", 1)
+            add_signal(signals, "Ссылка ведёт в домен, отличный от домена отправителя", 1)
 
     if len(links) >= 4:
         add_signal(signals, "В письме слишком много ссылок", 1)
@@ -264,6 +268,7 @@ def analyze_message(message, filename="<memory>"):
     if risky_attachments:
         add_signal(signals, "Есть вложение с рискованным расширением", 3, "danger")
 
+    # Сумма сохраняет вклад каждого сигнала видимым и проверяемым в отчёте.
     score = sum(signal.points for signal in signals)
     return EmailReport(
         filename=filename,
@@ -282,6 +287,7 @@ def analyze_file(path):
 
 
 def analyze_directory(data_dir=DATA_DIR):
+    # Фиксированный порядок файлов делает отчёт одинаковым на разных файловых системах.
     paths = sorted(data_dir.glob("*.eml"))
     if not paths:
         raise EmailAnalysisError(f"No .eml files found in {data_dir}")

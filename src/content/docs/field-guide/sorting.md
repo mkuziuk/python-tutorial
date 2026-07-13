@@ -1,6 +1,6 @@
 ---
 title: "sorting: упорядочиваем версии"
-description: "sorted(), key и reverse для рейтингов, отчетов и списков подозрительных совпадений."
+description: "sorted(), key и reverse для рейтингов, отчётов и списков подозрительных совпадений."
 concept: "sorting"
 usedIn:
   - "case-02"
@@ -36,4 +36,4 @@ print(sorted(pairs, key=lambda pair: pair[1], reverse=True))
 
 ## Где встречается в делах
 
-- [Дело 02. Детектор текстовых совпадений](../../cases/copy-paste-detector/) - рейтинг подозрительных пар отчетов.
+- [Дело 02. Детектор текстовых совпадений](../../cases/copy-paste-detector/) - рейтинг подозрительных пар отчётов.

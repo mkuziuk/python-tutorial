@@ -19,6 +19,7 @@ AUTHOR_NAMES = {
 
 
 def normalize_words(text):
+    # Список сохраняет повторы: они нужны и для частот, и для средней длины слов.
     return WORD_RE.findall(text.lower())
 
 
@@ -32,7 +33,9 @@ def build_profile(name, text):
     if not words:
         raise ValueError(f"Text for {name!r} does not contain Russian words")
 
+    # Длину измеряем в буквах, поэтому пробелы и знаки препинания в среднее не попадают.
     total_letters = sum(len(word) for word in words)
+    # Берём 12 самых частых слов, чтобы единичная редкая лексика не влияла сильнее устойчивых привычек.
     return {
         "name": name,
         "word_count": len(words),
@@ -70,6 +73,7 @@ def compare_profiles(anonymous, candidate):
     average_delta = abs(
         float(anonymous["average_word_length"]) - float(candidate["average_word_length"])
     )
+    # Разница в три буквы обнуляет эту часть оценки: это явная граница эвристики.
     length_score = max(0.0, 1.0 - average_delta / 3)
 
     punctuation_score = punctuation_similarity(
@@ -93,10 +97,12 @@ def rank_candidates(data_dir=DATA_DIR):
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
     results = []
 
+    # Шаблон не захватывает anonymous.txt, а сортировка фиксирует порядок обхода.
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
         results.append((str(profile["name"]), compare_profiles(anonymous, profile)))
 
+    # sorted() стабилен: при равных баллах сохранится зафиксированный выше порядок файлов.
     return sorted(results, key=lambda item: item[1], reverse=True)
 
 

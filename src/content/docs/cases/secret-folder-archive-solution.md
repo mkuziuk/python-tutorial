@@ -1,13 +1,13 @@
 ---
 title: "Разбор полного решения"
-description: "Полный код четвертого дела: SHA-256, JSON-манифест, дубли, изменения и сравнение двух хронологий."
+description: "Полный код четвёртого дела: SHA-256, JSON-манифест, дубли, изменения и сравнение двух хронологий."
 concepts:
   - pathlib
-  - file traversal
+  - обход файлов
   - hashlib
   - JSON
   - timestamps
-  - change detection
+  - поиск изменений
   - difflib
   - Rich
 difficulty: "средний"
@@ -15,7 +15,7 @@ projectId: "case-04"
 time: "20-30 минут"
 ---
 
-Эта страница нужна после того, как вы уже собрали `secret_folder_archive.py` по главе. Если открыть ее раньше, ночной сигнал слишком быстро раскроет свои технические детали.
+Обращайтесь к этой странице после самостоятельной сборки `secret_folder_archive.py`. Если открыть её раньше, работа сведётся к переписыванию готового ответа.
 
 ## Полный код
 
@@ -66,12 +66,14 @@ def iter_files(root):
 
 
 def relative_name(root, path):
+    # В манифест пишем переносимый относительный путь, а не адрес конкретного компьютера.
     return path.relative_to(root).as_posix()
 
 
 def file_sha256(path, chunk_size=65_536):
     digest = hashlib.sha256()
 
+    # Чтение частями ограничивает расход памяти независимо от размера файла.
     with path.open("rb") as file:
         # Оператор := сохраняет блок и сразу проверяет, не закончился ли файл.
         while chunk := file.read(chunk_size):
@@ -83,6 +85,7 @@ def file_sha256(path, chunk_size=65_536):
 def build_record(root, path):
     stat = path.stat()
 
+    # Хэш описывает содержимое, размер — байты, а modified_at — метаданные файловой системы.
     return {
         "path": relative_name(root, path),
         "size": stat.st_size,
@@ -106,6 +109,7 @@ def detect_duplicates(records):
 
     groups = []
     for digest, paths in sorted(by_hash.items()):
+        # Равный SHA-256 группирует байтовые дубли независимо от имени и каталога.
         if len(paths) > 1:
             groups.append({"sha256": digest, "paths": sorted(paths)})
 
@@ -142,6 +146,7 @@ def write_manifest(manifest, path):
 
 
 def index_by_path(manifest):
+    # Для сравнения берём только файлы: scanned_at меняется при каждом запуске и не является изменением архива.
     return {
         str(record["path"]): record
         for record in manifest.get("files", [])
@@ -158,6 +163,7 @@ def compare_manifests(previous, current):
     # Пересечение — общие пути; разности множеств — добавленные и удалённые.
     changed = []
     for path in sorted(old_paths & new_paths):
+        # Изменением считаем новое содержимое; один лишь mtime не создаёт ложную тревогу.
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
             changed.append(path)
 
@@ -261,7 +267,7 @@ def main():
     timeline_differences = compare_timeline_versions(TIMELINE_PATH, TIMELINE_BACKUP_PATH)
     render_timeline_difference(timeline_differences)
     write_manifest(current, MANIFEST_PATH)
-    console.print(f"[bold green]Манифест сохранен:[/bold green] {MANIFEST_PATH}")
+    console.print(f"[bold green]Манифест сохранён:[/bold green] {MANIFEST_PATH}")
 
 
 if __name__ == "__main__":
@@ -270,11 +276,11 @@ if __name__ == "__main__":
 
 ## Как читать решение
 
-Поток данных такой: `iter_files()` находит файлы, `build_record()` собирает запись с SHA-256, `build_manifest()` делает JSON-готовый снимок, `compare_manifests()` ищет изменения между запусками, а `compare_timeline_versions()` отдельно показывает расхождение двух уже существующих текстовых версий.
+Данные проходят несколько этапов: `iter_files()` находит файлы, `build_record()` собирает запись с SHA-256, `build_manifest()` создаёт снимок для записи в JSON, `compare_manifests()` ищет изменения между запусками, а `compare_timeline_versions()` отдельно показывает расхождение двух существующих текстовых версий.
 
-Главное решение - сравнивать содержимое по хэшу, а не по имени или времени. Имя и timestamp помогают читать отчет, но решение "изменился файл или нет" принимает SHA-256. Для объяснения конкретной текстовой разницы используется `difflib.ndiff()`: в отчете видны строки с `22:53` и `23:07`, а не только два разных хэша.
+Главное решение — сравнивать содержимое по хэшу, а не по имени или времени. Имя и временная метка помогают читать отчёт, но изменение файла определяет SHA-256. `difflib.ndiff()` показывает конкретное различие текста: в отчёте видны строки с `22:53` и `23:07`, а не только два разных хэша.
 
-Частые ошибки: сохранять абсолютные пути в manifest, читать большие файлы целиком, считать изменением только новую дату или забыть обработать первый запуск без `manifest.json`.
+Частые ошибки: сохранять абсолютные пути в манифесте, читать большие файлы целиком, определять изменение только по новой дате или забыть обработать первый запуск без `manifest.json`.
 
 Справочник: [pathlib](../../field-guide/pathlib/), [hashlib](../../field-guide/hashlib/), [JSON](../../field-guide/json/), [exceptions](../../field-guide/exceptions/), [dict](../../field-guide/dict/), [list](../../field-guide/list/), [functions](../../field-guide/functions/), [Rich](../../field-guide/rich/).
 
@@ -282,6 +288,6 @@ if __name__ == "__main__":
 
 `pathlib` держит работу с путями читаемой: `rglob()`, `relative_to()`, `as_posix()` и `with_name()` убирают большую часть ручной склейки строк.
 
-`hashlib.sha256()` читает байты файла и выдает стабильный отпечаток содержимого. Размер и timestamp полезны для отчета, но решение "изменился файл или нет" принимает именно хэш.
+`hashlib.sha256()` читает байты файла и выдаёт стабильный отпечаток содержимого. Размер и временная метка полезны для отчёта, но изменение файла определяет именно хэш.
 
-JSON-манифест специально остается простым: это словарь со списком файлов, группами дублей и временем сканирования. Такой формат легко расширять без переписывания всей программы.
+JSON-манифест намеренно остаётся простым: это словарь со списком файлов, группами дублей и временем сканирования. Такой формат легко расширять без переписывания всей программы.

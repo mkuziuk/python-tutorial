@@ -1,8 +1,8 @@
 ---
 title: "Разбор полного решения"
-description: "Полный код третьего дела: анализ .eml-писем, правила риска и объяснимый отчет."
+description: "Полный код третьего дела: анализ .eml-писем, правила риска и объяснимый отчёт."
 concepts:
-  - regex review
+  - повторение регулярных выражений
   - email
   - urllib.parse
   - ipaddress
@@ -14,7 +14,7 @@ projectId: "case-03"
 time: "15-20 минут"
 ---
 
-Эта страница нужна после того, как вы уже собрали `phishing_email.py` по главе. Если открыть ее раньше, правила риска превратятся в переписывание готового ответа.
+Обращайтесь к этой странице после самостоятельной сборки `phishing_email.py`. Если открыть её раньше, работа над правилами риска сведётся к переписыванию готового ответа.
 
 ## Полный код
 
@@ -99,6 +99,7 @@ class EmailReport:
 
 
 def clean_url(raw_url):
+    # Убираем только знаки, которыми URL обычно заканчивается в прозе; путь и параметры не меняем.
     return raw_url.rstrip(TRAILING_URL_CHARS)
 
 
@@ -165,6 +166,7 @@ def extract_links(text):
     links = []
     seen_urls = set()
 
+    # Сначала читаем HTML-ссылки: только так можно сравнить видимую подпись с реальным href.
     for match in HTML_LINK_RE.finditer(text):
         url = clean_url(match.group("url"))
         label = clean_label(match.group("label"))
@@ -240,6 +242,7 @@ def add_signal(
 
 
 def risk_verdict(score):
+    # Пороги — учебная шкала триажа, а не оценка вероятности взлома.
     if score >= 7:
         return "высокий риск"
     if score >= 3:
@@ -257,14 +260,15 @@ def analyze_message(message, filename="<memory>"):
     signals = []
 
     if reply_to_domain and base_domain(reply_to_domain) != base_domain(sender_domain):
-        add_signal(signals, "Reply-To ведет в другой домен", 2)
+        add_signal(signals, "Reply-To ведёт в другой домен", 2)
 
     if URGENT_RE.search(f"{subject}\n{body}"):
         add_signal(signals, "Есть слова срочности", 1)
 
     for link in links:
+        # Одна ссылка может нарушать несколько независимых правил, поэтому проверки не связаны через elif.
         if link.is_ip_host:
-            add_signal(signals, "Ссылка ведет на IP-адрес вместо домена", 3, "danger")
+            add_signal(signals, "Ссылка ведёт на IP-адрес вместо домена", 3, "danger")
 
         if link.scheme == "http":
             add_signal(signals, "Ссылка использует http без шифрования", 2)
@@ -279,7 +283,7 @@ def analyze_message(message, filename="<memory>"):
             and not link.is_ip_host
             and base_domain(link.host) != base_domain(sender_domain)
         ):
-            add_signal(signals, "Ссылка ведет в домен, отличный от домена отправителя", 1)
+            add_signal(signals, "Ссылка ведёт в домен, отличный от домена отправителя", 1)
 
     if len(links) >= 4:
         add_signal(signals, "В письме слишком много ссылок", 1)
@@ -290,6 +294,7 @@ def analyze_message(message, filename="<memory>"):
     if risky_attachments:
         add_signal(signals, "Есть вложение с рискованным расширением", 3, "danger")
 
+    # Сумма сохраняет вклад каждого сигнала видимым и проверяемым в отчёте.
     score = sum(signal.points for signal in signals)
     return EmailReport(
         filename=filename,
@@ -308,6 +313,7 @@ def analyze_file(path):
 
 
 def analyze_directory(data_dir=DATA_DIR):
+    # Фиксированный порядок файлов делает отчёт одинаковым на разных файловых системах.
     paths = sorted(data_dir.glob("*.eml"))
     if not paths:
         raise EmailAnalysisError(f"No .eml files found in {data_dir}")
@@ -357,9 +363,9 @@ if __name__ == "__main__":
 
 ## Как читать решение
 
-Поток данных такой: `load_message()` разбирает `.eml`, `text_from_message()` собирает текст письма, `extract_links()` делает список `LinkInfo`, `analyze_message()` начисляет `RiskSignal`, а `EmailReport` передается в таблицу.
+Данные проходят несколько этапов: `load_message()` разбирает `.eml`, `text_from_message()` собирает текст письма, `extract_links()` создаёт список `LinkInfo`, `analyze_message()` добавляет сигналы `RiskSignal`, а `EmailReport` передаётся в таблицу.
 
-Главное решение - правила остаются явными. Инструмент не говорит "письмо плохое" магически: каждый балл связан с проверяемым фактом, который ученик может показать в отчете.
+Главное решение — сохранить правила явными. Инструмент не выносит необъяснимый вердикт: каждый балл связан с проверяемым фактом, который можно показать в отчёте.
 
 Частые ошибки: вручную резать URL строками, считать домен из видимого текста ссылки вместо `href`, добавлять один и тот же сигнал много раз или ловить все исключения слишком широко.
 
@@ -371,6 +377,6 @@ if __name__ == "__main__":
 
 `urlparse()` нужен вместо ручного деления строки по `/`: он аккуратно достает `scheme` и `hostname`, даже если в ссылке есть путь и параметры.
 
-`ipaddress.ip_address()` используется как проверка с исключением. Для домена это не ошибка анализа, а обычный ответ "нет, это не IP".
+`ipaddress.ip_address()` используется как проверка с исключением. Домен вызывает исключение, но для анализа это не ошибка, а обычный ответ: «это не IP-адрес».
 
-Rich остается только слоем вывода: `Console` печатает, `Table` рисует таблицу, а анализ писем держится на стандартной библиотеке.
+Rich остаётся только слоем вывода: `Console` печатает, `Table` строит таблицу, а анализ писем работает на стандартной библиотеке.

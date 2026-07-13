@@ -24,8 +24,8 @@ DISPLAY_NAMES = {
     "report_north_table": "Опись Северного стола",
     "report_tour_draft": "Черновик экскурсии",
     "report_basement_route": "Служебный маршрут подвального коридора",
-    "report_alarm_stand": "Отчет учебного стенда",
-    "report_guard_note": "Отчет охраны",
+    "report_alarm_stand": "Отчёт учебного стенда",
+    "report_guard_note": "Отчёт охраны",
 }
 
 
@@ -36,6 +36,7 @@ def read_text(path):
 def normalize_words(text):
     cleaned = []
 
+    # Заменяем разделители пробелами, чтобы слова по обе стороны знака не склеились.
     for char in text.lower():
         if char.isalpha():
             cleaned.append(char)
@@ -63,6 +64,7 @@ def display_name(path):
 def build_profile(path, ngram_size=NGRAM_SIZE):
     text = read_text(path)
     words = normalize_words(text)
+    # Множество считает повторяющуюся n-грамму одним фрагментом, а не несколькими уликами.
     ngrams = set(make_ngrams(words, ngram_size))
 
     return {
@@ -75,6 +77,7 @@ def build_profile(path, ngram_size=NGRAM_SIZE):
 
 
 def overlap_score(left, right):
+    # Пустая сторона не даёт свидетельства сходства и защищает формулу от деления на ноль.
     if not left or not right:
         return 0.0
 
@@ -91,12 +94,14 @@ def overlap_score(left, right):
 def compare_profiles(left, right):
     left_ngrams = left["ngrams"]
     right_ngrams = right["ngrams"]
+    # Сортировка делает примеры воспроизводимыми при любом порядке элементов множества.
     shared_ngrams = sorted(left_ngrams & right_ngrams)
 
     return {
         "pair": (str(left["title"]), str(right["title"])),
         "score": overlap_score(left_ngrams, right_ngrams),
         "shared_count": len(shared_ngrams),
+        # Это первые примеры в стабильном порядке, а не «самые сильные» совпадения.
         "examples": shared_ngrams[:TOP_EXAMPLES],
     }
 
@@ -116,6 +121,7 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     # combinations(..., 2) выдаёт каждую пару один раз и не сравнивает файл с собой.
     for left, right in combinations(profiles, 2):
         result = compare_profiles(left, right)
+        # Нулевые совпадения не засоряют отчёт; отсутствующая пара означает нулевой общий след.
         if int(result["shared_count"]) > 0:
             results.append(result)
 

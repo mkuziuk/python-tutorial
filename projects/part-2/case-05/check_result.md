@@ -1,21 +1,21 @@
 # Ожидаемая форма результата II-05
 
-Данные
+## Данные
 - SHA-256 файла digits.csv совпадает с dataset_manifest.json.
 - X: (1797, 64), images: (1797, 8, 8), 10 классов.
 
-Процедура
-- Stratified outer split: 1 347 train / 450 test, пересечение индексов 0.
-- Train-only StratifiedKFold: 3 folds, shuffle=True, random_state=42.
-- Сравнены scaled k-NN(5) и scaled RBF SVM по accuracy и macro-F1.
-- Grid содержит ровно C={2,10} × gamma={scale,0.001}; scoring=f1_macro.
+## Процедура
+- Стратифицированное внешнее разбиение: 1 347 обучающих / 450 тестовых строк, пересечение индексов 0.
+- `StratifiedKFold` только на обучающей выборке: 3 части, `shuffle=True`, `random_state=42`.
+- k-NN(5) и RBF SVM с масштабированием сравнены по доле правильных ответов (accuracy) и macro-F1.
+- Сетка содержит ровно `C={2,10} × gamma={scale,0.001}`; `scoring=f1_macro`.
 - Зафиксирована конфигурация StandardScaler -> RBF SVC(C=2, gamma=scale).
 
-Holdout
-- Accuracy и macro-F1 находятся примерно около 0,98 и выше 0,95.
-- Показаны recall для цифр 0–9, confusion matrix и галерея реальных ошибок,
+## Отложенная тестовая выборка
+- Доля правильных ответов и macro-F1 находятся примерно около 0,98 и выше 0,95.
+- Показаны recall для цифр 0–9, матрица ошибок и галерея реальных ошибок,
   а не только удачных примеров.
 
-Артефакты
+## Артефакты
 - artifacts/model_lock.json фиксирует процедуру и метрики.
 - artifacts/audit_memo.md содержит пять разделов и не делает вывода об авторе.

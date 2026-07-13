@@ -77,6 +77,7 @@ class Evidence:
             raise ValueError("Evidence ID must not be empty")
         if not 1 <= self.reliability <= 5:
             raise ValueError("Evidence reliability must be between 1 and 5")
+        # Без смещения UTC события из разных источников нельзя надёжно упорядочить.
         if self.occurred_at.tzinfo is None:
             raise ValueError("Evidence timestamp must include a UTC offset")
 
@@ -151,7 +152,7 @@ class HypothesisAssessment:
             "rank": rank,
             "hypothesis_id": self.hypothesis.hypothesis_id,
             "claim": self.hypothesis.claim,
-            # .value сохраняет в отчете строку, а не объект перечисления.
+            # .value сохраняет в отчёте строку, а не объект перечисления.
             "status": self.status.value,
             "score": self.score,
             "support_points": self.support_points,
@@ -167,6 +168,7 @@ def load_bundle(path: Path = DATA_PATH) -> CaseBundle:
 
 
 def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
+    # ID — вторичный ключ: он даёт стабильный порядок событий с одинаковым временем.
     ordered = sorted(evidence, key=lambda item: (item.occurred_at, item.evidence_id))
     return [
         {
@@ -183,6 +185,7 @@ def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
 def classify_assessment(
     support_points: int, conflict_points: int
 ) -> AssessmentStatus:
+    # Границы статусов — зафиксированное правило этого дела, а не универсальная шкала доказанности.
     # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
         case 0, 0:
@@ -207,10 +210,12 @@ def score_hypothesis(
 
     for item in evidence:
         for effect in item.effects:
+            # Одна улика может влиять на несколько версий; здесь берём только связи с текущей.
             if effect.hypothesis_id != hypothesis.hypothesis_id:
                 continue
 
-            # Вклад зависит и от надежности источника, и от силы его связи.
+            # Баллы ранжируют проверки, но не превращаются в вероятность гипотезы.
+            # Вклад зависит и от надёжности источника, и от силы его связи.
             points = item.reliability * effect.weight
             match effect.stance:
                 case Stance.SUPPORT:
@@ -325,7 +330,7 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
                 "корреляцию в доказанный умысел."
             ),
             (
-                "Аппаратный ключ и локальный сеанс надежно связывают учетные "
+                "Аппаратный ключ и локальный сеанс надёжно связывают учётные "
                 "действия, но не заменяют полное интервью и видео."
             ),
             (
@@ -337,6 +342,7 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
 
 
 def save_verdict(verdict: dict[str, Any], path: Path = OUTPUT_PATH) -> None:
+    # ensure_ascii=False оставляет русский текст читаемым, а финальный \n делает файл удобным для diff и POSIX-инструментов.
     payload = json.dumps(verdict, ensure_ascii=False, indent=2)
     path.write_text(f"{payload}\n", encoding="utf-8")
 
@@ -381,7 +387,7 @@ def main() -> None:
     verdict = build_verdict(bundle)
     render_report(verdict)
     save_verdict(verdict)
-    print(f"\nJSON-вердикт сохранен: {OUTPUT_PATH.name}")
+    print(f"\nJSON-вердикт сохранён: {OUTPUT_PATH.name}")
 
 
 if __name__ == "__main__":

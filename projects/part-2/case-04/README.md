@@ -2,19 +2,19 @@
 
 Поставщик «Компаса» сообщает высокий общий `R²` и обещает оценку жилья в
 новых районах. В этом деле вы проверите, меняется ли вывод, когда вместо
-случайных строк holdout содержит целые невиданные географические ячейки.
+случайных строк в тестовую выборку попадают целые невиданные географические ячейки.
 
 Ориентир времени: **4–5 часов**. Нужен Python 3.12 или 3.13.
 
 ## Что внутри
 
 - `case-04.ipynb` — учебная тетрадь с упражнениями;
-- `data/california_housing.csv` — фиксированный offline-снимок;
+- `data/california_housing.csv` — зафиксированный локальный снимок;
 - `data/SOURCE.md`, `LICENSE.txt`, `dataset_manifest.json`, `CHECKSUMS.sha256` —
   происхождение и контроль целостности;
 - `requirements.txt` и `requirements-colab.txt` — закреплённые зависимости;
 - `check_result.md` — форма ожидаемого результата;
-- `solution/case-04-solution.ipynb` — эталон в репозитории, не в learner ZIP.
+- `solution/case-04-solution.ipynb` — эталон в репозитории; в учебный ZIP он не входит.
 
 ## Локальный запуск
 
@@ -25,14 +25,14 @@ python -m pip install -r requirements.txt
 jupyter lab case-04.ipynb
 ```
 
-Запускайте тетрадь из каталога дела. Bootstrap также умеет найти каталог из
+Запускайте тетрадь из каталога дела. Начальная ячейка также умеет найти каталог из
 корня репозитория. Данные не скачиваются и не требуют предыдущих дел.
 
 ## Google Colab
 
-[Открыть learner notebook в Colab](https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-04/case-04.ipynb)
+[Открыть тетрадь для самостоятельной работы в Colab](https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-04/case-04.ipynb)
 
-В Colab bootstrap скачивает `part-2-case-04.zip` и соседний `.zip.sha256`,
+В Colab начальная ячейка скачивает `part-2-case-04.zip` и соседний `.zip.sha256`,
 проверяет архив до распаковки и сохраняет ту же структуру путей.
 
 ## Результат

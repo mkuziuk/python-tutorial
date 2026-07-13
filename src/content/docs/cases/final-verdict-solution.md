@@ -1,23 +1,23 @@
 ---
 title: "Дело 06. Разбор полного решения"
-description: "Полный код финального отчета: неизменяемые модели, хронология, объяснимый рейтинг гипотез и осторожное операционное решение."
+description: "Полный код финального отчёта: неизменяемые модели, хронология, объяснимый рейтинг гипотез и осторожное операционное решение."
 concepts:
   - StrEnum
-  - frozen dataclasses
+  - неизменяемые dataclass
   - match
   - JSON
   - sorting
-  - scoring
+  - подсчёт баллов
 difficulty: "продвинутый"
 projectId: "case-06"
 time: "25-35 минут"
 ---
 
-Эта страница раскрывает развязку и нужна после самостоятельной сборки `final_verdict.py`. Если вы еще не проверили промежуточные результаты, вернитесь к [главе дела](../final-verdict/).
+Эта страница раскрывает развязку и предназначена для чтения после самостоятельной сборки `final_verdict.py`. Если вы ещё не проверили промежуточные результаты, вернитесь к [главе дела](../final-verdict/).
 
 ## Что именно установлено
 
-У финального отчета три уровня уверенности:
+В финальном отчёте разделены три уровня уверенности:
 
 - Алина Морозова подтвердила авторство предупреждения подписанным утренним протоколом. Ранее стилометрия лишь подсказала, кого спросить.
 - `H-NIKITA` — самая сильная рабочая гипотеза о двух правках файлов. Подписанный аудит связывает черновик до 18:00 и перезапись хронологии 23:19 с аппаратно подтвержденными сеансами `nikita.k`, но не доказывает мотив или физическую личность пользователя.
@@ -27,11 +27,11 @@ time: "25-35 минут"
 
 ## Почему первая гипотеза не захардкожена
 
-`build_verdict()` берет `assessments[0]` после сортировки и переносит в отчет текст именно этой гипотезы. Если новые материалы изменят рейтинг, первичный вывод тоже изменится. Проверка по строке `H-NIKITA` была бы незаметной подменой результата заранее известным ответом.
+После сортировки `build_verdict()` берёт `assessments[0]` и переносит в отчёт текст именно этой гипотезы. Если новые материалы изменят рейтинг, первичный вывод тоже изменится. Проверка по строке `H-NIKITA` незаметно подменила бы вычисленный результат заранее известным ответом.
 
 ## Полный код
 
-Код ниже можно целиком вставить в корневой пустой файл `final_verdict.py`. Вычисление `PROJECT_DIR` также позволяет запустить ту же версию из папки `solution/`.
+Код ниже можно целиком вставить в корневой стартовый файл `final_verdict.py`, заменив учебные комментарии. Вычисление `PROJECT_DIR` также позволяет запустить ту же версию из папки `solution/`.
 
 ```python
 from dataclasses import dataclass
@@ -113,6 +113,7 @@ class Evidence:
             raise ValueError("Evidence ID must not be empty")
         if not 1 <= self.reliability <= 5:
             raise ValueError("Evidence reliability must be between 1 and 5")
+        # Без смещения UTC события из разных источников нельзя надёжно упорядочить.
         if self.occurred_at.tzinfo is None:
             raise ValueError("Evidence timestamp must include a UTC offset")
 
@@ -187,7 +188,7 @@ class HypothesisAssessment:
             "rank": rank,
             "hypothesis_id": self.hypothesis.hypothesis_id,
             "claim": self.hypothesis.claim,
-            # .value сохраняет в отчете строку, а не объект перечисления.
+            # .value сохраняет в отчёте строку, а не объект перечисления.
             "status": self.status.value,
             "score": self.score,
             "support_points": self.support_points,
@@ -203,6 +204,7 @@ def load_bundle(path: Path = DATA_PATH) -> CaseBundle:
 
 
 def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
+    # ID — вторичный ключ: он даёт стабильный порядок событий с одинаковым временем.
     ordered = sorted(evidence, key=lambda item: (item.occurred_at, item.evidence_id))
     return [
         {
@@ -219,6 +221,7 @@ def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
 def classify_assessment(
     support_points: int, conflict_points: int
 ) -> AssessmentStatus:
+    # Границы статусов — зафиксированное правило этого дела, а не универсальная шкала доказанности.
     # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
         case 0, 0:
@@ -243,10 +246,12 @@ def score_hypothesis(
 
     for item in evidence:
         for effect in item.effects:
+            # Одна улика может влиять на несколько версий; здесь берём только связи с текущей.
             if effect.hypothesis_id != hypothesis.hypothesis_id:
                 continue
 
-            # Вклад зависит и от надежности источника, и от силы его связи.
+            # Баллы ранжируют проверки, но не превращаются в вероятность гипотезы.
+            # Вклад зависит и от надёжности источника, и от силы его связи.
             points = item.reliability * effect.weight
             match effect.stance:
                 case Stance.SUPPORT:
@@ -361,7 +366,7 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
                 "корреляцию в доказанный умысел."
             ),
             (
-                "Аппаратный ключ и локальный сеанс надежно связывают учетные "
+                "Аппаратный ключ и локальный сеанс надёжно связывают учётные "
                 "действия, но не заменяют полное интервью и видео."
             ),
             (
@@ -373,6 +378,7 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
 
 
 def save_verdict(verdict: dict[str, Any], path: Path = OUTPUT_PATH) -> None:
+    # ensure_ascii=False оставляет русский текст читаемым, а финальный \n делает файл удобным для diff и POSIX-инструментов.
     payload = json.dumps(verdict, ensure_ascii=False, indent=2)
     path.write_text(f"{payload}\n", encoding="utf-8")
 
@@ -417,7 +423,7 @@ def main() -> None:
     verdict = build_verdict(bundle)
     render_report(verdict)
     save_verdict(verdict)
-    print(f"\nJSON-вердикт сохранен: {OUTPUT_PATH.name}")
+    print(f"\nJSON-вердикт сохранён: {OUTPUT_PATH.name}")
 
 
 if __name__ == "__main__":
@@ -443,4 +449,4 @@ python -m unittest discover -s tests -v
 - `operational_decision.opening` — `postpone`;
 - три действия: вернуть строку и сохранить исходные версии, сменить доступы, опросить Никиту Королева.
 
-Число 73 — не процент уверенности. Это воспроизводимый приоритет для следующей проверки. Наиболее важная часть отчета находится рядом: список противоречий и ограничения вывода.
+Число 73 — не процент уверенности. Это воспроизводимый приоритет для следующей проверки. Наиболее важная часть отчёта находится рядом: список противоречий и ограничения вывода.

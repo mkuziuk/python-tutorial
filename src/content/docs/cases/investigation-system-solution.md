@@ -14,7 +14,7 @@ projectId: "case-05"
 time: "20-30 минут"
 ---
 
-Эта страница нужна после самостоятельной сборки `investigation_system.py`. Если открыть ее раньше, можно случайно пропустить самую полезную часть дела: решение, где должны жить данные, а где поведение.
+Обращайтесь к этой странице после самостоятельной сборки `investigation_system.py`. Если открыть её раньше, можно пропустить важную часть задачи: самостоятельно решить, где должны находиться данные, а где — поведение.
 
 ## Полный код
 
@@ -101,6 +101,7 @@ class Evidence:
 
     def matches(self, query):
         normalized_query = query.casefold().strip()
+        # Пустой запрос означает «без фильтра», поэтому подходит любая улика.
         if not normalized_query:
             return True
 
@@ -118,6 +119,7 @@ class Evidence:
         return normalized_query in haystack
 
     def short_body(self, limit=90):
+        # Сначала сжимаем пробелы, чтобы переносы строк не ломали таблицу и не расходовали лимит незаметно.
         compact = " ".join(self.body.split())
         if len(compact) <= limit:
             return compact
@@ -210,6 +212,7 @@ class Investigation:
         }
 
     def add_evidence(self, item):
+        # ID сравниваются без учёта регистра: EV-01 и ev-01 — одна логическая улика.
         if self.evidence_by_id(item.evidence_id) is not None:
             raise ValueError(f"Evidence {item.evidence_id!r} already exists")
         self.evidence.append(item)
@@ -228,6 +231,7 @@ class Investigation:
         return [item for item in self.evidence if item.matches(query)]
 
     def priority_evidence(self, limit=3):
+        # При равной надёжности ID служит дополнительным ключом и сохраняет стабильный порядок.
         return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
 
     def tag_index(self):
@@ -235,6 +239,7 @@ class Investigation:
         for item in self.evidence:
             for tag in item.tags:
                 index.setdefault(tag, []).append(item)
+        # Сортируем и теги, и улики, чтобы JSON и таблицы не зависели от порядка входных данных.
         return {
             tag: sorted(items, key=lambda item: item.evidence_id)
             for tag, items in sorted(index.items())
@@ -275,7 +280,7 @@ def render_overview(investigation):
     evidence_table.add_column("Тип")
     evidence_table.add_column("Название")
     evidence_table.add_column("Теги")
-    evidence_table.add_column("Надежность", justify="right")
+    evidence_table.add_column("Надёжность", justify="right")
 
     for item in investigation.priority_evidence(limit=len(investigation.evidence)):
         evidence_table.add_row(
@@ -303,6 +308,7 @@ def render_search_results(query, results):
 
 
 def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
+    # Читаем seed, а пишем в отдельный файл, чтобы исходная версия дела оставалась неизменной.
     investigation = CaseRepository(seed_path).load()
     access_matches = investigation.find_evidence("доступ")
     investigation.add_note(
@@ -318,7 +324,7 @@ def main():
     investigation = build_report()
     render_overview(investigation)
     render_search_results("доступ", investigation.find_evidence("доступ"))
-    console.print(f"\n[green]JSON-снимок сохранен:[/green] {OUTPUT_PATH.name}")
+    console.print(f"\n[green]JSON-снимок сохранён:[/green] {OUTPUT_PATH.name}")
 
 
 if __name__ == "__main__":
@@ -327,9 +333,9 @@ if __name__ == "__main__":
 
 ## Как читать решение
 
-Поток данных такой: `CaseRepository.load()` превращает JSON в `Investigation`, объект дела хранит списки `Person`, `Evidence` и `CaseNote`, методы выполняют поиск и добавляют заметку, а `CaseRepository.save()` снова пишет JSON.
+Данные проходят несколько этапов: `CaseRepository.load()` превращает JSON в `Investigation`, объект дела хранит списки `Person`, `Evidence` и `CaseNote`, методы выполняют поиск и добавляют заметку, а `CaseRepository.save()` записывает результат обратно в JSON.
 
-Главное решение - разделить предметную модель и хранение. `Evidence` не знает про файл, `Investigation` не рисует таблицы, а `CaseRepository` не решает, как искать по уликам.
+Главное решение — разделить предметную модель и хранение. `Evidence` ничего не знает о файле, `Investigation` не строит таблицы, а `CaseRepository` не определяет правила поиска по уликам.
 
 Частые ошибки: оставить сырые словари внутри `Investigation`, забыть `field(default_factory=list)`, потерять `created_at` при обратной записи JSON, разрешить дубликаты `evidence_id` или смешать сохранение JSON с логикой поиска.
 
@@ -337,7 +343,7 @@ if __name__ == "__main__":
 
 ## Что важно заметить
 
-`Evidence`, `Person` и `CaseNote` не знают, где лежит JSON-файл. Они отвечают только за свои данные и маленькие операции вокруг них. `created_at` остается строкой, чтобы без выдумки сохранить исходную точность: большинство улик имеют timestamp, а EV-006 — только известную дату и ограничение «до 18:00» в описании.
+`Evidence`, `Person` и `CaseNote` не знают, где лежит JSON-файл. Они отвечают только за свои данные и небольшие связанные с ними операции. `created_at` остаётся строкой, чтобы сохранить исходную точность без домыслов: для большинства улик известна временная метка, а для EV-006 — только дата и ограничение «до 18:00» в описании.
 
 `Investigation` собирает объекты вместе. Это центр предметной логики: поиск, добавление заметки, защита от дубликатов и индекс по тегам.
 
