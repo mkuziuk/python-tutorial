@@ -1,7 +1,7 @@
 # Ожидаемая форма результата II-05
 
 Данные
-- Content hash load_digits совпадает с dataset_manifest.json.
+- SHA-256 файла digits.csv совпадает с dataset_manifest.json.
 - X: (1797, 64), images: (1797, 8, 8), 10 классов.
 
 Процедура

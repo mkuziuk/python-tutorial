@@ -202,7 +202,7 @@ jupyter lab
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/part-2/case-01/</code></p>
-  <p><strong>Данные:</strong> <code>sklearn-iris</code>, встроенный offline loader</p>
+  <p><strong>Данные:</strong> <a href="../datasets/iris.csv" download><code>iris.csv</code></a> · <a href="../datasets/iris.csv.sha256">SHA-256</a> · замороженный offline snapshot <code>sklearn-iris</code></p>
   <p><strong>Архив:</strong> <a href="../downloads/part-2-case-01.zip">part-2-case-01.zip</a></p>
   <p><strong>Notebook:</strong> <code>case-01.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-01/case-01.ipynb">Open in Colab</a></p>
   <p><strong>Главы:</strong> <a href="../bureau/iris-exam/">брифинг</a> · <a href="../bureau/iris-exam-solution/">дебриф</a></p>
@@ -212,7 +212,7 @@ jupyter lab
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/part-2/case-02/</code></p>
-  <p><strong>Данные:</strong> <code>openml-titanic-40945-frozen</code>, локальный snapshot с provenance и SHA-256</p>
+  <p><strong>Данные:</strong> <a href="../datasets/titanic.csv" download><code>titanic.csv</code></a> · <a href="../datasets/titanic.csv.sha256">SHA-256</a> · локальный snapshot <code>openml-titanic-40945-frozen</code></p>
   <p><strong>Архив:</strong> <a href="../downloads/part-2-case-02.zip">part-2-case-02.zip</a></p>
   <p><strong>Notebook:</strong> <code>case-02.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-02/case-02.ipynb">Open in Colab</a></p>
   <p><strong>Главы:</strong> <a href="../bureau/passengers-after-the-fact/">брифинг</a> · <a href="../bureau/passengers-after-the-fact-solution/">дебриф</a></p>
@@ -222,7 +222,7 @@ jupyter lab
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/part-2/case-03/</code></p>
-  <p><strong>Данные:</strong> <code>openml-titanic-40945-frozen</code>, тот же замороженный Titanic; честный pipeline вложен, предыдущее дело не требуется на диске</p>
+  <p><strong>Данные:</strong> <a href="../datasets/titanic.csv" download><code>titanic.csv</code></a> · <a href="../datasets/titanic.csv.sha256">SHA-256</a> · тот же замороженный Titanic; честный pipeline вложен, предыдущее дело не требуется на диске</p>
   <p><strong>Архив:</strong> <a href="../downloads/part-2-case-03.zip">part-2-case-03.zip</a></p>
   <p><strong>Notebook:</strong> <code>case-03.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-03/case-03.ipynb">Open in Colab</a></p>
   <p><strong>Главы:</strong> <a href="../bureau/cost-of-one-error/">брифинг</a> · <a href="../bureau/cost-of-one-error-solution/">дебриф</a></p>
@@ -232,7 +232,7 @@ jupyter lab
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/part-2/case-04/</code></p>
-  <p><strong>Данные:</strong> <code>sklearn-california-housing-1990-frozen-v1</code>, локальный snapshot с provenance и SHA-256</p>
+  <p><strong>Данные:</strong> <a href="../datasets/california_housing.csv" download><code>california_housing.csv</code></a> · <a href="../datasets/california_housing.csv.sha256">SHA-256</a> · локальный snapshot <code>sklearn-california-housing-1990-frozen-v1</code></p>
   <p><strong>Архив:</strong> <a href="../downloads/part-2-case-04.zip">part-2-case-04.zip</a></p>
   <p><strong>Notebook:</strong> <code>case-04.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-04/case-04.ipynb">Open in Colab</a></p>
   <p><strong>Главы:</strong> <a href="../bureau/map-of-costly-errors/">брифинг</a> · <a href="../bureau/map-of-costly-errors-solution/">дебриф</a></p>
@@ -242,7 +242,7 @@ jupyter lab
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/part-2/case-05/</code></p>
-  <p><strong>Данные:</strong> <code>sklearn-digits-8x8-v1</code>, встроенный offline loader</p>
+  <p><strong>Данные:</strong> <a href="../datasets/digits.csv" download><code>digits.csv</code></a> · <a href="../datasets/digits.csv.sha256">SHA-256</a> · замороженный offline snapshot <code>sklearn-digits-8x8-v1</code></p>
   <p><strong>Архив:</strong> <a href="../downloads/part-2-case-05.zip">part-2-case-05.zip</a></p>
   <p><strong>Notebook:</strong> <code>case-05.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-05/case-05.ipynb">Open in Colab</a></p>
   <p><strong>Главы:</strong> <a href="../bureau/familiar-handwriting/">брифинг</a> · <a href="../bureau/familiar-handwriting-solution/">дебриф</a></p>
@@ -252,7 +252,7 @@ jupyter lab
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/part-2/case-06/</code></p>
-  <p><strong>Данные:</strong> <code>compass-digits-synthetic-captures-v1</code>, документированный синтетический стресс-тест</p>
+  <p><strong>Данные:</strong> <a href="../datasets/compass_digits_synthetic_captures.csv.gz" download><code>compass_digits_synthetic_captures.csv.gz</code></a> · <a href="../datasets/compass_digits_synthetic_captures.csv.gz.sha256">SHA-256</a> · документированный синтетический стресс-тест <code>compass-digits-synthetic-captures-v1</code></p>
   <p><strong>Архив:</strong> <a href="../downloads/part-2-case-06.zip">part-2-case-06.zip</a></p>
   <p><strong>Notebook:</strong> <code>case-06.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-06/case-06.ipynb">Open in Colab</a></p>
   <p><strong>Главы:</strong> <a href="../bureau/compass-exam/">брифинг</a> · <a href="../bureau/compass-exam-solution/">финальный дебриф</a></p>

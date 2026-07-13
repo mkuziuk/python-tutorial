@@ -112,6 +112,7 @@
           "solutionRoute": "/bureau/iris-exam-solution/",
           "projectPath": "projects/part-2/case-01",
           "archive": "public/downloads/part-2-case-01.zip",
+          "datasetDownload": "/datasets/iris.csv",
           "notebooks": {
             "learner": "projects/part-2/case-01/case-01.ipynb",
             "solution": "projects/part-2/case-01/solution/case-01-solution.ipynb"
@@ -129,6 +130,7 @@
           "solutionRoute": "/bureau/passengers-after-the-fact-solution/",
           "projectPath": "projects/part-2/case-02",
           "archive": "public/downloads/part-2-case-02.zip",
+          "datasetDownload": "/datasets/titanic.csv",
           "notebooks": {
             "learner": "projects/part-2/case-02/case-02.ipynb",
             "solution": "projects/part-2/case-02/solution/case-02-solution.ipynb"
@@ -146,6 +148,7 @@
           "solutionRoute": "/bureau/cost-of-one-error-solution/",
           "projectPath": "projects/part-2/case-03",
           "archive": "public/downloads/part-2-case-03.zip",
+          "datasetDownload": "/datasets/titanic.csv",
           "notebooks": {
             "learner": "projects/part-2/case-03/case-03.ipynb",
             "solution": "projects/part-2/case-03/solution/case-03-solution.ipynb"
@@ -163,6 +166,7 @@
           "solutionRoute": "/bureau/map-of-costly-errors-solution/",
           "projectPath": "projects/part-2/case-04",
           "archive": "public/downloads/part-2-case-04.zip",
+          "datasetDownload": "/datasets/california_housing.csv",
           "notebooks": {
             "learner": "projects/part-2/case-04/case-04.ipynb",
             "solution": "projects/part-2/case-04/solution/case-04-solution.ipynb"
@@ -180,6 +184,7 @@
           "solutionRoute": "/bureau/familiar-handwriting-solution/",
           "projectPath": "projects/part-2/case-05",
           "archive": "public/downloads/part-2-case-05.zip",
+          "datasetDownload": "/datasets/digits.csv",
           "notebooks": {
             "learner": "projects/part-2/case-05/case-05.ipynb",
             "solution": "projects/part-2/case-05/solution/case-05-solution.ipynb"
@@ -197,6 +202,7 @@
           "solutionRoute": "/bureau/compass-exam-solution/",
           "projectPath": "projects/part-2/case-06",
           "archive": "public/downloads/part-2-case-06.zip",
+          "datasetDownload": "/datasets/compass_digits_synthetic_captures.csv.gz",
           "notebooks": {
             "learner": "projects/part-2/case-06/case-06.ipynb",
             "solution": "projects/part-2/case-06/solution/case-06-solution.ipynb"

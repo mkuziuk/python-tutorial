@@ -104,6 +104,23 @@ def main() -> None:
 
             notebooks = item.get("notebooks", {})
             if arc_id == "part-2":
+                dataset_download = item.get("datasetDownload")
+                if not isinstance(dataset_download, str) or not dataset_download.startswith(
+                    "/datasets/"
+                ):
+                    failures.append(f"{label}: missing public datasetDownload")
+                else:
+                    public_dataset = ROOT / "public" / dataset_download.lstrip("/")
+                    if not public_dataset.is_file():
+                        failures.append(
+                            f"{label}: missing public dataset {public_dataset.relative_to(ROOT)}"
+                        )
+                    checksum_sidecar = public_dataset.with_name(
+                        f"{public_dataset.name}.sha256"
+                    )
+                    if not checksum_sidecar.is_file():
+                        failures.append(f"{label}: missing public dataset checksum")
+
                 for variant in ("learner", "solution"):
                     notebook = notebooks.get(variant)
                     if not notebook or not (ROOT / notebook).is_file():
@@ -117,6 +134,18 @@ def main() -> None:
                         failures.append(
                             f"{label}: {variant} notebook dataset_ids differ from manifest"
                         )
+                    code = "\n".join(
+                        source_text
+                        for cell in notebook_data.get("cells", [])
+                        if cell.get("cell_type") == "code"
+                        for source_text in [
+                            "".join(cell.get("source", ""))
+                            if isinstance(cell.get("source", ""), list)
+                            else str(cell.get("source", ""))
+                        ]
+                    )
+                    if "pd.read_csv(" not in code:
+                        failures.append(f"{label}: {variant} notebook must read CSV into pandas")
 
                 for record_name in (
                     "data/dataset_manifest.json",

@@ -25,7 +25,7 @@ concepts: [cross-validation, precision, recall, F1, threshold, out-of-fold predi
 </div>
 
 <div class="materials-panel bureau-actions">
-  <p><strong>Начать:</strong> <a href="../../downloads/part-2-case-03.zip">скачать ZIP</a> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-03/case-03.ipynb">Open in Colab</a></p>
+  <p><strong>Начать:</strong> <a href="../../downloads/part-2-case-03.zip">скачать ZIP</a> · <a href="../../datasets/titanic.csv" download>скачать данные CSV</a> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-03/case-03.ipynb">Open in Colab</a></p>
   <p><strong>После работы:</strong> <a href="../cost-of-one-error-solution/">дебриф и готовый notebook</a> · <a href="../../materials/#ii-03--цена-одной-ошибки">состав архива</a></p>
   <p><strong>Справочник:</strong> <a href="../../field-guide/classification-metrics/">метрики, пороги и срезы</a> · <a href="../../field-guide/cross-validation/">кросс-валидация</a> · <a href="../../field-guide/ml-models/">логистическая регрессия и дерево</a></p>
 </div>
@@ -48,7 +48,22 @@ concepts: [cross-validation, precision, recall, F1, threshold, out-of-fold predi
 
 ## Код расследования
 
-В learner notebook внешний holdout остается закрытым, пока одинаковые folds сравнивают кандидатов на outer-train. Эта ячейка собирает несколько метрик, чтобы accuracy не стала единственным критерием:
+Дело самостоятельно: оно снова начинает с локального `titanic.csv`, а не требует переменных из II-02. Bootstrap-ячейка заранее создаёт `DATA_DIR` и `sha256_file()`:
+
+```python
+DATASET_SHA256 = "c617db2c7470716250f6f001be51304c76bcc8815527ab8bae734bdca0735737"
+data_path = DATA_DIR / "titanic.csv"
+actual_sha256 = sha256_file(data_path)
+if actual_sha256 != DATASET_SHA256:
+    raise RuntimeError("Контрольная сумма titanic.csv не совпала")
+
+passengers = pd.read_csv(data_path, na_values=["?"])
+passengers["survived"] = passengers["survived"].astype(int)
+display(passengers.head(3))
+print("Форма DataFrame:", passengers.shape)
+```
+
+После подготовки split внешний holdout остается закрытым, пока одинаковые folds сравнивают кандидатов на outer-train. Следующая ячейка собирает несколько метрик, чтобы accuracy не стала единственным критерием:
 
 ```python
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)

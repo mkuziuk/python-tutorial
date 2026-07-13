@@ -25,7 +25,7 @@ concepts: [пропуски, категории, leakage, SimpleImputer, OneHotE
 </div>
 
 <div class="materials-panel bureau-actions">
-  <p><strong>Начать:</strong> <a href="../../downloads/part-2-case-02.zip">скачать ZIP</a> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-02/case-02.ipynb">Open in Colab</a></p>
+  <p><strong>Начать:</strong> <a href="../../downloads/part-2-case-02.zip">скачать ZIP</a> · <a href="../../datasets/titanic.csv" download>скачать данные CSV</a> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-02/case-02.ipynb">Open in Colab</a></p>
   <p><strong>После работы:</strong> <a href="../passengers-after-the-fact-solution/">дебриф и готовый notebook</a> · <a href="../../materials/#ii-02--пассажиры-после-факта">состав архива</a></p>
   <p><strong>Справочник:</strong> <a href="../../field-guide/pandas/">pandas и пропуски</a> · <a href="../../field-guide/ml-framing/">постановка задачи</a> · <a href="../../field-guide/leakage-pipelines/">утечка и pipeline</a> · <a href="../../field-guide/ml-models/#логистическая-регрессия">логистическая регрессия</a></p>
 </div>
@@ -50,7 +50,22 @@ concepts: [пропуски, категории, leakage, SimpleImputer, OneHotE
 
 ## Код расследования
 
-Эти фрагменты взяты из learner notebook и оставляют ключевое решение вам. Начните не с модели, а с временной доступности каждого поля:
+Эти фрагменты взяты из learner notebook и оставляют ключевое решение вам. Сначала проверьте локальный файл и создайте `DataFrame`; `DATA_DIR` и `sha256_file()` приходят из bootstrap-ячейки:
+
+```python
+DATASET_SHA256 = "c617db2c7470716250f6f001be51304c76bcc8815527ab8bae734bdca0735737"
+data_path = DATA_DIR / "titanic.csv"
+actual_sha256 = sha256_file(data_path)
+if actual_sha256 != DATASET_SHA256:
+    raise RuntimeError("Контрольная сумма titanic.csv не совпала")
+
+passengers = pd.read_csv(data_path, na_values=["?"])
+passengers["survived"] = passengers["survived"].astype(int)
+display(passengers.head(3))
+print("Форма DataFrame:", passengers.shape)
+```
+
+Только после чтения таблицы начинайте не с модели, а с временной доступности каждого поля:
 
 ```python
 # TODO: замените статус и объяснение для каждого поля.

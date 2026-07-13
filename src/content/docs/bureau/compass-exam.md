@@ -25,7 +25,7 @@ concepts: [related samples, StratifiedGroupKFold, distribution shift, macro-F1, 
 </div>
 
 <div class="materials-panel bureau-actions">
-  <p><strong>Начать:</strong> <a href="../../downloads/part-2-case-06.zip">скачать ZIP</a> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-06/case-06.ipynb">Open in Colab</a></p>
+  <p><strong>Начать:</strong> <a href="../../downloads/part-2-case-06.zip">скачать ZIP</a> · <a href="../../datasets/compass_digits_synthetic_captures.csv.gz" download>скачать данные CSV.GZ</a> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-06/case-06.ipynb">Open in Colab</a></p>
   <p><strong>После работы:</strong> <a href="../compass-exam-solution/">финальный дебриф и готовый notebook</a> · <a href="../../materials/#ii-06--экзамен-для-компаса">состав архива</a></p>
   <p><strong>Справочник:</strong> <a href="../../field-guide/grouped-validation/">группы, сдвиг и model card</a> · <a href="../../field-guide/cross-validation/">CV</a> · <a href="../../field-guide/classification-metrics/">macro-F1 и срезы</a></p>
 </div>
@@ -53,7 +53,24 @@ concepts: [related samples, StratifiedGroupKFold, distribution shift, macro-F1, 
 
 ## Код расследования
 
-Финальные learner-ячейки намеренно воспроизводят процедуру поставщика до того, как предлагают ее исправить. Сначала пересчитайте vendor test без изменения модели или split; формула macro-F1 остается упражнением:
+Финальное дело тоже начинается с файла. Notebook проверяет документированный синтетический CSV.GZ и создаёт `DataFrame` со связанными снимками и служебными полями:
+
+```python
+generation_report = json.loads(
+    (DATA_DIR / "generation_report.json").read_text(encoding="utf-8")
+)
+capture_path = DATA_DIR / "digits_compass.csv.gz"
+assert sha256_file(capture_path) == generation_report["sha256"], "Derivative изменён"
+
+captures = pd.read_csv(capture_path)
+pixel_columns = [
+    f"pixel_{row}_{column}" for row in range(8) for column in range(8)
+]
+display(captures.head())
+print("Форма DataFrame:", captures.shape)
+```
+
+После этого learner-ячейки намеренно воспроизводят процедуру поставщика до того, как предлагают ее исправить. Сначала пересчитайте vendor test без изменения модели или split; формула macro-F1 остается упражнением:
 
 ```python
 vendor_model = locked_model()

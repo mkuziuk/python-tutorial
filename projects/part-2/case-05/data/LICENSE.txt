@@ -1,6 +1,6 @@
 DIGITS DATA NOTICE
 
-The notebook loads the Digits dataset distributed with scikit-learn. The
+This CSV snapshot was exported from the Digits dataset distributed with scikit-learn. The
 scikit-learn software is BSD 3-Clause licensed. The upstream UCI Optical
 Recognition of Handwritten Digits record identifies the dataset license as
 Creative Commons Attribution 4.0 International (CC BY 4.0).

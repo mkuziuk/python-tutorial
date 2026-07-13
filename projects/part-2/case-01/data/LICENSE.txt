@@ -1,0 +1,12 @@
+IRIS DATA NOTICE
+
+This CSV snapshot was exported from the Iris dataset distributed with
+scikit-learn. The scikit-learn software is BSD 3-Clause licensed. The upstream
+UCI Iris record identifies the dataset license as Creative Commons Attribution
+4.0 International (CC BY 4.0).
+
+Attribution:
+R. A. Fisher, The use of multiple measurements in taxonomic problems, 1936.
+
+License text: https://creativecommons.org/licenses/by/4.0/
+UCI record: https://archive.ics.uci.edu/dataset/53/iris

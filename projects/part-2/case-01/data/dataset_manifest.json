@@ -1,0 +1,21 @@
+{
+  "dataset_id": "sklearn-iris",
+  "filename": "iris.csv",
+  "rows": 150,
+  "columns": 6,
+  "feature_names": [
+    "sepal length (cm)",
+    "sepal width (cm)",
+    "petal length (cm)",
+    "petal width (cm)"
+  ],
+  "target": "species_code",
+  "classes": [
+    "setosa",
+    "versicolor",
+    "virginica"
+  ],
+  "sha256": "926abf13e580d20666815978ae3990573c789a3486aeb0e6856eb966d0e0af7a",
+  "scikit_learn_version": "1.9.0",
+  "source_loader": "sklearn.datasets.load_iris"
+}

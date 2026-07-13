@@ -25,7 +25,7 @@ concepts: [DummyRegressor, linear regression, random forest, MAE, RMSE, R², res
 </div>
 
 <div class="materials-panel bureau-actions">
-  <p><strong>Начать:</strong> <a href="../../downloads/part-2-case-04.zip">скачать ZIP</a> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-04/case-04.ipynb">Open in Colab</a></p>
+  <p><strong>Начать:</strong> <a href="../../downloads/part-2-case-04.zip">скачать ZIP</a> · <a href="../../datasets/california_housing.csv" download>скачать данные CSV</a> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-04/case-04.ipynb">Open in Colab</a></p>
   <p><strong>После работы:</strong> <a href="../map-of-costly-errors-solution/">дебриф и готовый notebook</a> · <a href="../../materials/#ii-04--карта-дорогих-ошибок">состав архива</a></p>
   <p><strong>Справочник:</strong> <a href="../../field-guide/regression/">регрессия и остатки</a> · <a href="../../field-guide/ml-models/#дерево-и-случайный-лес">лес</a> · <a href="../../field-guide/grouped-validation/">групповая проверка</a> · <a href="../../field-guide/plotting/">графики</a></p>
 </div>
@@ -48,7 +48,25 @@ concepts: [DummyRegressor, linear regression, random forest, MAE, RMSE, R², res
 
 ## Код расследования
 
-Ключевые learner-ячейки показывают, что новое утверждение требует нового разбиения. В первой заглушке нужно заменить технические группы реальными географическими ячейками; проверка пересечения уже подготовлена:
+Сначала notebook проверяет карточку локального снимка и создаёт `DataFrame`. Переменные `DATA_DIR` и функция `sha256_file()` определены в bootstrap-ячейке:
+
+```python
+manifest = json.loads(
+    (DATA_DIR / "dataset_manifest.json").read_text(encoding="utf-8")
+)
+data_path = DATA_DIR / manifest["filename"]
+actual_sha256 = sha256_file(data_path)
+assert actual_sha256 == manifest["sha256"], "Снимок данных изменился"
+
+housing = pd.read_csv(data_path)
+display(housing.head())
+print("Форма DataFrame:", housing.shape)
+
+X = housing.drop(columns=[manifest["target"]])
+y = housing[manifest["target"]]
+```
+
+Теперь ключевые learner-ячейки показывают, что новое утверждение требует нового разбиения. В первой заглушке нужно заменить технические группы реальными географическими ячейками; проверка пересечения уже подготовлена:
 
 ```python
 # TODO: замените временные группы на географические ячейки 0,5° × 0,5°.
