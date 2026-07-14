@@ -75,6 +75,7 @@ print(digest.hexdigest())
 try:
     text = path.read_text(encoding="utf-8")
 except OSError as exc:
+    # from exc сохраняет OSError как исходную причину нового RuntimeError.
     raise RuntimeError(f"Не удалось прочитать {path}") from exc
 ```
 

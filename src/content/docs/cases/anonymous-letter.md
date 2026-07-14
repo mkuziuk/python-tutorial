@@ -270,6 +270,8 @@ def punctuation_similarity(left, right):
 ```python
 def compare_profiles(anonymous, candidate):
     # В формулу входит состав частых слов; количества использовались только при отборе двенадцати.
+    # Каждый элемент common_words — пара (слово, количество);
+    # _ показывает, что количество здесь не используется.
     anonymous_words = {word for word, _ in anonymous["common_words"]}
     candidate_words = {word for word, _ in candidate["common_words"]}
     word_overlap = jaccard(anonymous_words, candidate_words)

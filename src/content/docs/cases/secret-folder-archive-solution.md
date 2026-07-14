@@ -160,6 +160,8 @@ def write_manifest(manifest, path):
 
 def index_by_path(manifest):
     # index_by_path() строит словарь «путь → запись» из раздела files.
+    # get("files", []) считает отсутствующий раздел пустым,
+    # а isinstance() пропускает повреждённые записи другого типа.
     return {
         str(record["path"]): record
         for record in manifest.get("files", [])

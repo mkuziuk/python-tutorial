@@ -17,9 +17,11 @@ order: 10
 Используйте `try` / `except`, когда ошибка ожидаема и у программы есть понятное действие: пропустить запись, добавить предупреждение, показать аккуратный отчёт.
 
 ```python
+# Сначала Python выполняет блок try.
 try:
     number = int("17")
 except ValueError:
+    # Этот блок выполняется, только если int() бросил ValueError.
     number = 0
 ```
 
@@ -31,6 +33,7 @@ from pathlib import Path
 try:
     text = Path("missing.txt").read_text(encoding="utf-8")
 except FileNotFoundError:
+    # После совпавшего except выполнение продолжается со следующей строки после конструкции.
     text = ""
 ```
 
@@ -47,8 +50,10 @@ try:
 except FileNotFoundError:
     print("файл record.json не найден")
 except json.JSONDecodeError as error:
+    # as error сохраняет объект исключения, поэтому доступна позиция ошибки error.pos.
     print(f"JSON повреждён около символа {error.pos}")
 else:
+    # else выполняется, только если блок try завершился без исключения.
     print(f"загружено полей: {len(record)}")
 ```
 

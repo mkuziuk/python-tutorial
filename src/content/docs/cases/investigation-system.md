@@ -294,6 +294,7 @@ class Investigation:
                 self.source,
                 self.body,
                 self.created_at,
+                # *self.tags вставляет каждый тег отдельным элементом в общий текст для поиска.
                 *self.tags,
             ]
         ).casefold()
@@ -450,6 +451,8 @@ class CaseRepository:
         return Investigation.from_dict(raw_data)
 
     def save(self, investigation):
+        # parents=True создаёт недостающие родительские папки,
+        # а exist_ok=True разрешает уже существующую папку.
         self.path.parent.mkdir(parents=True, exist_ok=True)
         # to_dict() задаёт точные ключи и значения выходного JSON.
         payload = json.dumps(investigation.to_dict(), ensure_ascii=False, indent=2)

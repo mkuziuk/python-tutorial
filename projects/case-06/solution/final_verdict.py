@@ -143,6 +143,7 @@ class HypothesisAssessment:
     conflicts: tuple[str, ...]
     status: AssessmentStatus
 
+    # @property позволяет читать assessment.score как поле, хотя значение вычисляет метод.
     @property
     def score(self) -> int:
         return self.support_points - self.conflict_points
@@ -190,6 +191,7 @@ def classify_assessment(
     match support_points, conflict_points:
         case 0, 0:
             return AssessmentStatus.NO_EVIDENCE
+        # support и conflict получают текущие числа; условие после if проверяет порог статуса.
         case support, conflict if support >= 15 and support >= conflict * 2:
             return AssessmentStatus.STRONGLY_SUPPORTED
         case support, conflict if support >= 10 and support >= conflict + 5:

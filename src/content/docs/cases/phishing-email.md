@@ -192,6 +192,7 @@ def load_message(path):
             # Читаем исходные байты, чтобы policy.default корректно декодировала MIME.
             message = BytesParser(policy=policy.default).parse(file)
     except OSError as exc:
+        # as exc сохраняет исходную ошибку, а from exc связывает её с EmailAnalysisError.
         raise EmailAnalysisError(f"Cannot read {path}") from exc
 
     # Для анализа нужны заголовки From и Subject, поэтому проверяем их сразу после чтения письма.
@@ -219,7 +220,8 @@ def text_from_message(message):
             return content if isinstance(content, str) else ""
 
         chunks = []
-        # Обходим MIME-дерево, потому что текст может лежать глубже первого уровня письма.
+        # MIME-дерево — структура частей письма: контейнеры могут содержать текст,
+        # вложения и другие контейнеры.
         for part in message.walk():
             # walk() возвращает и multipart-контейнеры, поэтому пропускаем их и вложения.
             if part.is_multipart() or part.get_content_disposition() == "attachment":
@@ -230,6 +232,7 @@ def text_from_message(message):
                     chunks.append(content)
         return "\n".join(chunks)
     except (LookupError, UnicodeDecodeError) as exc:
+        # Кортеж в except перехватывает любую из двух ошибок декодирования.
         raise EmailAnalysisError("Cannot decode message body") from exc
 ```
 
@@ -299,6 +302,8 @@ def is_ip_address(host):
     if not host:
         return False
     try:
+        # ip_address() возвращает объект для корректного IP
+        # и бросает ValueError для остальных строк.
         # Квадратные скобки допустимы вокруг IPv6 в URL, но не являются частью самого адреса.
         ipaddress.ip_address(host.strip("[]"))
     except ValueError:
@@ -421,6 +426,8 @@ def add_signal(
 ):
     # Каждый тип риска добавляем один раз, даже если ему соответствуют несколько ссылок.
     # Повторяющиеся ссылки не должны повторно добавлять сигнал и увеличивать score.
+    # all() возвращает True, только если title отличается
+    # от заголовка каждого существующего сигнала.
     if all(signal.title != title for signal in signals):
         signals.append(RiskSignal(title=title, points=points, level=level))
 
@@ -566,7 +573,7 @@ def main():
     try:
         reports = analyze_directory()
     except EmailAnalysisError as exc:
-        # Пользователь получает короткую причину, а ненулевой код сообщает об ошибке оболочке и CI.
+        # При ошибке печатаем причину и завершаем программу; render_results() здесь не вызывается.
         console.print(f"[bold red]Ошибка:[/bold red] {exc}")
         raise SystemExit(1) from exc
 
