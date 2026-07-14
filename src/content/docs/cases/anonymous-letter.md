@@ -13,7 +13,6 @@ concepts:
   - ветвления и циклы
   - comprehensions
   - работа с файлами
-  - unittest
 difficulty: "начальный+"
 projectId: "case-01"
 time: "90-120 минут"
@@ -28,7 +27,7 @@ time: "90-120 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-01.zip">case-01.zip</a> · <a href="../../materials/">материалы всех расследований</a> · <a href="../anonymous-letter-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/control-flow/">условия и циклы</a> · <a href="../../field-guide/str/">str</a> · <a href="../../field-guide/regex/">regex</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/counter/">Counter</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/comprehensions/">включения</a> · <a href="../../field-guide/file-io/">файлы</a> · <a href="../../field-guide/rich/">Rich</a> · <a href="../../field-guide/testing/">unittest</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/control-flow/">условия и циклы</a> · <a href="../../field-guide/str/">str</a> · <a href="../../field-guide/regex/">regex</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/counter/">Counter</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/comprehensions/">включения</a> · <a href="../../field-guide/file-io/">файлы</a> · <a href="../../field-guide/rich/">Rich</a></p>
 </div>
 
 ## Завязка
@@ -45,7 +44,7 @@ time: "90-120 минут"
 
 В учебном наборе:
 
-- `anonymous_letter.py` — пустой стартовый файл;
+- `anonymous_letter.py` — пустой файл для программы, которую вы соберёте по главе;
 - `requirements.txt` — внешняя библиотека для удобного чтения отчёта;
 - `data/anonymous.txt` — анонимная записка;
 - `data/author_morozova.txt`, `data/author_sokolov.txt`, `data/author_korolev.txt` — образцы текстов кандидатов;
@@ -91,32 +90,42 @@ python -m pip install -r requirements.txt
 - `requirements.txt` фиксирует точную версию зависимости;
 - `rich==15.0.0` нужен только для красивой таблицы в терминале.
 
-Запустите стартовый файл:
+Проверьте стартовый файл:
 
 ```bash
 python anonymous_letter.py
 ```
 
-Пока программа ничего не выводит: это нормально. Откройте `anonymous_letter.py` и начните с путей, консоли и чтения текста:
+Пустой файл ничего не напечатает — это ожидаемо. Откройте `anonymous_letter.py` и переносите в него листинги по порядку: от чтения файлов до таблицы и JSON.
+
+Начало программы выглядит так:
 
 ```python
 from collections import Counter
+import json
 from pathlib import Path
 
 from rich.console import Console
 
-# Путь считаем от самого скрипта: запуск из другой папки не должен менять набор данных.
-DATA_DIR = Path(__file__).with_name("data")
-# Один объект Console переиспользуем во всём уроке, чтобы вывод оставался единообразным.
+# __file__ — путь к этому скрипту; parent — папка case-01.
+PROJECT_DIR = Path(__file__).resolve().parent
+DATA_DIR = PROJECT_DIR / "data"
+ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "01-authorship.json"
 console = Console()
+```
 
+`Counter` считает повторы, `json` сохраняет результат, а `Path` работает с файлами. `Console` отвечает за терминальный вывод; таблицу подключим только перед её созданием. `PROJECT_DIR` привязывает все пути к самому скрипту, поэтому текущая папка терминала не меняет входные данные. `console` создаётся один раз и переиспользуется в конце.
 
+Ниже функция чтения выполняет одну операцию:
+
+```python
 def read_text(path):
-    # Явная UTF-8 кодировка делает чтение одинаковым на Windows, macOS и Linux.
     return path.read_text(encoding="utf-8")
 ```
 
-Дальше мы шаг за шагом соберём инструмент.
+`path` — конкретный объект `Path`, а результат — одна строка с полным содержимым файла. Явная UTF-8 кодировка делает чтение одинаковым на Windows, macOS и Linux.
+
+Дальше мы шаг за шагом соберём инструмент. После каждого листинга запускайте файл и сверяйте промежуточное значение с примером главы.
 
 ## Стратегия
 
@@ -190,9 +199,21 @@ def normalize_words(text):
 
 Добавьте `import re`, `WORD_RE` и функцию `normalize_words()` в `anonymous_letter.py`. Эта функция получает одну [строку](../../field-guide/str/) и возвращает список слов: дальше весь анализ работает уже не с исходным текстом, а с чистыми словами. Если оставить пунктуацию внутри слов, `Counter` будет считать `след` и `след.` разными признаками.
 
+Сразу проверьте преобразование на короткой строке:
+
+```python
+print(normalize_words("След есть. След рядом!"))
+```
+
+```text
+['след', 'есть', 'след', 'рядом']
+```
+
+Повтор `след` сохранился, а точка и восклицательный знак исчезли. Именно такой список далее получает `Counter`.
+
 ## Профиль текста
 
-Теперь добавим частоты и пунктуацию.
+Теперь разберём частоты и пунктуацию.
 
 ```python
 PUNCTUATION = ".,;:!?"
@@ -232,6 +253,26 @@ def build_profile(name, text):
 - `set(words)` оставляет только уникальные слова;
 - `dict` собирает разные признаки в один профиль;
 - `Counter` считает слова и знаки.
+
+Постройте первый настоящий профиль и выведите только несколько полей, чтобы не заполнять терминал всем словарём:
+
+```python
+anonymous = build_profile(
+    "Анонимное письмо",
+    read_text(DATA_DIR / "anonymous.txt"),
+)
+print(anonymous["word_count"])
+print(round(anonymous["average_word_length"], 2))
+print(anonymous["common_words"][:3])
+```
+
+```text
+102
+5.39
+[('и', 3), ('потому', 2), ('что', 2)]
+```
+
+Теперь видно форму промежуточного результата: `word_count` — целое число, средняя длина — число с плавающей точкой, а `common_words` — список пар `(слово, количество)`.
 
 ## Сравнение профилей
 
@@ -296,7 +337,7 @@ def compare_profiles(anonymous, candidate):
 
 ## Загрузка кандидатов
 
-Добавим имена и чтение файлов. `rank_candidates()` отвечает только за порядок работы: загрузить анонимное письмо, построить профиль каждого кандидата, сравнить и вернуть список пар `(имя, оценка)`.
+Следующий этап соединяет имена и чтение файлов. `rank_candidates()` отвечает только за порядок работы: загрузить анонимное письмо, построить профиль каждого кандидата, сравнить и вернуть список пар `(имя, оценка)`.
 
 ```python
 AUTHOR_NAMES = {
@@ -326,6 +367,18 @@ def rank_candidates(data_dir=DATA_DIR):
     return sorted(results, key=lambda item: item[1], reverse=True)
 ```
 
+До оформления таблицы проверьте сам список:
+
+```python
+print(rank_candidates())
+```
+
+```text
+[('Алина Морозова', 0.688), ('Никита Королев', 0.528), ('Илья Соколов', 0.404)]
+```
+
+Каждый элемент — пара `(имя, оценка)`. Список уже отсортирован, поэтому `results[0]` в следующем шаге означает лидера рейтинга, а не доказанного автора.
+
 ## Отчёт с Rich
 
 Библиотека [Rich](../../field-guide/rich/) не участвует в анализе. Она только делает вывод читаемым: если убрать `render_results()`, ранжирование кандидатов продолжит работать.
@@ -335,7 +388,7 @@ from rich.table import Table
 
 
 def render_results(results):
-    # Отрисовка отделена от расчёта: тесты проверяют результаты без захвата терминала.
+    # Отрисовка отделена от расчёта: данные можно переиспользовать без терминала.
     table = Table(title="Вероятные авторы")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Кандидат")
@@ -358,7 +411,56 @@ def render_results(results):
 
 ## Передаём результат дальше
 
-Добавьте `build_artifact()` и `save_artifact()` из [разбора решения](../anonymous-letter-solution/). JSON должен содержать рейтинг кандидатов, исходные файлы и прямое ограничение: программа сравнивает только частые слова, среднюю длину слов и пунктуацию. Эти признаки могут совпасть у разных людей, поэтому рейтинг не устанавливает автора.
+JSON должен содержать рейтинг кандидатов, исходные файлы и прямое ограничение: программа сравнивает только частые слова, среднюю длину слов и пунктуацию. Эти признаки могут совпасть у разных людей, поэтому рейтинг не устанавливает автора.
+
+Стабильные ID и форма полей — часть договора с I-02. Разберите две функции целиком:
+
+```python
+def build_artifact(results, data_dir=DATA_DIR):
+    candidates = [
+        {"name": name, "score": score, "rank": position}
+        for position, (name, score) in enumerate(results, start=1)
+    ]
+    return {
+        "schema_version": 1,
+        "investigation_id": "I-01",
+        "generated_at": "2026-03-15T06:45:00+03:00",
+        "source_files": [
+            path.relative_to(data_dir).as_posix()
+            for path in sorted(data_dir.glob("*.txt"))
+        ],
+        "findings": [
+            {
+                "finding_id": "F-I01-AUTHORSHIP",
+                "kind": "authorship-ranking",
+                "title": "Рейтинг сходства с анонимным предупреждением",
+                "summary": (
+                    f"Первое место занимает {candidates[0]['name']}; "
+                    "оценка сравнивает только частые слова, длину слов и пунктуацию."
+                ),
+                "candidates": candidates,
+                "limitation": (
+                    "Выбранные признаки могут совпасть у разных людей, поэтому "
+                    "рейтинг задаёт направление проверки, но не устанавливает автора."
+                ),
+            }
+        ],
+    }
+
+
+def save_artifact(artifact, path=ARTIFACT_PATH):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+```
+
+`enumerate(..., start=1)` одновременно получает кандидата и его место, поэтому `candidates` содержит готовые строки рейтинга. Внешний словарь задаёт версию формата, номер дела и учебное время. List comprehension в `source_files` превращает пути в переносимые строки относительно `data`. Список `findings` пока содержит один вывод: его заголовок, краткое резюме, весь рейтинг и честное ограничение метода.
+
+В `save_artifact()` первая строка создаёт папку при первом запуске. `json.dumps()` превращает словарь в текст; `ensure_ascii=False` сохраняет русские буквы, `indent=2` делает файл читаемым, а `"\n"` завершает его переводом строки. Затем `write_text()` записывает готовую строку в UTF-8.
+
+Фиксированное `generated_at` описывает время учебного расследования и делает результат воспроизводимым. Технические поля уже даны в листинге: студенту не нужно придумывать их, они позволяют следующей программе точно прочитать этот вывод.
 
 В конце `main()` выполняет расчёт один раз, печатает его и сохраняет тот же результат:
 
@@ -367,6 +469,7 @@ def main():
     results = rank_candidates()
     render_results(results)
     save_artifact(build_artifact(results))
+    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
 
 
 if __name__ == "__main__":
@@ -380,14 +483,6 @@ if __name__ == "__main__":
 ```bash
 python anonymous_letter.py
 ```
-
-Затем запустите тесты из учебного набора:
-
-```bash
-python -m unittest discover -s tests
-```
-
-В скачанном ZIP тесты проверяют собранный вами корневой скрипт.
 
 Ожидаемая форма результата:
 

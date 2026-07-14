@@ -53,8 +53,11 @@ def main() -> None:
             failures=failures,
         )
         cases = arc.get("cases", [])
-        if len(cases) != 6:
-            failures.append(f"{arc_id}: expected 6 cases, found {len(cases)}")
+        expected_case_count = 4 if arc_id == "part-1" else 6
+        if len(cases) != expected_case_count:
+            failures.append(
+                f"{arc_id}: expected {expected_case_count} cases, found {len(cases)}"
+            )
         overview = route_source(str(arc.get("route", "")))
         if not overview.is_file():
             failures.append(f"{arc_id}: missing overview {overview.relative_to(ROOT)}")
@@ -177,7 +180,7 @@ def main() -> None:
         for failure in failures:
             print(f"- {failure}", file=sys.stderr)
         raise SystemExit(1)
-    print("checked course manifest: 2 arcs, 12 cases")
+    print("checked course manifest: 2 arcs, 10 cases")
 
 
 if __name__ == "__main__":

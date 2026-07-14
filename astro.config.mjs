@@ -55,28 +55,12 @@ export default defineConfig({
               slug: 'cases/phishing-email-solution',
             },
             {
-              label: '04. Ночной сигнал архива',
-              slug: 'cases/secret-folder-archive',
+              label: '04. Последнее доказательство',
+              slug: 'cases/final-evidence',
             },
             {
               label: '04. Разбор решения',
-              slug: 'cases/secret-folder-archive-solution',
-            },
-            {
-              label: '05. Доска расследования',
-              slug: 'cases/investigation-system',
-            },
-            {
-              label: '05. Разбор решения',
-              slug: 'cases/investigation-system-solution',
-            },
-            {
-              label: '06. Вердикт перед открытием',
-              slug: 'cases/final-verdict',
-            },
-            {
-              label: '06. Разбор решения',
-              slug: 'cases/final-verdict-solution',
+              slug: 'cases/final-evidence-solution',
             },
           ],
         },

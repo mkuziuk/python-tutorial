@@ -116,71 +116,26 @@ python phishing_email.py
 python -m unittest discover -s tests
 ```
 
-## Расследование 04. Ночной сигнал архива
+## Расследование 04. Последнее доказательство
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/case-04/</code></p>
   <p><strong>Уровень:</strong> средний</p>
   <p><strong>Архив:</strong> <a href="../downloads/case-04.zip">case-04.zip</a></p>
-  <p><strong>Глава:</strong> <a href="../cases/secret-folder-archive/">сборка инструмента</a> · <a href="../cases/secret-folder-archive-solution/">разбор решения</a></p>
+  <p><strong>Глава:</strong> <a href="../cases/final-evidence/">сборка инструмента</a> · <a href="../cases/final-evidence-solution/">разбор решения</a></p>
 </div>
 
 Ключевые файлы:
 
-- стартовый скрипт индексатора с комментариями-ориентирами;
-- папка `data/secret_folder/` с архивными заметками и копиями;
-- `check_result.txt` с формой отчёта по манифесту.
+- стартовый `final_evidence.py` с комментариями-ориентирами;
+- три канонических отчёта I-01–I-03 в `data/artifacts/`;
+- `final_evidence.json` с утренними проверками;
+- `suspect_dossiers.json` с вымышленными локальными досье;
+- `check_result.txt` с формой итогового отчёта.
 
 ```bash
 cd case-04
-python -m pip install -r requirements.txt
-python secret_folder_archive.py
-python -m unittest discover -s tests
-```
-
-## Расследование 05. Доска расследования
-
-<div class="materials-panel">
-  <p><strong>Проект:</strong> <code>projects/case-05/</code></p>
-  <p><strong>Уровень:</strong> средний</p>
-  <p><strong>Архив:</strong> <a href="../downloads/case-05.zip">case-05.zip</a></p>
-  <p><strong>Глава:</strong> <a href="../cases/investigation-system/">сборка инструмента</a> · <a href="../cases/investigation-system-solution/">разбор решения</a></p>
-</div>
-
-Ключевые файлы:
-
-- четыре канонических отчёта I-01–I-04 в `data/artifacts/`;
-- `data/relationships.json` с людьми, гипотезами и связями;
-- `check_result.txt` с формой `05-case-board.json`.
-
-```bash
-cd case-05
-python -m pip install -r requirements.txt
-python investigation_system.py
-python -m unittest discover -s tests
-```
-
-## Расследование 06. Вердикт перед открытием
-
-<div class="materials-panel">
-  <p><strong>Проект:</strong> <code>projects/case-06/</code></p>
-  <p><strong>Уровень:</strong> продвинутый</p>
-  <p><strong>Архив:</strong> <a href="../downloads/case-06.zip">case-06.zip</a></p>
-  <p><strong>Глава:</strong> <a href="../cases/final-verdict/">сборка инструмента</a> · <a href="../cases/final-verdict-solution/">разбор решения</a></p>
-</div>
-
-Ключевые файлы:
-
-- стартовый `final_verdict.py` с комментариями-ориентирами;
-- `data/artifacts/05-case-board.json` из предыдущего расследования;
-- `data/morning_updates.json` только с новыми утренними материалами;
-- `check_result.txt` с формой финального отчёта;
-- `tests/` для проверки хронологии, баллов и вердикта.
-
-```bash
-cd case-06
-python -m pip install -r requirements.txt
-python final_verdict.py
+python final_evidence.py
 python -m unittest discover -s tests
 ```
 

@@ -23,6 +23,7 @@ from phishing_email import (  # noqa: E402
     domain_from_address,
     extract_links,
     is_ip_address,
+    load_context,
     load_message,
     make_link_info,
     render_results,
@@ -163,6 +164,27 @@ class PhishingEmailTests(unittest.TestCase):
         self.assertEqual(reports[0]["verdict"], "низкий риск")
         self.assertEqual(reports[1]["verdict"], "ошибка чтения")
         self.assertIn("missing From header", reports[1]["error"])
+
+    def test_context_finds_text_matches_by_stable_id(self):
+        context = {
+            "investigation_id": "I-02",
+            "findings": [
+                {"finding_id": "F-OTHER", "matches": []},
+                {
+                    "finding_id": "F-I02-TEXT-MATCHES",
+                    "matches": [{"examples": ["общая фраза"]}],
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "02-text-matches.json"
+            path.write_text(json.dumps(context, ensure_ascii=False), encoding="utf-8")
+            self.assertEqual(load_context(path), ["общая фраза"])
+
+            context["findings"] = [{"finding_id": "F-OTHER", "matches": []}]
+            path.write_text(json.dumps(context, ensure_ascii=False), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_context(path)
 
     def test_artifact_preserves_attack_limit(self):
         artifact = build_artifact(analyze_directory(PROJECT_DIR / "data"))

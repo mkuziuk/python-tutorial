@@ -10,7 +10,6 @@ concepts:
   - functions
   - ветвления и циклы
   - comprehensions
-  - unittest
 difficulty: "начальный+"
 projectId: "case-02"
 time: "90-120 минут"
@@ -26,7 +25,7 @@ time: "90-120 минут"
 
 <div class="materials-panel">
   <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-02.zip">case-02.zip</a> · <a href="../../materials/">материалы всех расследований</a> · <a href="../copy-paste-detector-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/control-flow/">условия и циклы</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/tuple/">tuple</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/sorting/">sorting</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/comprehensions/">включения</a> · <a href="../../field-guide/rich/">Rich</a> · <a href="../../field-guide/testing/">unittest</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/control-flow/">условия и циклы</a> · <a href="../../field-guide/list/">list</a> · <a href="../../field-guide/tuple/">tuple</a> · <a href="../../field-guide/set/">set</a> · <a href="../../field-guide/dict/">dict</a> · <a href="../../field-guide/sorting/">sorting</a> · <a href="../../field-guide/functions/">functions</a> · <a href="../../field-guide/comprehensions/">включения</a> · <a href="../../field-guide/rich/">Rich</a></p>
 </div>
 
 ## Проблема
@@ -41,7 +40,7 @@ time: "90-120 минут"
 
 В учебном наборе:
 
-- `copy_paste_detector.py` — пустой стартовый файл;
+- `copy_paste_detector.py` — пустой файл для программы, которую вы соберёте по главе;
 - `requirements.txt` — точная версия Rich для удобной таблицы;
 - `data/report_*.txt` — полные отчёты из архива;
 - `check_result.txt` — форма ожидаемого результата.
@@ -72,13 +71,13 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Запустите стартовый файл:
+Проверьте стартовый файл:
 
 ```bash
 python copy_paste_detector.py
 ```
 
-Пока программа ничего не выводит: это только заготовка. Дальше мы шаг за шагом соберём детектор.
+Пустой файл ничего не напечатает — это ожидаемо. Откройте `copy_paste_detector.py` и переносите листинги по порядку, чтобы провести данные от исходных текстов до отчёта.
 
 ## Стратегия
 
@@ -111,29 +110,47 @@ python copy_paste_detector.py
 
 ## Сборка инструмента
 
-Откройте `copy_paste_detector.py`. Сначала добавьте путь к данным, размер n-граммы и консоль:
+Начните с импортов, поиска папки данных, размера n-граммы и консоли:
 
 ```python
+import json
 from pathlib import Path
+from itertools import combinations
 
 from rich.console import Console
+from rich.table import Table
 
-# Путь строится от файла скрипта и не зависит от текущей папки терминала.
-DATA_DIR = Path(__file__).with_name("data")
-# Четыре слова — выбранная для расследования чувствительность, а не универсальный стандарт плагиата.
+
+def default_data_dir():
+    script_dir = Path(__file__).resolve().parent
+    local_data = script_dir / "data"
+    if local_data.exists():
+        return local_data
+    return script_dir.parent / "data"
+
+
+DATA_DIR = default_data_dir()
+PROJECT_DIR = DATA_DIR.parent
+AUTHORSHIP_PATH = DATA_DIR / "artifacts" / "01-authorship.json"
+ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "02-text-matches.json"
 NGRAM_SIZE = 4
-# В отчёт попадут только несколько примеров; сама оценка использует все совпадения.
 TOP_EXAMPLES = 3
 console = Console()
 ```
 
-Сначала добавьте чтение файла:
+`combinations` позднее создаст каждую пару текстов один раз. `json` читает результат I-01 и сохраняет I-02, `Path` работает с файлами, а два класса Rich строят терминальную таблицу. `default_data_dir()` сначала ищет `data` рядом со скриптом студента; запасная ветка нужна тому же коду в подпапке `solution`. Поэтому самостоятельная и полная версии используют одни данные. Остальные константы задают вход I-01, выход I-02, окно из четырёх слов и три примера совпадений.
+
+Четыре слова — чувствительность этого учебного расследования, а не универсальный стандарт плагиата. `TOP_EXAMPLES` ограничивает только число иллюстраций: сама оценка использует все совпадения.
+
+Сначала разберите функцию чтения:
 
 ```python
 def read_text(path):
     # Явная кодировка исключает зависимость результата от настроек операционной системы.
     return path.read_text(encoding="utf-8")
 ```
+
+`path` содержит путь к одному отчёту. `read_text()` возвращает весь файл одной строкой, а явная кодировка исключает зависимость от настроек операционной системы.
 
 ### Нормализуем слова
 
@@ -156,31 +173,50 @@ def normalize_words(text):
 
 `isalpha()` работает и с русскими буквами. `"".join(cleaned)` собирает очищенную строку, а `.split()` делит её на слова.
 
+Проверьте результат до перехода к окнам слов:
+
+```python
+words = normalize_words("Северный стол закрыт для посетителей.")
+print(words)
+```
+
+```text
+['северный', 'стол', 'закрыт', 'для', 'посетителей']
+```
+
+Список содержит пять слов без точки и заглавной буквы. Следующая функция будет двигать по этому списку окно длиной четыре.
+
 ### Собираем n-граммы
 
 Теперь нужна функция, которая двигает окно размера `size` по списку слов. Она возвращает список кортежей, потому что дальше эти кортежи можно положить во множество и быстро сравнивать.
 
 ```python
-NGRAM_SIZE = 4
-
-
 def make_ngrams(words, size=NGRAM_SIZE):
     # Проверяем параметр сразу, чтобы отрицательный диапазон не выглядел как корректный пустой результат.
     if size < 1:
         raise ValueError("N-gram size must be positive")
 
-    # Если слов меньше size, цикл не выполнится и функция честно вернёт пустой список.
-    ngrams = []
-
     # Последнее окно начинается в len(words) - size; +1 включает эту позицию.
-    for index in range(len(words) - size + 1):
-        ngram = tuple(words[index : index + size])
-        ngrams.append(ngram)
-
-    return ngrams
+    return [
+        tuple(words[index : index + size])
+        for index in range(len(words) - size + 1)
+    ]
 ```
 
-Кортеж хранит соседние слова в фиксированном порядке. В нашем проекте длина обычно равна четырём, но функция работает с любым допустимым `size`.
+List comprehension перебирает допустимые начальные позиции окна. Срез `words[index:index + size]` получает соседние слова, а `tuple(...)` превращает их в неизменяемую n-грамму. Если слов меньше `size`, диапазон пуст и функция возвращает пустой список.
+
+Для пяти слов из предыдущего шага получатся два перекрывающихся окна:
+
+```python
+print(make_ngrams(words))
+```
+
+```text
+[('северный', 'стол', 'закрыт', 'для'),
+ ('стол', 'закрыт', 'для', 'посетителей')]
+```
+
+Слова `стол`, `закрыт` и `для` входят в оба окна. Такое перекрытие позволяет найти длинную скопированную фразу, а не только отдельные общие слова.
 
 ### Профиль отчёта
 
@@ -222,6 +258,21 @@ def build_profile(path, ngram_size=NGRAM_SIZE):
 
 Здесь `set(...)` важен: множество хранит только уникальные n-граммы и умеет быстро находить пересечения.
 
+Проверьте краткую форму профиля закрытой описи:
+
+```python
+profile = build_profile(DATA_DIR / "report_north_table.txt")
+print(profile["title"])
+print(profile["word_count"], profile["ngram_count"])
+```
+
+```text
+Опись Северного стола
+165 162
+```
+
+Профиль содержит 165 слов и 162 уникальные 4-граммы. Поле `ngrams` намеренно не печатаем целиком: оно нужно следующему этапу для пересечения множеств.
+
 ### Считаем подозрительность
 
 Для пары отчётов нужны две оценки. `overlap_score()` принимает два множества n-грамм и возвращает число от `0.0` до `1.0`, пригодное для сортировки.
@@ -261,38 +312,52 @@ def overlap_score(left, right):
 
 ```python
 def compare_profiles(left, right):
-    # compare_profiles() сравнивает множества n-грамм из готовых профилей.
     left_ngrams = left["ngrams"]
     right_ngrams = right["ngrams"]
     # Сортировка делает примеры воспроизводимыми при любом порядке элементов множества.
     shared_ngrams = sorted(left_ngrams & right_ngrams)
 
-    # Результат пары хранит и оценку, и данные для объяснения этой оценки в таблице.
     return {
-        "pair": (left["title"], right["title"]),
+        "pair": (str(left["title"]), str(right["title"])),
         "score": overlap_score(left_ngrams, right_ngrams),
         "shared_count": len(shared_ngrams),
-        # examples содержит первые три n-граммы после сортировки.
-        "examples": shared_ngrams[:3],
+        # examples содержит первые TOP_EXAMPLES n-грамм после сортировки.
+        "examples": shared_ngrams[:TOP_EXAMPLES],
     }
 ```
 
 Если редактор спросит: «Почему эта пара подозрительна?», поле `examples` покажет несколько совпавших n-грамм.
 
-### Ранжируем все пары
-
-Чтобы сравнить каждый отчёт со всеми остальными, подключим `combinations`.
+Сравните опись с черновиком экскурсии и выведите только сводку:
 
 ```python
-from itertools import combinations
+left = build_profile(DATA_DIR / "report_north_table.txt")
+right = build_profile(DATA_DIR / "report_tour_draft.txt")
+comparison = compare_profiles(left, right)
+print(comparison["score"], comparison["shared_count"])
+print(" ".join(comparison["examples"][0]))
 ```
+
+```text
+0.273 49
+а сначала отмечает расхождение
+```
+
+Число `49` показывает объём пересечения, `0.273` позволяет сравнить эту пару с другими, а первая n-грамма объясняет результат конкретным фрагментом.
+
+### Ранжируем все пары
+
+Чтобы сравнить каждый отчёт со всеми остальными, используем `combinations`, уже подключённую в начальном блоке импортов.
 
 Загрузка профилей:
 
 ```python
 def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
-    # glob("report_*.txt") выбирает только файлы отчётов и исключает остальные txt-файлы.
+    # Сначала берём отчёты, затем явно добавляем предупреждение к тому же корпусу.
     paths = sorted(data_dir.glob("report_*.txt"))
+    anonymous_path = data_dir / "anonymous.txt"
+    if anonymous_path.exists():
+        paths.append(anonymous_path)
     if not paths:
         raise FileNotFoundError(f"No report_*.txt files found in {data_dir}")
 
@@ -311,26 +376,36 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     for left, right in combinations(profiles, 2):
         result = compare_profiles(left, right)
         # Пары без общих n-грамм не добавляем в отчёт.
-        if result["shared_count"] > 0:
+        if int(result["shared_count"]) > 0:
             results.append(result)
 
     return sorted(
         results,
         # Кортеж задаёт два ключа: сначала балл, затем число совпадений.
-        key=lambda item: (item["score"], item["shared_count"]),
+        key=lambda item: (float(item["score"]), int(item["shared_count"])),
         reverse=True,
     )
 ```
 
 Сортировка получает ключ из двух значений: сначала оценка, потом количество общих n-грамм. Так пары с одинаковой оценкой будут упорядочены стабильнее.
 
-### Печатаем отчёт
-
-[Rich](../../field-guide/rich/) нужен только для вывода. Анализ остаётся на стандартной библиотеке.
+Полный рейтинг содержит только две пары с общими 4-граммами:
 
 ```python
-from rich.table import Table
+for result in rank_overlaps():
+    print(result["pair"], result["score"], result["shared_count"])
 ```
+
+```text
+('Опись Северного стола', 'Черновик экскурсии') 0.273 49
+('Отчёт учебного стенда', 'Отчёт охраны') 0.175 25
+```
+
+Теперь данные уже находятся в нужном порядке. Rich на следующем шаге только оформит этот список.
+
+### Печатаем отчёт
+
+[Rich](../../field-guide/rich/) нужен только для вывода. `Table` уже подключён в начальном блоке импортов, а анализ остаётся на стандартной библиотеке.
 
 ```python
 def format_ngram(ngram):
@@ -354,17 +429,96 @@ def render_results(results, limit=5):
         table.add_row(
             str(position),
             f"{left} / {right}",
-            f"{result['score']:.3f}",
+            f"{float(result['score']):.3f}",
             str(result["shared_count"]),
             example,
         )
 
     console.print(table)
+
+    if results:
+        best = results[0]
+        left, right = best["pair"]
+        console.print(
+            f"\n[bold]Главная версия:[/bold] {left} и {right} "
+            f"имеют самый сильный общий след: [cyan]{float(best['score']):.3f}[/cyan]."
+        )
 ```
 
 ## Читаем вывод I-01 и сохраняем новый отчёт
 
-`load_authorship_lead()` проверяет `investigation_id="I-01"` и переносит в новый отчёт фактического лидера рейтинга вместе с ограничением вывода. `load_profiles()` дополнительно включает `anonymous.txt`, поэтому предупреждение сравнивается с тем же корпусом.
+`load_authorship_lead()` проверяет `investigation_id="I-01"` и переносит в новый отчёт фактического лидера рейтинга вместе с ограничением вывода. `load_profiles()` дополнительно включает `anonymous.txt`, поэтому предупреждение сравнивается с тем же корпусом. В канонических данных у предупреждения нет общих 4-грамм с отчётами, поэтому в итоговый рейтинг всё равно попадают две пары отчётов.
+
+Разберите загрузку результата I-01:
+
+```python
+def load_authorship_lead(path=AUTHORSHIP_PATH):
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if data.get("investigation_id") != "I-01":
+        raise ValueError(f"Expected I-01 artifact: {path}")
+    finding = data["findings"][0]
+    return {
+        "finding_id": finding["finding_id"],
+        "candidate": finding["candidates"][0]["name"],
+        "score": finding["candidates"][0]["score"],
+        "limitation": finding["limitation"],
+    }
+```
+
+Теперь преобразуйте кортежи в строки и списки, которые можно записать в JSON:
+
+```python
+def build_artifact(results, authorship_path=AUTHORSHIP_PATH):
+    matches = []
+    for position, result in enumerate(results, start=1):
+        matches.append(
+            {
+                "rank": position,
+                "pair": list(result["pair"]),
+                "score": result["score"],
+                "shared_count": result["shared_count"],
+                "examples": [format_ngram(item) for item in result["examples"]],
+            }
+        )
+    return {
+        "schema_version": 1,
+        "investigation_id": "I-02",
+        "generated_at": "2026-03-15T06:50:00+03:00",
+        "source_files": [
+            "anonymous.txt",
+            *[path.name for path in sorted(DATA_DIR.glob("report_*.txt"))],
+            "artifacts/01-authorship.json",
+        ],
+        "inputs": {"authorship_lead": load_authorship_lead(authorship_path)},
+        "findings": [
+            {
+                "finding_id": "F-I02-TEXT-MATCHES",
+                "kind": "text-overlap-ranking",
+                "title": "Совпадения n-грамм в материалах архива",
+                "summary": (
+                    f"Самая сильная пара: {' / '.join(matches[0]['pair'])}."
+                    if matches
+                    else "Совпадений n-грамм не найдено."
+                ),
+                "matches": matches,
+            }
+        ],
+    }
+
+
+def save_artifact(artifact, path=ARTIFACT_PATH):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+```
+
+В `load_authorship_lead()` первая строка превращает JSON-текст в словарь. Проверка не даёт случайно прочитать отчёт другого дела. Переменная `finding` выбирает единственный вывод I-01, а возвращаемый словарь оставляет только лидера, его балл и ограничение метода.
+
+В `build_artifact()` цикл превращает внутренние значения Python в значения JSON: `pair` становится списком, а каждый кортеж n-граммы — строкой. Внешний словарь сохраняет входные файлы, использованный вывод I-01 и один новый вывод с полным рейтингом совпадений. Условное выражение в `summary` отдельно обрабатывает пустой рейтинг.
+
+`save_artifact()` создаёт папку при первом запуске. `ensure_ascii=False` сохраняет русские буквы, `indent=2` добавляет отступы, а `"\n"` завершает файл переводом строки. Технические значения уже даны в листинге: студенту не требуется придумывать метки, они нужны следующей программе для точного чтения результата.
 
 В конце `main()` печатает рейтинг и сохраняет его для I-03:
 
@@ -373,6 +527,7 @@ def main():
     results = rank_overlaps()
     render_results(results)
     save_artifact(build_artifact(results))
+    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
 
 
 if __name__ == "__main__":
@@ -387,12 +542,6 @@ if __name__ == "__main__":
 
 ```bash
 python copy_paste_detector.py
-```
-
-После таблицы запустите тесты из учебного набора:
-
-```bash
-python -m unittest discover -s tests
 ```
 
 Ожидаемая форма результата:

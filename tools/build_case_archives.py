@@ -24,7 +24,8 @@ def learner_files(project: Path) -> list[Path]:
 
     files.extend(sorted(project.glob("*.py")))
 
-    for folder_name in ("data", "tests"):
+    # Part I tests are maintainer tools, not student-facing tutorial material.
+    for folder_name in ("data",):
         folder = project / folder_name
         if not folder.is_dir():
             continue

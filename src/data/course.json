@@ -52,45 +52,17 @@
         },
         {
           "number": "I-04",
-          "slug": "secret-folder-archive",
-          "title": "Ночной сигнал архива",
-          "time": "90–120 минут",
+          "slug": "final-evidence",
+          "title": "Последнее доказательство",
+          "time": "120–150 минут",
           "format": "Python-скрипт",
-          "concepts": ["pathlib", "hashlib", "JSON", "происхождение данных"],
-          "route": "/cases/secret-folder-archive/",
-          "solutionRoute": "/cases/secret-folder-archive-solution/",
+          "concepts": ["JSON", "словари", "сортировка", "происхождение улик"],
+          "route": "/cases/final-evidence/",
+          "solutionRoute": "/cases/final-evidence-solution/",
           "projectPath": "projects/case-04",
           "archive": "public/downloads/case-04.zip",
           "notebooks": { "learner": null, "solution": null },
-          "datasetIds": ["archive-secret-folder"]
-        },
-        {
-          "number": "I-05",
-          "slug": "investigation-system",
-          "title": "Доска расследования",
-          "time": "110–140 минут",
-          "format": "Python-скрипт",
-          "concepts": ["классы", "dataclass", "композиция", "JSON"],
-          "route": "/cases/investigation-system/",
-          "solutionRoute": "/cases/investigation-system-solution/",
-          "projectPath": "projects/case-05",
-          "archive": "public/downloads/case-05.zip",
-          "notebooks": { "learner": null, "solution": null },
-          "datasetIds": ["archive-investigation-artifacts"]
-        },
-        {
-          "number": "I-06",
-          "slug": "final-verdict",
-          "title": "Вердикт перед открытием",
-          "time": "110–140 минут",
-          "format": "Python-скрипт",
-          "concepts": ["хронология", "StrEnum", "match", "вердикт"],
-          "route": "/cases/final-verdict/",
-          "solutionRoute": "/cases/final-verdict-solution/",
-          "projectPath": "projects/case-06",
-          "archive": "public/downloads/case-06.zip",
-          "notebooks": { "learner": null, "solution": null },
-          "datasetIds": ["archive-case-board-updates"]
+          "datasetIds": ["archive-final-evidence"]
         }
       ]
     },

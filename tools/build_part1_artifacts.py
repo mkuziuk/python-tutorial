@@ -58,8 +58,6 @@ def expected_artifacts():
     case01 = load_solution("01", "anonymous_letter")
     case02 = load_solution("02", "copy_paste_detector")
     case03 = load_solution("03", "phishing_email")
-    case04 = load_solution("04", "secret_folder_archive")
-    case05 = load_solution("05", "investigation_system")
 
     data01 = case01.build_artifact(case01.rank_candidates(), case01.DATA_DIR)
 
@@ -79,39 +77,10 @@ def expected_artifacts():
         )
         data03 = case03.build_artifact(reports03)
 
-    with temporary_inputs(
-        PROJECTS / "case-04" / "data" / "artifacts",
-        {
-            "01-authorship.json": data01,
-            "02-text-matches.json": data02,
-            "03-mail-review.json": data03,
-        },
-    ):
-        data04 = case04.build_evidence_index(
-            PROJECTS / "case-04" / "data" / "secret_folder",
-            PROJECTS / "case-04" / "data" / "artifacts",
-        )
-
-    with temporary_inputs(
-        PROJECTS / "case-05" / "data" / "artifacts",
-        {
-            "01-authorship.json": data01,
-            "02-text-matches.json": data02,
-            "03-mail-review.json": data03,
-            "04-evidence-index.json": data04,
-        },
-    ):
-        board = case05.build_board(
-            PROJECTS / "case-05" / "data" / "artifacts",
-            PROJECTS / "case-05" / "data" / "relationships.json",
-        ).to_dict()
-
     return {
         "01-authorship.json": data01,
         "02-text-matches.json": data02,
         "03-mail-review.json": data03,
-        "04-evidence-index.json": data04,
-        "05-case-board.json": board,
     }
 
 
@@ -164,11 +133,6 @@ def destinations(artifacts):
         PROJECTS / "case-04" / "data" / "artifacts" / "01-authorship.json": artifacts["01-authorship.json"],
         PROJECTS / "case-04" / "data" / "artifacts" / "02-text-matches.json": artifacts["02-text-matches.json"],
         PROJECTS / "case-04" / "data" / "artifacts" / "03-mail-review.json": artifacts["03-mail-review.json"],
-        PROJECTS / "case-05" / "data" / "artifacts" / "01-authorship.json": artifacts["01-authorship.json"],
-        PROJECTS / "case-05" / "data" / "artifacts" / "02-text-matches.json": artifacts["02-text-matches.json"],
-        PROJECTS / "case-05" / "data" / "artifacts" / "03-mail-review.json": artifacts["03-mail-review.json"],
-        PROJECTS / "case-05" / "data" / "artifacts" / "04-evidence-index.json": artifacts["04-evidence-index.json"],
-        PROJECTS / "case-06" / "data" / "artifacts" / "05-case-board.json": artifacts["05-case-board.json"],
     }
 
 

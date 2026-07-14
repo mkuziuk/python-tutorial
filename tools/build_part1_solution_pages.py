@@ -10,9 +10,7 @@ PAGES = [
     ("01", "anonymous_letter.py", "anonymous-letter-solution.md", "Кто оставил предупреждение?", "Рейтинг авторов и 01-authorship.json"),
     ("02", "copy_paste_detector.py", "copy-paste-detector-solution.md", "Детектор текстовых совпадений", "Рейтинг n-грамм и 02-text-matches.json"),
     ("03", "phishing_email.py", "phishing-email-solution.md", "Фишинговое письмо или нет?", "Разбор писем и 03-mail-review.json"),
-    ("04", "secret_folder_archive.py", "secret-folder-archive-solution.md", "Ночной сигнал архива", "SHA-256, происхождение файлов и 04-evidence-index.json"),
-    ("05", "investigation_system.py", "investigation-system-solution.md", "Доска расследования", "Объекты, связи и 05-case-board.json"),
-    ("06", "final_verdict.py", "final-verdict-solution.md", "Вердикт перед открытием", "Утренние обновления, гипотезы и 06-verdict.json"),
+    ("04", "final_evidence.py", "final-evidence-solution.md", "Последнее доказательство", "Цепочка улик, рейтинг подозреваемых и 04-investigation-summary.json"),
 ]
 
 
@@ -24,23 +22,13 @@ title: "Разбор решения: {title}"
 description: "{description}."
 ---
 
-Эта страница показывает полную версию программы после выполнения упражнения. Сначала завершите самостоятельную версию и запустите тесты.
+Эта страница показывает полную версию программы после выполнения упражнения. Сначала завершите самостоятельную версию и сверьте её результат с главой.
 
-Решение сохраняет результат в JSON для следующего расследования. Поэтому важно проверять не только таблицу в терминале, но и структуру созданного файла.
+Решение сохраняет результат в JSON для следующего шага арки. Поэтому важно проверять не только вывод в терминале, но и структуру созданного файла.
 
 ```python
 {code}
 ```
-
-## Проверка
-
-Из папки проекта выполните:
-
-```bash
-python -m unittest discover -s tests
-```
-
-Все переходы I-01 → I-06 дополнительно проверяет команда сопровождающего `pnpm test:part1-artifacts`.
 '''
 
 

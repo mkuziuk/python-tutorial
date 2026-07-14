@@ -4,8 +4,10 @@
 1  Опись Северного стола / Черновик экскурсии       0.27  ...
 2  Отчёт учебного стенда / Отчёт охраны              0.18  ...
 
-Числа могут немного отличаться, если вы меняли размер n-граммы или формулу оценки.
+Для канонического артефакта используйте размер n-граммы и формулу из главы.
 
 Программа читает data/artifacts/01-authorship.json и создаёт
-artifacts/02-text-matches.json. Первая пара в findings[0].matches —
-«Опись Северного стола» / «Черновик экскурсии».
+artifacts/02-text-matches.json. Его investigation_id равен I-02,
+findings[0].finding_id равен F-I02-TEXT-MATCHES, а inputs.authorship_lead
+сохраняет finding_id, candidate, score и limitation из I-01. Первая пара в
+findings[0].matches — «Опись Северного стола» / «Черновик экскурсии».

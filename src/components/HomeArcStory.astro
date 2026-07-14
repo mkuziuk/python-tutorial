@@ -141,7 +141,7 @@ const diagnosticCells = Array.from({ length: 36 });
       </div>
     </div>
 
-    <ol class="story-steps" aria-label={`Шесть расследований: ${title}`}>
+    <ol class="story-steps" aria-label={`${cases.length} расследований: ${title}`}>
       {cases.map((item, index) => (
         <li
           class="case-step"

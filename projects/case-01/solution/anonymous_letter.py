@@ -1,3 +1,5 @@
+"""Эталон I-01: построить и сравнить простые стилометрические профили."""
+
 from collections import Counter
 import json
 from pathlib import Path
@@ -6,6 +8,7 @@ import re
 from rich.console import Console
 from rich.table import Table
 
+# Эталон лежит в solution/, поэтому parents[1] возвращает папку case-01.
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_DIR / "data"
 ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "01-authorship.json"
@@ -22,16 +25,19 @@ AUTHOR_NAMES = {
 
 
 def normalize_words(text):
+    """Вернуть русские слова в нижнем регистре, сохранив их повторы."""
     # Список сохраняет повторы: они нужны и для частот, и для средней длины слов.
     return WORD_RE.findall(text.lower())
 
 
 def punctuation_profile(text):
+    """Посчитать шесть выбранных знаков препинания."""
     # Counter получает только нужные знаки и сам подсчитывает их частоты.
     return Counter(char for char in text if char in PUNCTUATION)
 
 
 def build_profile(name, text):
+    """Собрать имя и пять измеримых признаков текста в одном словаре."""
     words = normalize_words(text)
     if not words:
         raise ValueError(f"Text for {name!r} does not contain Russian words")
@@ -50,6 +56,7 @@ def build_profile(name, text):
 
 
 def jaccard(left, right):
+    """Измерить отношение пересечения множеств к их объединению."""
     if not left and not right:
         return 1.0
     # «&» даёт общие слова, а «|» — все слова из обоих множеств.
@@ -57,6 +64,7 @@ def jaccard(left, right):
 
 
 def punctuation_similarity(left, right):
+    """Сравнить доли знаков препинания и вернуть сходство от 0 до 1."""
     # Единица защищает от деления на ноль, а / 2 приводит результат к диапазону 0–1.
     left_total = sum(left.values()) or 1
     right_total = sum(right.values()) or 1
@@ -69,6 +77,7 @@ def punctuation_similarity(left, right):
 
 
 def compare_profiles(anonymous, candidate):
+    """Смешать три признака профилей в один воспроизводимый балл."""
     # Каждый элемент common_words — пара (слово, количество);
     # _ показывает, что количество здесь не используется.
     anonymous_words = {word for word, _ in anonymous["common_words"]}
@@ -91,14 +100,17 @@ def compare_profiles(anonymous, candidate):
 
 
 def display_name(path):
+    """Преобразовать техническое имя файла в подпись для читателя."""
     return AUTHOR_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
 def read_text(path):
+    """Прочитать один UTF-8 файл целиком."""
     return path.read_text(encoding="utf-8")
 
 
 def rank_candidates(data_dir=DATA_DIR):
+    """Сравнить письмо со всеми author_*.txt и вернуть рейтинг."""
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
     results = []
 
@@ -112,10 +124,12 @@ def rank_candidates(data_dir=DATA_DIR):
 
 
 def build_artifact(results, data_dir=DATA_DIR):
+    """Преобразовать рейтинг в JSON-совместимый отчёт расследования I-01."""
     candidates = [
         {"name": name, "score": score, "rank": position}
         for position, (name, score) in enumerate(results, start=1)
     ]
+    # Артефакт хранит не только лидера, но и происхождение и предел метода.
     return {
         "schema_version": 1,
         "investigation_id": "I-01",
@@ -144,6 +158,7 @@ def build_artifact(results, data_dir=DATA_DIR):
 
 
 def save_artifact(artifact, path=ARTIFACT_PATH):
+    """Сохранить словарь как читаемый UTF-8 JSON для следующего проекта."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
@@ -152,6 +167,7 @@ def save_artifact(artifact, path=ARTIFACT_PATH):
 
 
 def render_results(results):
+    """Показать рейтинг и осторожную интерпретацию в терминале."""
     table = Table(title="Вероятные авторы")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Кандидат")
@@ -171,11 +187,13 @@ def render_results(results):
 
 
 def main():
+    """Вычислить рейтинг один раз, затем показать и сохранить его."""
     results = rank_candidates()
     render_results(results)
     save_artifact(build_artifact(results))
     console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
 
 
+# При импорте модуль определяет функции, но не запускает расследование.
 if __name__ == "__main__":
     main()

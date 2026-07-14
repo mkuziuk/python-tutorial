@@ -289,7 +289,8 @@ def analyze_message(message, filename="<memory>", context_phrases=()):
     if len(links) >= 4:
         add_signal(signals, "В письме слишком много ссылок", 1)
     # Path.suffix извлекает последнее расширение имени вложения вместе с точкой.
-    if any(Path(name).suffix.casefold() in RISKY_SUFFIXES for name in attachment_names(message)):
+    names = attachment_names(message)
+    if any(Path(name).suffix.casefold() in RISKY_SUFFIXES for name in names):
         add_signal(signals, "Есть вложение с рискованным расширением", 3)
 
     # Итоговый score равен сумме баллов уникальных признаков.
@@ -301,7 +302,7 @@ def analyze_message(message, filename="<memory>", context_phrases=()):
         "sender": sender,
         "sender_domain": sender_domain,
         "links": links,
-        "attachments": attachment_names(message),
+        "attachments": names,
         "signals": signals,
         "score": score,
         "verdict": risk_verdict(score),
@@ -323,11 +324,27 @@ def load_context(path=CONTEXT_PATH):
     # investigation_id защищает от случайной передачи JSON с другой схемой.
     if data.get("investigation_id") != "I-02":
         raise ValueError(f"Expected I-02 artifact: {path}")
-    # По контракту I-02 первый finding содержит пары текстов и примеры общих фраз.
-    matches = data["findings"][0].get("matches", [])
+    # Стабильный finding_id не зависит от порядка выводов в JSON.
+    finding = next(
+        (
+            item
+            for item in data.get("findings", [])
+            if item.get("finding_id") == "F-I02-TEXT-MATCHES"
+        ),
+        None,
+    )
+    if finding is None:
+        raise ValueError(f"I-02 text-match finding is missing: {path}")
+    matches = finding.get("matches", [])
     # examples разворачиваются в один список; dict.fromkeys() удаляет повторы,
     # сохраняя порядок первого появления фраз.
-    return list(dict.fromkeys(phrase for match in matches for phrase in match.get("examples", [])))
+    return list(
+        dict.fromkeys(
+            phrase
+            for match in matches
+            for phrase in match.get("examples", [])
+        )
+    )
 
 
 def analyze_directory(data_dir=DATA_DIR, context_path=CONTEXT_PATH):

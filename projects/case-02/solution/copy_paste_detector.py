@@ -1,3 +1,5 @@
+"""Эталон I-02: найти общие фрагменты архивных текстов по n-граммам."""
+
 from itertools import combinations
 import json
 from pathlib import Path
@@ -7,6 +9,7 @@ from rich.table import Table
 
 
 def default_data_dir():
+    """Найти data и из корня проекта, и из подпапки solution."""
     script_dir = Path(__file__).resolve().parent
     local_data = script_dir / "data"
     # После копирования рядом будет data; в solution/ она находится уровнем выше.
@@ -35,10 +38,12 @@ DISPLAY_NAMES = {
 
 
 def read_text(path):
+    """Прочитать UTF-8 файл целиком."""
     return path.read_text(encoding="utf-8")
 
 
 def normalize_words(text):
+    """Вернуть строчные слова без пунктуации и цифр."""
     cleaned = []
 
     # Заменяем разделители пробелами, чтобы слова по обе стороны знака не склеились.
@@ -52,6 +57,7 @@ def normalize_words(text):
 
 
 def make_ngrams(words, size=NGRAM_SIZE):
+    """Построить все перекрывающиеся окна слов заданной длины."""
     if size < 1:
         raise ValueError("N-gram size must be positive")
 
@@ -63,10 +69,12 @@ def make_ngrams(words, size=NGRAM_SIZE):
 
 
 def display_name(path):
+    """Получить читабельный заголовок по техническому имени файла."""
     return DISPLAY_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
 def build_profile(path, ngram_size=NGRAM_SIZE):
+    """Собрать метаданные текста и множество его уникальных n-грамм."""
     text = read_text(path)
     words = normalize_words(text)
     # set хранит каждую уникальную n-грамму один раз.
@@ -82,6 +90,7 @@ def build_profile(path, ngram_size=NGRAM_SIZE):
 
 
 def overlap_score(left, right):
+    """Смешать containment и Jaccard в один балл от 0 до 1."""
     # При пустом множестве сходство равно 0.
     if not left or not right:
         return 0.0
@@ -98,6 +107,7 @@ def overlap_score(left, right):
 
 
 def compare_profiles(left, right):
+    """Описать одну пару текстов, её балл и примеры совпадений."""
     left_ngrams = left["ngrams"]
     right_ngrams = right["ngrams"]
     # Сортировка делает примеры воспроизводимыми при любом порядке элементов множества.
@@ -113,6 +123,7 @@ def compare_profiles(left, right):
 
 
 def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
+    """Найти входные тексты и построить профиль каждого файла."""
     paths = sorted(data_dir.glob("report_*.txt"))
     anonymous_path = data_dir / "anonymous.txt"
     if anonymous_path.exists():
@@ -124,6 +135,7 @@ def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
 
 
 def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
+    """Сравнить каждую пару один раз и вернуть совпадения по убыванию."""
     profiles = load_profiles(data_dir, ngram_size)
     results = []
 
@@ -143,10 +155,12 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
 
 
 def format_ngram(ngram):
+    """Преобразовать кортеж слов в строку для человека и JSON."""
     return " ".join(ngram)
 
 
 def load_authorship_lead(path=AUTHORSHIP_PATH):
+    """Прочитать осторожный вывод I-01 и проверить его происхождение."""
     data = json.loads(path.read_text(encoding="utf-8"))
     if data.get("investigation_id") != "I-01":
         raise ValueError(f"Expected I-01 artifact: {path}")
@@ -160,6 +174,7 @@ def load_authorship_lead(path=AUTHORSHIP_PATH):
 
 
 def build_artifact(results, authorship_path=AUTHORSHIP_PATH):
+    """Упаковать совпадения и вход I-01 в JSON-отчёт I-02."""
     matches = []
     for position, result in enumerate(results, start=1):
         matches.append(
@@ -171,6 +186,8 @@ def build_artifact(results, authorship_path=AUTHORSHIP_PATH):
                 "examples": [format_ngram(item) for item in result["examples"]],
             }
         )
+    # В JSON нельзя записать Path, set или tuple, поэтому выше все значения
+    # превращены в строки и списки.
     return {
         "schema_version": 1,
         "investigation_id": "I-02",
@@ -198,6 +215,7 @@ def build_artifact(results, authorship_path=AUTHORSHIP_PATH):
 
 
 def save_artifact(artifact, path=ARTIFACT_PATH):
+    """Сохранить отчёт как читаемый UTF-8 JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
@@ -206,6 +224,7 @@ def save_artifact(artifact, path=ARTIFACT_PATH):
 
 
 def render_results(results, limit=5):
+    """Показать до limit лучших пар и один общий фрагмент каждой."""
     table = Table(title="Подозрительные совпадения")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Пара")
@@ -238,11 +257,13 @@ def render_results(results, limit=5):
 
 
 def main():
+    """Вычислить рейтинг один раз, затем показать и сохранить его."""
     results = rank_overlaps()
     render_results(results)
     save_artifact(build_artifact(results))
     console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
 
 
+# При импорте модуль определяет функции, но не запускает расследование.
 if __name__ == "__main__":
     main()
