@@ -26,6 +26,32 @@ terminology and tone.
 - Keep duplicated comments synchronized across lesson pages, solution pages,
   scripts, and notebooks. Preserve learner/solution boundaries in Part II.
 
+## Tutorial prose
+
+- Describe what the learner will do, what material they will use, and what
+  result they will produce. Prefer “read the `.eml` files, extract links, and
+  assign a risk score” over broad claims about careful reasoning.
+- In course summaries and introductions, prioritize the actual curriculum:
+  projects, Python concepts, datasets, notebook work, tests, and resulting
+  artifacts. Do not make an abstract principle sound like the main learning
+  outcome when concrete skills are more useful to the learner.
+- Keep story language for atmosphere, but write instructions, learning goals,
+  transitions, and outcomes literally. A learner should not need the plot to
+  understand what happens next.
+- Avoid unexplained metaphors and contrasts such as “the boundary of a
+  conclusion” or “not a loud result, but a careful one.” Name the operation
+  instead: split the data, compare metrics, inspect errors, or record a model
+  limitation.
+- Introduce unfamiliar terms with a short plain-language definition at first
+  use. Prefer concrete nouns and existing identifiers over labels such as
+  “discipline,” “signal,” “trace,” or “strategy” when those labels do not name
+  a specific object in the lesson.
+- Keep one main idea per sentence and use active constructions that place the
+  learner or program before the action.
+- After changing prominent copy, inspect the rendered page at desktop and
+  mobile widths. Rebalance type size, line length, or grid columns when a
+  longer heading changes the intended proportions.
+
 ## Verification
 
 Run the narrow checks for the edited area and use `pnpm verify` before handing

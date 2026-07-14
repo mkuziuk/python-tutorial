@@ -42,13 +42,13 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Проектный учебник по Python и машинному обучению: две сюжетные арки, двенадцать расследований и воспроизводимые учебные проекты."
+      content="Двенадцать учебных проектов: шесть Python-скриптов и шесть тетрадей Jupyter по анализу данных и машинному обучению."
     />
     <meta name="theme-color" content="#0b0e12" />
     <meta property="og:title" content="Python-расследования" />
     <meta
       property="og:description"
-      content="Сначала проверяем улики. Затем — модели. Две сюжетные арки от основ Python до аудита машинного обучения."
+      content="Сначала создаём программы на Python. Затем анализируем данные и обучаем модели."
     />
     <meta property="og:type" content="website" />
     {canonical && <link rel="canonical" href={canonical} />}
@@ -85,10 +85,10 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
           <p class="hero-kicker">Проектный учебник · Python и ML</p>
           <h1 id="home-title">
             <span>Python-<br />расследования</span>
-            <small>Сначала проверяем улики.<br />Затем — модели.</small>
+            <small>Сначала создаём программы на Python.<br />Затем анализируем данные и обучаем модели.</small>
           </h1>
           <p class="hero-summary">
-            Две сюжетные арки ведут от первых функций и файлов к воспроизводимому машинному обучению и осторожным решениям.
+            Курс состоит из двенадцати проектов: шести Python-скриптов и шести тетрадей Jupyter по анализу данных и машинному обучению.
           </p>
           <div class="hero-actions" aria-label="Выбрать маршрут">
             <a class="button primary" href={withBase(archive.route)}>Начать с части I</a>
@@ -103,9 +103,9 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
 
       <section class="progression" id="progression" aria-labelledby="progression-title">
         <p class="section-index">Маршрут курса</p>
-        <h2 id="progression-title">Код сначала измеряет след.<br />Потом проверяет собственную модель.</h2>
+        <h2 id="progression-title">Сначала разберём готовый фрагмент кода.<br />Затем дополним программу и проверим на материалах расследования.</h2>
         <p>
-          Часть I даёт язык Python и привычку не путать вывод с фактом. Часть II переносит ту же дисциплину в анализ данных: базовая модель, корректное разбиение, ошибки, ограничения и решение.
+          В Части I вы шаг за шагом создадите шесть программ на Python: сравните тексты, найдёте совпадения, разберёте email, проверите содержимое папки, сохраните материалы дела и сформируете итоговый отчёт. В Части II вы продолжите работу в Jupyter: исследуете данные, обучите модели и проверите их на новых примерах.
         </p>
       </section>
 
@@ -114,7 +114,7 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
         mode="archive"
         eyebrow="Часть I · Архив"
         title="Северный стол"
-        description="За одну ночь рабочие материалы теряют целостность. Пока шесть программ превращают тексты, письма, папки и журналы в проверяемые следы, окно справа остаётся вашим рабочим столом."
+        description="В шести проектах вы сравните тексты, проверите письма и файлы, сохраните материалы дела в JSON и подготовите итоговый отчёт."
         note="Без опыта программирования · 90–150 минут на дело · Python-скрипты"
         overviewHref={withBase(archive.route)}
         overviewLabel="Открыть обзор первой части"
@@ -138,9 +138,9 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
         <div class="handoff-shade" aria-hidden="true"></div>
         <div class="handoff-copy">
           <p class="section-index">Вербовка · апрель 2026</p>
-          <h2 id="handoff-title">В Бюро заметили не громкость вывода, а его границы.</h2>
+          <h2 id="handoff-title">Во второй части вы перейдёте от Python-скриптов к Jupyter и машинному обучению.</h2>
           <p>
-            Та же привычка отделять факт от версии теперь нужна среди таблиц, изображений и слишком убедительных отчётов о контрольных испытаниях.
+            Вы подготовите данные, разделите их на обучающую и тестовую выборки, сравните модели и разберёте ошибки.
           </p>
         </div>
       </section>
@@ -150,7 +150,7 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
         mode="bureau"
         eyebrow="Часть II · Бюро"
         title="Протокол «Компас»"
-        description="Поставщик обещает безупречные метрики. Шесть расследований в тетрадях Jupyter проверяют данные, разбиения, ошибки и границы каждого вывода."
+        description="В шести тетрадях Jupyter вы проверите признаки и разбиения, сравните метрики и проанализируете ошибки моделей."
         note="После части I · 3–5 часов на дело · финал 6–8 часов · Jupyter Notebook"
         overviewHref={withBase(bureau.route)}
         overviewLabel="Открыть обзор Бюро"
@@ -159,17 +159,17 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
 
       <section class="method" aria-labelledby="method-title">
         <p class="section-index">Один принцип</p>
-        <h2 id="method-title">Модель не выносит приговор.</h2>
+        <h2 id="method-title">Каждое ML-дело состоит из трёх шагов.</h2>
         <div class="method-flow">
           <div><span>01</span><strong>Соберите</strong><p>Прочитайте досье и воспроизведите заявленный результат.</p></div>
           <div><span>02</span><strong>Проверьте</strong><p>Найдите утечки, слабые разбиения и систематические ошибки.</p></div>
-          <div><span>03</span><strong>Сформулируйте</strong><p>Отделите факт, интерпретацию, ограничение и безопасное действие.</p></div>
+          <div><span>03</span><strong>Сформулируйте</strong><p>Запишите полученные метрики, объясните их значение, перечислите ограничения модели и решите, можно ли её использовать.</p></div>
         </div>
       </section>
 
       <section class="course-close" aria-labelledby="close-title">
         <p class="section-index">Выберите точку входа</p>
-        <h2 id="close-title">Новичок идёт в архив.<br />Выпускник — в Бюро.</h2>
+        <h2 id="close-title">Начните с основ Python<br />или перейдите к машинному обучению.</h2>
         <div class="close-actions">
           <a class="button paper" href={withBase(archive.route)}>Начать часть I</a>
           <a class="button cobalt" href={withBase(bureau.route)}>Начать часть II</a>
@@ -422,11 +422,12 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
     margin-inline: auto;
     padding: clamp(5rem, 9vw, 9rem) 0;
     display: grid;
-    grid-template-columns: minmax(8rem,.42fr) minmax(0,1.25fr) minmax(18rem,.68fr);
+    grid-template-columns: minmax(8rem,.42fr) minmax(0,1.05fr) minmax(22rem,.85fr);
     gap: clamp(1.5rem,4vw,4rem);
     align-items: start;
   }
-  .progression h2, .method h2, .course-close h2 { font-size: clamp(2.7rem, 6vw, 6.2rem); line-height: .93; letter-spacing: -.055em; }
+  .progression h2 { font-size: clamp(2.4rem, 3.6vw, 3.8rem); line-height: .98; letter-spacing: -.045em; }
+  .method h2, .course-close h2 { font-size: clamp(2.7rem, 6vw, 6.2rem); line-height: .93; letter-spacing: -.055em; }
   .progression p:last-child { color: rgba(246,234,212,.7); font-size: 1.05rem; line-height: 1.7; }
 
   .text-link { display: inline-flex; gap: .55rem; font-weight: 850; text-underline-offset: .25em; transition: transform 180ms ease; }
