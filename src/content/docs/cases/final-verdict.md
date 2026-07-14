@@ -114,9 +114,6 @@ python final_verdict.py
 Добавьте в `final_verdict.py` первый блок. `StrEnum` ограничивает словарь допустимых типов, а `frozen=True, slots=True` делает загруженные факты неизменяемыми. Если анализу понадобится другая версия улики, безопаснее создать новый объект, чем незаметно исправить старый.
 
 ```python
-# Собирайте отчёт по шагам и сверяйте каждый промежуточный результат.
-# Не подменяйте расчёт заранее известным выводом: решение должно следовать из данных.
-# Различайте установленный факт, рабочую гипотезу и итоговое решение команды.
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -285,7 +282,7 @@ class HypothesisAssessment:
             "rank": rank,
             "hypothesis_id": self.hypothesis.hypothesis_id,
             "claim": self.hypothesis.claim,
-            # .value сохраняет в отчёте строку, а не объект перечисления.
+            # .value записывает строковое значение Enum в JSON.
             "status": self.status.value,
             "score": self.score,
             "support_points": self.support_points,
@@ -347,7 +344,7 @@ python -c "import final_verdict as f; b=f.load_bundle(); t=f.build_timeline(b.ev
 def classify_assessment(
     support_points: int, conflict_points: int
 ) -> AssessmentStatus:
-    # Границы статусов — зафиксированное правило этого дела, а не универсальная шкала доказанности.
+    # Пороги ниже определяют AssessmentStatus для этого дела.
     # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
         # Если support и conflict равны 0, ни одна улика не связана с гипотезой.
@@ -378,7 +375,7 @@ def score_hypothesis(
             if effect.hypothesis_id != hypothesis.hypothesis_id:
                 continue
 
-            # Баллы используются только для ранжирования гипотез и не являются вероятностями.
+            # Баллы задают порядок гипотез в рейтинге.
             # Вклад зависит и от надёжности источника, и от силы его связи.
             # points рассчитывается как reliability * weight.
             points = item.reliability * effect.weight
@@ -444,14 +441,14 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
     timeline = build_timeline(bundle.evidence)
     # Рейтинг вычисляется один раз и затем одинаково используется в JSON и печатном выводе.
     assessments = rank_hypotheses(bundle)
-    # Основной вывод берём из рассчитанного рейтинга, а не задаём вручную.
+    # primary получает первую запись рассчитанного рейтинга.
     # Код требует хотя бы одну гипотезу; первая запись отсортированного рейтинга становится лидером.
     primary = assessments[0]
 
     return {
         "case_id": bundle.case_id,
         "title": bundle.title,
-        # Время берём из снимка дела, а не из now(), поэтому повторный запуск даёт тот же результат.
+        # generated_at получает значение bundle.analysis_time.
         "generated_at": bundle.analysis_time.isoformat(),
         "scheduled_opening": bundle.scheduled_opening.isoformat(),
         "timeline": timeline,

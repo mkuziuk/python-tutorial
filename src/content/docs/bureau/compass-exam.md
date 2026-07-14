@@ -95,7 +95,7 @@ print("Временный результат: пересечение не рас
 Следующая заглушка должна быть заменена на OOF-прогнозы зафиксированной модели с `groups=source_groups`. Партия C на этом этапе всё ещё закрыта:
 
 ```python
-# Группы не позволяют вариантам одного source_id попасть в обучение и валидацию одновременно.
+# Группа помещает все строки одного source_id в одну часть разбиения.
 # TODO: замените временную базовую модель на cross_val_predict с groups=source_groups.
 fallback = DummyClassifier(strategy="most_frequent").fit(X_development, y_development)
 grouped_predictions = fallback.predict(X_development)

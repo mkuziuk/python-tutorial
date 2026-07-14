@@ -152,7 +152,7 @@ class HypothesisAssessment:
             "rank": rank,
             "hypothesis_id": self.hypothesis.hypothesis_id,
             "claim": self.hypothesis.claim,
-            # .value сохраняет в отчёте строку, а не объект перечисления.
+            # .value записывает строковое значение Enum в JSON.
             "status": self.status.value,
             "score": self.score,
             "support_points": self.support_points,
@@ -185,7 +185,7 @@ def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
 def classify_assessment(
     support_points: int, conflict_points: int
 ) -> AssessmentStatus:
-    # Границы статусов — зафиксированное правило этого дела, а не универсальная шкала доказанности.
+    # Пороги ниже определяют AssessmentStatus для этого дела.
     # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
         case 0, 0:
@@ -214,7 +214,7 @@ def score_hypothesis(
             if effect.hypothesis_id != hypothesis.hypothesis_id:
                 continue
 
-            # Баллы используются только для ранжирования гипотез и не являются вероятностями.
+            # Баллы задают порядок гипотез в рейтинге.
             # Вклад зависит и от надёжности источника, и от силы его связи.
             points = item.reliability * effect.weight
             match effect.stance:
@@ -255,7 +255,7 @@ def rank_hypotheses(bundle: CaseBundle) -> list[HypothesisAssessment]:
 def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
     timeline = build_timeline(bundle.evidence)
     assessments = rank_hypotheses(bundle)
-    # Основной вывод берём из рассчитанного рейтинга, а не задаём вручную.
+    # primary получает первую запись рассчитанного рейтинга.
     primary = assessments[0]
 
     return {

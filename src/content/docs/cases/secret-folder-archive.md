@@ -116,9 +116,6 @@ python secret_folder_archive.py
 Откройте `secret_folder_archive.py`. Вверху нам нужны стандартные модули и две сущности из Rich:
 
 ```python
-# Собирайте индексатор по этапам и проверяйте каждый этап отдельно.
-# Не изменяйте материалы дела: программа должна только читать и описывать их.
-# Перед повторным запуском определите, какой снимок считается предыдущим состоянием.
 from datetime import datetime, timezone
 from difflib import ndiff
 import hashlib
@@ -174,7 +171,7 @@ def relative_name(root, path):
 Файл лучше читать кусками. Маленькие файлы можно прочитать целиком, но привычка с чанками спасает, когда архив разрастается. `file_sha256()` принимает путь и возвращает строку-хэш; именно эта строка потом решает, одинаковые ли файлы.
 
 ```python
-# 65 536 байт — размер блока чтения, а не ограничение на размер файла.
+# Читаем файл блоками по 65 536 байт.
 def file_sha256(path, chunk_size=65_536):
     digest = hashlib.sha256()
 
@@ -291,7 +288,7 @@ def build_manifest(root):
 
 ```python
 def load_manifest(path):
-    # Отсутствие манифеста означает первый запуск, а не повреждение данных.
+    # При первом запуске load_manifest() возвращает None.
     if not path.exists():
         return None
 
@@ -313,7 +310,7 @@ def write_manifest(manifest, path):
 
 ```python
 def index_by_path(manifest):
-    # Для сравнения берём только файлы: scanned_at меняется при каждом запуске и не является изменением архива.
+    # index_by_path() строит словарь «путь → запись» из раздела files.
     return {
         str(record["path"]): record
         for record in manifest.get("files", [])
@@ -337,7 +334,7 @@ def compare_manifests(
     # Пересечение — общие пути; разности множеств — добавленные и удалённые.
     changed = []
     for path in sorted(old_paths & new_paths):
-        # Файл считается изменённым только при новом SHA-256; изменение одного mtime игнорируется.
+        # В changed попадают пути, у которых изменился SHA-256.
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
             changed.append(path)
 
@@ -364,7 +361,7 @@ def compare_manifests(
 
 ```python
 def compare_timeline_versions(current_path, backup_path):
-    # splitlines() сравнивает строки и не считает завершающий перевод строки отдельным изменением.
+    # splitlines() преобразует каждую версию в список строк для ndiff().
     current_lines = current_path.read_text(encoding="utf-8").splitlines()
     backup_lines = backup_path.read_text(encoding="utf-8").splitlines()
     differences = {"current": [], "backup": []}

@@ -35,7 +35,7 @@ scores = cross_validate(
     pipeline,
     X,
     y,
-    # groups управляет разбиением и не становится признаком модели.
+    # groups задаёт принадлежность к частям; модель обучается на X.
     groups=source_id,
     cv=cv,
     scoring="f1_macro",

@@ -81,7 +81,7 @@ def compare_profiles(anonymous, candidate):
         candidate["punctuation"],
     )
 
-    # Веса складываются в 1: это эвристика сходства, а не вероятность авторства.
+    # Итоговая оценка — взвешенная сумма word_overlap, length_score и punctuation_score.
     return round(word_overlap * 0.45 + length_score * 0.25 + punctuation_score * 0.30, 3)
 
 
@@ -97,7 +97,7 @@ def rank_candidates(data_dir=DATA_DIR):
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
     results = []
 
-    # Шаблон не захватывает anonymous.txt, а сортировка фиксирует порядок обхода.
+    # glob("author_*.txt") выбирает образцы авторов, а sorted() фиксирует их порядок.
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
         results.append((str(profile["name"]), compare_profiles(anonymous, profile)))

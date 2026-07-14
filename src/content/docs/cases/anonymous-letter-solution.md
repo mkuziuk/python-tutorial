@@ -109,7 +109,7 @@ def compare_profiles(anonymous, candidate):
         candidate["punctuation"],
     )
 
-    # Веса складываются в 1: это эвристика сходства, а не вероятность авторства.
+    # Итоговая оценка — взвешенная сумма word_overlap, length_score и punctuation_score.
     return round(word_overlap * 0.45 + length_score * 0.25 + punctuation_score * 0.30, 3)
 
 
@@ -128,7 +128,7 @@ def rank_candidates(data_dir=DATA_DIR):
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
     results = []
 
-    # Шаблон не захватывает anonymous.txt, а сортировка фиксирует порядок обхода.
+    # glob("author_*.txt") выбирает образцы авторов, а sorted() фиксирует их порядок.
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
         # После сравнения полные профили больше не нужны, поэтому сохраняем только имя и итоговый балл.
@@ -150,7 +150,7 @@ def render_results(results):
         table.add_row(str(position), name, f"{score:.2f}")
 
     console.print(table)
-    # Хотя бы один кандидат — контракт учебного набора; иначе здесь нужен отдельный пустой отчёт.
+    # results[0] требует непустой рейтинг кандидатов.
     winner, score = results[0]
     console.print(
         f"\n[bold]Главная версия:[/bold] {winner} "
@@ -183,4 +183,4 @@ if __name__ == "__main__":
 
 `WORD_RE.findall(text.lower())` возвращает список слов, а не итератор совпадений. Для первого проекта это проще читать, чем `finditer()`.
 
-`compare_profiles()` не пытается быть научной моделью. Это прозрачная эвристика: пересечение популярных слов, близость средней длины слова и похожесть пунктуации.
+`compare_profiles()` не пытается быть научной моделью. Это прозрачная эвристика: пересечение популярных слов, близость средней длины слова и похожесть пунктуации. Итоговая оценка показывает сходство этих признаков, но не является вероятностью авторства.

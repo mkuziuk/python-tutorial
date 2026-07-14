@@ -35,7 +35,7 @@ scores = cross_validate(
 ```python
 from sklearn.model_selection import cross_val_predict
 
-# Каждый объект оценивает модель, которая не обучалась на этом объекте.
+# cross_val_predict возвращает OOF-прогноз для каждого объекта.
 oof_probability = cross_val_predict(
     pipeline,
     X_train,

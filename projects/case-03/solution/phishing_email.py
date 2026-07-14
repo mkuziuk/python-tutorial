@@ -216,7 +216,7 @@ def add_signal(signals, title, points, level="warning"):
 
 
 def risk_verdict(score):
-    # Пороги — учебная шкала триажа, а не оценка вероятности взлома.
+    # score от 7 означает высокий риск, от 3 — ручную проверку.
     if score >= 7:
         return "высокий риск"
     if score >= 3:
@@ -247,7 +247,7 @@ def analyze_message(message, filename="<memory>"):
         if link.scheme == "http":
             add_signal(signals, "Ссылка использует http без шифрования", 2)
 
-        # Текст ссылки может обещать один домен, а href вести на другой.
+        # Сравниваем домен в тексте ссылки с доменом из href.
         if link.display_host and base_domain(link.display_host) != base_domain(link.host):
             add_signal(signals, "Видимый домен ссылки не совпадает с реальным", 3, "danger")
 

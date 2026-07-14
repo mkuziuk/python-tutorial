@@ -117,7 +117,7 @@ def build_logistic_pipeline(
             ("categorical", categorical_steps, categorical_features),
         ]
     )
-    # Единый Pipeline не даёт преобразованиям обучиться на тестовой выборке.
+    # Pipeline обучает преобразования на обучающей части каждого разбиения.
     return Pipeline(
         [
             ("preprocess", preprocessing),

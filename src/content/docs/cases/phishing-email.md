@@ -111,9 +111,6 @@ python phishing_email.py
 Откройте `phishing_email.py` и добавьте импорты, путь к письмам и консоль:
 
 ```python
-# Собирайте анализатор небольшими проверяемыми шагами.
-# Сначала убедитесь, что письмо читается, и только потом добавляйте оценки риска.
-# Сохраняйте причины каждого решения: итоговый балл должен объясняться сигналами отчёта.
 from dataclasses import dataclass
 from email import policy
 from email.parser import BytesParser
@@ -150,7 +147,7 @@ class LinkInfo:
 @dataclass(frozen=True)
 class RiskSignal:
     title: str
-    # points — вклад правила в учебную шкалу триажа, а не вероятность фишинга.
+    # points — число баллов, которое сигнал добавляет к score.
     points: int
     level: str
 
@@ -170,7 +167,7 @@ class EmailReport:
 
 `raw` хранит исходную ссылку, `host` — фактический хост из URL, а `display_host` — домен, показанный в тексте ссылки. В HTML-письмах они могут различаться: текст выглядит как `support.example.org`, а `href` ведёт на другой адрес.
 
-`EmailReport` — результат одной проверки. Функции анализа возвращают этот объект, а функция вывода получает готовые поля и не пересчитывает риск.
+`EmailReport` — результат одной проверки. Функции анализа возвращают этот объект, а функция вывода получает готовые поля и не пересчитывает риск. `score` показывает сумму баллов правил, но не является вероятностью фишинга.
 
 ### Исключение для дела
 
@@ -190,7 +187,7 @@ from email.parser import BytesParser
 
 def load_message(path):
     try:
-        # Никакие вложения здесь не выполняются: парсер только разбирает структуру файла.
+        # BytesParser преобразует содержимое .eml-файла в объект сообщения.
         with path.open("rb") as file:
             # Читаем исходные байты, чтобы policy.default корректно декодировала MIME.
             message = BytesParser(policy=policy.default).parse(file)
@@ -255,7 +252,7 @@ python -c "from phishing_email import DATA_DIR, load_message; message = load_mes
 ```python
 TRAILING_URL_CHARS = ".,;:!?)]}"
 
-# Регулярное выражение ищет учебное подмножество URL и не заменяет полноценный HTML-парсер браузера.
+# URL_RE и HTML_LINK_RE находят ссылки http/https в учебных письмах.
 URL_RE = re.compile(r"https?://[^\s<>'\"\\]+", re.IGNORECASE)
 HTML_LINK_RE = re.compile(
     r"<a\s+[^>]*href=[\"'](?P<url>https?://[^\"']+)[\"'][^>]*>"
@@ -269,6 +266,8 @@ DOMAIN_RE = re.compile(
     re.IGNORECASE,
 )
 ```
+
+Эти шаблоны рассчитаны на формат учебных писем. Для разбора произвольного HTML нужен полноценный HTML-парсер.
 
 Именованные группы `(?P<url>...)` и `(?P<label>...)` делают код чтения понятнее: мы не запоминаем, была ли ссылка первой или второй группой.
 
@@ -320,7 +319,7 @@ def base_domain(host):
 
 
 def domain_from_address(value):
-    # parseaddr отделяет отображаемое имя; существование почтового ящика эта проверка не подтверждает.
+    # parseaddr возвращает адрес без отображаемого имени отправителя.
     _, address = parseaddr(value or "")
     if "@" not in address:
         return ""
@@ -328,7 +327,7 @@ def domain_from_address(value):
 
 
 def display_host_from_label(label):
-    # Берём первый домен из видимой подписи; сложная HTML-разметка остаётся ограничением эвристики.
+    # DOMAIN_RE извлекает первый домен из текста ссылки.
     match = DOMAIN_RE.search(label)
     if match is None:
         return ""
@@ -341,7 +340,7 @@ def display_host_from_label(label):
 
 ```python
 def make_link_info(raw_url, label=""):
-    # urlparse только разбирает строку и не выполняет сетевой запрос по подозрительной ссылке.
+    # urlparse разделяет raw_url на схему, хост, путь и параметры.
     parsed = urlparse(raw_url)
     # hostname уже отделён от схемы, порта, пути и параметров URL.
     host = normalize_host(parsed.hostname or "")
@@ -390,7 +389,7 @@ python -c "from phishing_email import DATA_DIR, extract_links, load_message, tex
 
 ### Правила риска
 
-Слова срочности и опасные расширения тоже зададим явными шаблонами. Функция `attachment_names()` читает только имена вложений; она ничего не сохраняет и не запускает.
+Слова срочности и опасные расширения тоже зададим явными шаблонами. Функция `attachment_names()` читает только имена вложений; она ничего не сохраняет и не запускает. Совпадение расширения добавляет сигнал для ручной проверки, но само по себе не доказывает вредоносность файла.
 
 ```python
 URGENT_RE = re.compile(
@@ -400,7 +399,7 @@ URGENT_RE = re.compile(
 RISKY_ATTACHMENT_RE = re.compile(r"\.(exe|js|scr|cmd|bat|vbs|ps1)$", re.IGNORECASE)
 
 
-# Анализируем только имена вложений: содержимое файлов не открывается и не запускается.
+# attachment_names() собирает имена MIME-частей с типом attachment.
 def attachment_names(message):
     names = []
     for part in message.walk():
@@ -427,7 +426,7 @@ def add_signal(
 
 
 def risk_verdict(score):
-    # Пороги — учебная шкала триажа, а не оценка вероятности взлома.
+    # score от 7 означает высокий риск, от 3 — ручную проверку.
     if score >= 7:
         return "высокий риск"
     if score >= 3:
@@ -441,7 +440,7 @@ def risk_verdict(score):
 
 ```python
 def analyze_message(message, filename="<memory>"):
-    # Сначала извлекаем наблюдаемые данные, и только затем применяем к ним правила риска.
+    # Сначала извлекаем поля письма и ссылки, затем проверяем правила риска.
     subject = str(message.get("Subject", "(без темы)"))
     sender = str(message.get("From", ""))
     sender_domain = domain_from_address(sender)
@@ -480,7 +479,6 @@ def analyze_message(message, filename="<memory>"):
     if len(links) >= 4:
         add_signal(signals, "В письме слишком много ссылок", 1)
 
-    # Расширение — повод для проверки, а не доказательство запуска или вредоносности файла.
     risky_attachments = [
         name for name in attachment_names(message) if RISKY_ATTACHMENT_RE.search(name)
     ]
@@ -539,7 +537,7 @@ def render_results(reports):
     table.add_column("Балл", justify="right")
     table.add_column("Сигналы")
 
-    # Сортируем только представление; исходные EmailReport остаются неизменными.
+    # sorted() создаёт новый список отчётов в порядке убывания score.
     for report in sorted(reports, key=lambda item: item.score, reverse=True):
         signals = "\n".join(
             f"{signal.title} (+{signal.points})" for signal in report.signals

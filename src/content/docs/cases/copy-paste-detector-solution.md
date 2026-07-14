@@ -89,7 +89,7 @@ def display_name(path):
 def build_profile(path, ngram_size=NGRAM_SIZE):
     text = read_text(path)
     words = normalize_words(text)
-    # Множество считает повторяющуюся n-грамму одним фрагментом, а не несколькими уликами.
+    # set хранит каждую уникальную n-грамму один раз.
     ngrams = set(make_ngrams(words, ngram_size))
 
     return {
@@ -103,7 +103,7 @@ def build_profile(path, ngram_size=NGRAM_SIZE):
 
 
 def overlap_score(left, right):
-    # Если хотя бы одно множество n-грамм пусто, возвращаем 0 и не выполняем деление.
+    # При пустом множестве сходство равно 0.
     if not left or not right:
         return 0.0
 
@@ -123,7 +123,7 @@ def overlap_score(left, right):
 
 
 def compare_profiles(left, right):
-    # Сравнение получает готовые профили и больше не читает файлы с диска.
+    # compare_profiles() сравнивает множества n-грамм из готовых профилей.
     left_ngrams = left["ngrams"]
     right_ngrams = right["ngrams"]
     # Сортировка делает примеры воспроизводимыми при любом порядке элементов множества.
@@ -134,7 +134,7 @@ def compare_profiles(left, right):
         "pair": (str(left["title"]), str(right["title"])),
         "score": overlap_score(left_ngrams, right_ngrams),
         "shared_count": len(shared_ngrams),
-        # Это первые примеры в стабильном порядке, а не «самые сильные» совпадения.
+        # examples содержит первые TOP_EXAMPLES n-грамм после сортировки.
         "examples": shared_ngrams[:TOP_EXAMPLES],
     }
 
@@ -153,7 +153,7 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     profiles = load_profiles(data_dir, ngram_size)
     results = []
 
-    # combinations(..., 2) выдаёт каждую пару один раз и не сравнивает файл с собой.
+    # combinations(profiles, 2) создаёт каждую неупорядоченную пару один раз.
     for left, right in combinations(profiles, 2):
         result = compare_profiles(left, right)
         # Пары без общих n-грамм не добавляем в отчёт.
@@ -181,7 +181,7 @@ def render_results(results, limit=5):
     table.add_column("Общих n-грамм", justify="right")
     table.add_column("Пример")
 
-    # limit ограничивает только таблицу; полный рейтинг в results остаётся доступен вызывающему коду.
+    # render_results() показывает первые limit элементов полного списка results.
     for position, result in enumerate(results[:limit], start=1):
         left, right = result["pair"]
         examples = result["examples"]
@@ -208,7 +208,7 @@ def render_results(results, limit=5):
 
 
 def main():
-    # Вывод получает уже отсортированный рейтинг и не меняет результаты анализа.
+    # render_results() форматирует уже отсортированный список results.
     render_results(rank_overlaps())
 
 

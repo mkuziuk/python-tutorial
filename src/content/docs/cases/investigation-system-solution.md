@@ -53,7 +53,7 @@ class Evidence:
     source: str
     body: str
     created_at: str
-    # default_factory даёт каждой улике свой список, а не один общий.
+    # default_factory=list создаёт отдельный список tags для каждого Evidence.
     tags: list[str] = field(default_factory=list)
     reliability: int = 3
 
@@ -121,7 +121,7 @@ class Evidence:
                 *self.tags,
             ]
         ).casefold()
-        # Это простой поиск подстроки по всем полям, а не ранжированный полнотекстовый поиск.
+        # matches() ищет query как подстроку в полях улики.
         return normalized_query in haystack
 
     def short_body(self, limit=90):
@@ -162,7 +162,7 @@ class Person:
         }
 
     def label(self):
-        # Короткая подпись предназначена для интерфейса и не заменяет стабильный person_id.
+        # label() возвращает текст для интерфейса.
         return f"{self.name} - {self.role}"
 
 
@@ -274,7 +274,7 @@ class CaseRepository:
 
     def save(self, investigation):
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        # Сериализуем явную схему to_dict(), а не внутреннее устройство dataclass.
+        # to_dict() задаёт точные ключи и значения выходного JSON.
         payload = json.dumps(investigation.to_dict(), ensure_ascii=False, indent=2)
         self.path.write_text(f"{payload}\n", encoding="utf-8")
 
@@ -316,7 +316,7 @@ def render_overview(investigation):
 
 
 def render_search_results(query, results):
-    # results уже отфильтрован: эта функция отвечает только за представление найденных объектов.
+    # render_search_results() форматирует уже отфильтрованный список results.
     table = Table(title=f"Поиск: {query}")
     table.add_column("ID", style="cyan")
     table.add_column("Название")

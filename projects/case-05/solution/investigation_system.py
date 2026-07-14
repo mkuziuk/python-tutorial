@@ -30,7 +30,7 @@ class Evidence:
     source: str
     body: str
     created_at: str
-    # default_factory даёт каждой улике свой список, а не один общий.
+    # default_factory=list создаёт отдельный список tags для каждого Evidence.
     tags: list[str] = field(default_factory=list)
     reliability: int = 3
 

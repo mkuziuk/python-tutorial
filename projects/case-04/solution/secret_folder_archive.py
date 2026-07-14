@@ -124,7 +124,7 @@ def write_manifest(manifest, path):
 
 
 def index_by_path(manifest):
-    # Для сравнения берём только файлы: scanned_at меняется при каждом запуске и не является изменением архива.
+    # index_by_path() строит словарь «путь → запись» из раздела files.
     return {
         str(record["path"]): record
         for record in manifest.get("files", [])
@@ -141,7 +141,7 @@ def compare_manifests(previous, current):
     # Пересечение — общие пути; разности множеств — добавленные и удалённые.
     changed = []
     for path in sorted(old_paths & new_paths):
-        # Файл считается изменённым только при новом SHA-256; изменение одного mtime игнорируется.
+        # В changed попадают пути, у которых изменился SHA-256.
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
             changed.append(path)
 
