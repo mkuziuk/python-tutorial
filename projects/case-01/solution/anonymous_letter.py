@@ -73,7 +73,7 @@ def compare_profiles(anonymous, candidate):
     average_delta = abs(
         float(anonymous["average_word_length"]) - float(candidate["average_word_length"])
     )
-    # Разница в три буквы обнуляет эту часть оценки: это явная граница эвристики.
+    # Если средняя длина слова отличается на три буквы или больше, length_score равен 0.
     length_score = max(0.0, 1.0 - average_delta / 3)
 
     punctuation_score = punctuation_similarity(

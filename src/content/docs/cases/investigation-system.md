@@ -132,7 +132,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-# seed остаётся исходным снимком, а результат пишется отдельно — его можно безопасно пересоздать.
+# case_seed.json не изменяем; новый результат записываем в case_report.json.
 DATA_DIR = Path(__file__).with_name("data")
 SEED_PATH = DATA_DIR / "case_seed.json"
 OUTPUT_PATH = Path(__file__).with_name("case_report.json")
@@ -142,7 +142,7 @@ console = Console()
 # slots запрещает случайно создать поле с опечаткой и фиксирует заявленную структуру объекта.
 @dataclass(slots=True)
 class Evidence:
-    # evidence_id — стабильная идентичность улики; title можно менять для более ясного отображения.
+    # evidence_id остаётся постоянным идентификатором; title можно менять для более ясного отображения.
     evidence_id: str
     kind: str
     title: str
@@ -248,7 +248,7 @@ class Investigation:
         # Множество убирает дубли, а casefold() выравнивает регистр тегов.
         self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
 
-        # ID и время обязательны для идентификации улики; пустые значения отбрасываем на границе загрузки.
+        # __post_init__() отклоняет улики с пустыми evidence_id или created_at.
         if not self.evidence_id:
             raise ValueError("Evidence ID must not be empty")
         if not self.created_at:
@@ -310,7 +310,7 @@ class Investigation:
 
 ```python
     def short_body(self, limit=90):
-        # Сначала сжимаем пробелы, чтобы переносы строк не ломали таблицу и не расходовали лимит незаметно.
+        # Нормализуем пробелы до обрезки, чтобы limit применялся к отображаемой строке.
         compact = " ".join(self.body.split())
         # limit измеряется в символах уже после нормализации пробелов.
         if len(compact) <= limit:
@@ -408,7 +408,7 @@ def to_dict(self):
 
 ```python
     def find_evidence(self, query):
-        # Investigation управляет коллекцией, а правило совпадения остаётся внутри Evidence.
+        # Investigation перебирает улики, а Evidence.matches() проверяет совпадение с запросом.
         return [item for item in self.evidence if item.matches(query)]
 ```
 
@@ -442,7 +442,7 @@ def to_dict(self):
 `CaseRepository` отвечает только за хранение. Он не решает, что такое улика, и не рисует таблицы. Если позже заменить JSON-файл на базу данных, менять нужно будет этот слой, а не методы `Evidence` и `Investigation`.
 
 ```python
-# Репозиторий изолирует файловый ввод-вывод от правил поиска и изменения Investigation.
+# CaseRepository читает и записывает JSON, а Investigation содержит правила поиска и изменения дела.
 class CaseRepository:
     def __init__(self, path):
         self.path = path

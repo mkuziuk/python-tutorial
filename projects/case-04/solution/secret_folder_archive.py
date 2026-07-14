@@ -141,7 +141,7 @@ def compare_manifests(previous, current):
     # Пересечение — общие пути; разности множеств — добавленные и удалённые.
     changed = []
     for path in sorted(old_paths & new_paths):
-        # Изменением считаем новое содержимое; один лишь mtime не создаёт ложную тревогу.
+        # Файл считается изменённым только при новом SHA-256; изменение одного mtime игнорируется.
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
             changed.append(path)
 

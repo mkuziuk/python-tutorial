@@ -214,7 +214,7 @@ def score_hypothesis(
             if effect.hypothesis_id != hypothesis.hypothesis_id:
                 continue
 
-            # Баллы ранжируют проверки, но не превращаются в вероятность гипотезы.
+            # Баллы используются только для ранжирования гипотез и не являются вероятностями.
             # Вклад зависит и от надёжности источника, и от силы его связи.
             points = item.reliability * effect.weight
             match effect.stance:

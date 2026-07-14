@@ -101,7 +101,7 @@ def compare_profiles(anonymous, candidate):
     average_delta = abs(
         float(anonymous["average_word_length"]) - float(candidate["average_word_length"])
     )
-    # Разница в три буквы обнуляет эту часть оценки: это явная граница эвристики.
+    # Если средняя длина слова отличается на три буквы или больше, length_score равен 0.
     length_score = max(0.0, 1.0 - average_delta / 3)
 
     punctuation_score = punctuation_similarity(
@@ -124,14 +124,14 @@ def read_text(path):
 
 
 def rank_candidates(data_dir=DATA_DIR):
-    # Анонимный текст строит эталон для одного запуска; его не нужно перечитывать для каждого автора.
+    # Профиль анонимного текста строим один раз и используем при сравнении со всеми авторами.
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
     results = []
 
     # Шаблон не захватывает anonymous.txt, а сортировка фиксирует порядок обхода.
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
-        # В рейтинг кладём только имя и итоговый балл: тяжёлые профили дальше уже не нужны.
+        # После сравнения полные профили больше не нужны, поэтому сохраняем только имя и итоговый балл.
         results.append((str(profile["name"]), compare_profiles(anonymous, profile)))
 
     # sorted() стабилен: при равных баллах сохранится зафиксированный выше порядок файлов.

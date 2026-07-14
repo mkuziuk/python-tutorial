@@ -236,7 +236,7 @@ def build_profile(path, ngram_size=NGRAM_SIZE):
 
 
 def overlap_score(left, right):
-    # Пустая сторона не даёт свидетельства сходства и защищает формулу от деления на ноль.
+    # Если хотя бы одно множество n-грамм пусто, возвращаем 0 и не выполняем деление.
     if not left or not right:
         return 0.0
 
@@ -245,12 +245,13 @@ def overlap_score(left, right):
     if not shared:
         return 0.0
 
-    # Первая доля ищет вложение в меньший текст, вторая штрафует лишние n-граммы.
+    # containment измеряет долю n-грамм меньшего текста, найденных в другом тексте.
+    # Jaccard снижает оценку, если в текстах много несовпадающих n-грамм.
     # shared не может быть больше меньшего множества, поэтому containment всегда лежит в диапазоне 0–1.
     containment = len(shared) / min(len(left), len(right))
     # Jaccard симметрично штрафует лишние фрагменты в обоих текстах.
     jaccard = len(shared) / len(left | right)
-    # Округляем опубликованную оценку; при равенстве рейтинг дополнительно смотрит на число совпадений.
+    # Округляем score; при равном score пары дополнительно сортируются по shared_count.
     return round(containment * 0.7 + jaccard * 0.3, 3)
 ```
 
@@ -292,7 +293,7 @@ from itertools import combinations
 
 ```python
 def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
-    # Маска задаёт границу входа: посторонние txt-файлы в каталоге в расследование не попадут.
+    # glob("report_*.txt") выбирает только файлы отчётов и исключает остальные txt-файлы.
     paths = sorted(data_dir.glob("report_*.txt"))
     if not paths:
         raise FileNotFoundError(f"No report_*.txt files found in {data_dir}")
@@ -311,7 +312,7 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     # combinations(..., 2) выдаёт каждую пару один раз и не сравнивает файл с собой.
     for left, right in combinations(profiles, 2):
         result = compare_profiles(left, right)
-        # Нулевые совпадения не засоряют отчёт; отсутствующая пара означает нулевой общий след.
+        # Пары без общих n-грамм не добавляем в отчёт.
         if result["shared_count"] > 0:
             results.append(result)
 
@@ -335,7 +336,7 @@ from rich.table import Table
 
 ```python
 def format_ngram(ngram):
-    # Внутри алгоритма порядок хранит кортеж, а пользователю показываем обычную строку.
+    # N-грамма хранится как кортеж слов; join() объединяет их в строку для вывода.
     return " ".join(ngram)
 
 

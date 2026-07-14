@@ -68,7 +68,7 @@ class Evidence:
         # Множество убирает дубли, а casefold() выравнивает регистр тегов.
         self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
 
-        # ID и время обязательны для идентификации улики; пустые значения отбрасываем на границе загрузки.
+        # __post_init__() отклоняет улики с пустыми evidence_id или created_at.
         if not self.evidence_id:
             raise ValueError("Evidence ID must not be empty")
         if not self.created_at:
@@ -125,7 +125,7 @@ class Evidence:
         return normalized_query in haystack
 
     def short_body(self, limit=90):
-        # Сначала сжимаем пробелы, чтобы переносы строк не ломали таблицу и не расходовали лимит незаметно.
+        # Нормализуем пробелы до обрезки, чтобы limit применялся к отображаемой строке.
         compact = " ".join(self.body.split())
         # limit измеряется в символах уже после нормализации пробелов.
         if len(compact) <= limit:
@@ -241,7 +241,7 @@ class Investigation:
         return None
 
     def find_evidence(self, query):
-        # Investigation управляет коллекцией, а правило совпадения остаётся внутри Evidence.
+        # Investigation перебирает улики, а Evidence.matches() проверяет совпадение с запросом.
         return [item for item in self.evidence if item.matches(query)]
 
     def priority_evidence(self, limit=3):
@@ -262,7 +262,7 @@ class Investigation:
         }
 
 
-# Репозиторий изолирует файловый ввод-вывод от правил поиска и изменения Investigation.
+# CaseRepository читает и записывает JSON, а Investigation содержит правила поиска и изменения дела.
 class CaseRepository:
     def __init__(self, path):
         self.path = path

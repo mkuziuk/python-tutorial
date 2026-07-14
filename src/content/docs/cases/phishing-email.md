@@ -197,7 +197,7 @@ def load_message(path):
     except OSError as exc:
         raise EmailAnalysisError(f"Cannot read {path}") from exc
 
-    # Эти заголовки — минимальный контракт дальнейшего анализа, поэтому проверяем их на входе.
+    # Для анализа нужны заголовки From и Subject, поэтому проверяем их сразу после чтения письма.
     if not message.get("From"):
         raise EmailAnalysisError(f"{path.name}: missing From header")
     if not message.get("Subject"):
@@ -420,8 +420,8 @@ def add_signal(
     points,
     level="warning",
 ):
-    # Один тип риска учитываем один раз, даже если его дали несколько ссылок.
-    # Повтор усиливает наблюдение, но не должен многократно начислять один и тот же тип риска.
+    # Каждый тип риска добавляем один раз, даже если ему соответствуют несколько ссылок.
+    # Повторяющиеся ссылки не должны повторно добавлять сигнал и увеличивать score.
     if all(signal.title != title for signal in signals):
         signals.append(RiskSignal(title=title, points=points, level=level))
 
@@ -487,7 +487,7 @@ def analyze_message(message, filename="<memory>"):
     if risky_attachments:
         add_signal(signals, "Есть вложение с рискованным расширением", 3, "danger")
 
-    # Сумма сохраняет вклад каждого сигнала видимым и проверяемым в отчёте.
+    # score равен сумме points всех сигналов, поэтому вклад каждого правила виден в отчёте.
     score = sum(signal.points for signal in signals)
     return EmailReport(
         filename=filename,
@@ -507,7 +507,7 @@ def analyze_message(message, filename="<memory>"):
 
 ```python
 def analyze_file(path):
-    # Эта маленькая граница связывает файловый ввод с анализом уже разобранного сообщения.
+    # Читаем письмо из файла и передаём разобранное сообщение в analyze_message().
     return analyze_message(load_message(path), filename=path.name)
 
 

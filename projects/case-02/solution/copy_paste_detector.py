@@ -77,7 +77,7 @@ def build_profile(path, ngram_size=NGRAM_SIZE):
 
 
 def overlap_score(left, right):
-    # Пустая сторона не даёт свидетельства сходства и защищает формулу от деления на ноль.
+    # Если хотя бы одно множество n-грамм пусто, возвращаем 0 и не выполняем деление.
     if not left or not right:
         return 0.0
 
@@ -85,7 +85,8 @@ def overlap_score(left, right):
     if not shared:
         return 0.0
 
-    # Первая доля ищет вложение в меньший текст, вторая штрафует лишние n-граммы.
+    # containment измеряет долю n-грамм меньшего текста, найденных в другом тексте.
+    # Jaccard снижает оценку, если в текстах много несовпадающих n-грамм.
     containment = len(shared) / min(len(left), len(right))
     jaccard = len(shared) / len(left | right)
     return round(containment * 0.7 + jaccard * 0.3, 3)
@@ -121,7 +122,7 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     # combinations(..., 2) выдаёт каждую пару один раз и не сравнивает файл с собой.
     for left, right in combinations(profiles, 2):
         result = compare_profiles(left, right)
-        # Нулевые совпадения не засоряют отчёт; отсутствующая пара означает нулевой общий след.
+        # Пары без общих n-грамм не добавляем в отчёт.
         if int(result["shared_count"]) > 0:
             results.append(result)
 

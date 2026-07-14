@@ -98,7 +98,7 @@ class Evidence:
         return normalized_query in haystack
 
     def short_body(self, limit=90):
-        # Сначала сжимаем пробелы, чтобы переносы строк не ломали таблицу и не расходовали лимит незаметно.
+        # Нормализуем пробелы до обрезки, чтобы limit применялся к отображаемой строке.
         compact = " ".join(self.body.split())
         if len(compact) <= limit:
             return compact

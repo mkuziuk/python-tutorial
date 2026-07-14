@@ -65,7 +65,7 @@ class EvidenceKind(StrEnum):
     EMAIL_AUDIT = "email_audit"
 
 
-# Stance описывает направление влияния улики; сила связи хранится отдельно в weight.
+# Stance указывает, поддерживает улика гипотезу или противоречит ей; weight задаёт силу связи.
 class Stance(StrEnum):
     SUPPORT = "support"
     CONFLICT = "conflict"
@@ -192,7 +192,7 @@ class HypothesisAssessment:
 
     @property
     def score(self) -> int:
-        # Итоговый балл — чистая разность поддержки и противоречий, без скрытого коэффициента.
+        # Итоговый балл равен support_points - conflict_points; дополнительные коэффициенты не применяются.
         return self.support_points - self.conflict_points
 
     def to_dict(self, rank: int) -> dict[str, Any]:
@@ -239,7 +239,7 @@ def classify_assessment(
     # Границы статусов — зафиксированное правило этого дела, а не универсальная шкала доказанности.
     # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
-        # Нулевые суммы означают отсутствие связей, а не равновесие доказательств.
+        # Если support и conflict равны 0, ни одна улика не связана с гипотезой.
         case 0, 0:
             return AssessmentStatus.NO_EVIDENCE
         case support, conflict if support >= 15 and support >= conflict * 2:
@@ -267,9 +267,9 @@ def score_hypothesis(
             if effect.hypothesis_id != hypothesis.hypothesis_id:
                 continue
 
-            # Баллы ранжируют проверки, но не превращаются в вероятность гипотезы.
+            # Баллы используются только для ранжирования гипотез и не являются вероятностями.
             # Вклад зависит и от надёжности источника, и от силы его связи.
-            # Произведение соединяет надёжность источника и силу конкретной связи с гипотезой.
+            # points рассчитывается как reliability * weight.
             points = item.reliability * effect.weight
             match effect.stance:
                 case Stance.SUPPORT:
@@ -313,7 +313,7 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
     # Рейтинг вычисляется один раз и затем одинаково используется в JSON и печатном выводе.
     assessments = rank_hypotheses(bundle)
     # Основной вывод берём из рассчитанного рейтинга, а не задаём вручную.
-    # Наличие хотя бы одной гипотезы — контракт пакета дела; первая запись уже лидер рейтинга.
+    # Код требует хотя бы одну гипотезу; первая запись отсортированного рейтинга становится лидером.
     primary = assessments[0]
 
     return {

@@ -330,14 +330,14 @@ def compare_manifests(
 ):
     old_files = index_by_path(previous)
     new_files = index_by_path(current)
-    # Путь служит идентичностью файла: переименование будет парой «удалён + добавлен», даже при том же хэше.
+    # Файлы сопоставляем по относительному пути, поэтому переименование считается удалением и добавлением.
     old_paths = set(old_files)
     new_paths = set(new_files)
 
     # Пересечение — общие пути; разности множеств — добавленные и удалённые.
     changed = []
     for path in sorted(old_paths & new_paths):
-        # Изменением считаем новое содержимое; один лишь mtime не создаёт ложную тревогу.
+        # Файл считается изменённым только при новом SHA-256; изменение одного mtime игнорируется.
         if old_files[path].get("sha256") != new_files[path].get("sha256"):
             changed.append(path)
 
@@ -364,7 +364,7 @@ def compare_manifests(
 
 ```python
 def compare_timeline_versions(current_path, backup_path):
-    # splitlines() сравнивает содержимое строк и намеренно не считает финальный перевод строки отдельной уликой.
+    # splitlines() сравнивает строки и не считает завершающий перевод строки отдельным изменением.
     current_lines = current_path.read_text(encoding="utf-8").splitlines()
     backup_lines = backup_path.read_text(encoding="utf-8").splitlines()
     differences = {"current": [], "backup": []}

@@ -210,7 +210,7 @@ def attachment_names(message):
 
 
 def add_signal(signals, title, points, level="warning"):
-    # Один тип риска учитываем один раз, даже если его дали несколько ссылок.
+    # Каждый тип риска добавляем один раз, даже если ему соответствуют несколько ссылок.
     if all(signal.title != title for signal in signals):
         signals.append(RiskSignal(title=title, points=points, level=level))
 
@@ -268,7 +268,7 @@ def analyze_message(message, filename="<memory>"):
     if risky_attachments:
         add_signal(signals, "Есть вложение с рискованным расширением", 3, "danger")
 
-    # Сумма сохраняет вклад каждого сигнала видимым и проверяемым в отчёте.
+    # score равен сумме points всех сигналов, поэтому вклад каждого правила виден в отчёте.
     score = sum(signal.points for signal in signals)
     return EmailReport(
         filename=filename,
