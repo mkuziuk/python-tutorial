@@ -40,9 +40,9 @@
           "number": "I-03",
           "slug": "phishing-email",
           "title": "Фишинговое письмо или нет?",
-          "time": "120–150 минут",
+          "time": "100–130 минут",
           "format": "Python-скрипт",
-          "concepts": ["email", "URL", "IP", "исключения"],
+          "concepts": ["email", "URL", "IP", "try/except", "JSON"],
           "route": "/cases/phishing-email/",
           "solutionRoute": "/cases/phishing-email-solution/",
           "projectPath": "projects/case-03",
@@ -54,9 +54,9 @@
           "number": "I-04",
           "slug": "secret-folder-archive",
           "title": "Ночной сигнал архива",
-          "time": "100–130 минут",
+          "time": "90–120 минут",
           "format": "Python-скрипт",
-          "concepts": ["pathlib", "hashlib", "JSON", "даты"],
+          "concepts": ["pathlib", "hashlib", "JSON", "происхождение данных"],
           "route": "/cases/secret-folder-archive/",
           "solutionRoute": "/cases/secret-folder-archive-solution/",
           "projectPath": "projects/case-04",
@@ -68,7 +68,7 @@
           "number": "I-05",
           "slug": "investigation-system",
           "title": "Доска расследования",
-          "time": "120–150 минут",
+          "time": "110–140 минут",
           "format": "Python-скрипт",
           "concepts": ["классы", "dataclass", "композиция", "JSON"],
           "route": "/cases/investigation-system/",
@@ -76,13 +76,13 @@
           "projectPath": "projects/case-05",
           "archive": "public/downloads/case-05.zip",
           "notebooks": { "learner": null, "solution": null },
-          "datasetIds": ["archive-case-seed"]
+          "datasetIds": ["archive-investigation-artifacts"]
         },
         {
           "number": "I-06",
           "slug": "final-verdict",
           "title": "Вердикт перед открытием",
-          "time": "120–150 минут",
+          "time": "110–140 минут",
           "format": "Python-скрипт",
           "concepts": ["хронология", "StrEnum", "match", "вердикт"],
           "route": "/cases/final-verdict/",
@@ -90,7 +90,7 @@
           "projectPath": "projects/case-06",
           "archive": "public/downloads/case-06.zip",
           "notebooks": { "learner": null, "solution": null },
-          "datasetIds": ["archive-evidence-bundle"]
+          "datasetIds": ["archive-case-board-updates"]
         }
       ]
     },

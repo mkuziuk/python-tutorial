@@ -12,7 +12,7 @@ notebook: projects/part-2/case-04/solution/case-04-solution.ipynb
 
 <span class="bureau-page-scope" aria-hidden="true"></span>
 
-Сначала закончите [дело II-04](../map-of-costly-errors/). Графики, таблицы и готовый код находятся в тетради:
+Сначала закончите [расследование II-04](../map-of-costly-errors/). Графики, таблицы и готовый код находятся в тетради:
 
 - [посмотреть тетрадь с решением на GitHub](https://github.com/mkuziuk/python-tutorial/blob/main/projects/part-2/case-04/solution/case-04-solution.ipynb);
 - [запустить тетрадь с решением в Colab](https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-04/solution/case-04-solution.ipynb).
@@ -33,4 +33,4 @@ notebook: projects/part-2/case-04/solution/case-04-solution.ipynb
 
 MAE отвечает на вопрос о типичной абсолютной ошибке, RMSE сильнее штрафует крупные промахи, а R² сравнивает модель с вариативностью цели. Ни одна из этих метрик не показывает, **где** возникают ошибки; для этого нужны остатки и срезы.
 
-Следующее дело: [Знакомый почерк](../familiar-handwriting/).
+Следующее расследование: [Знакомый почерк](../familiar-handwriting/).

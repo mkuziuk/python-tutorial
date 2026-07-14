@@ -1,24 +1,15 @@
 ---
-title: "Разбор полного решения"
-description: "Полный код второго дела: n-граммы, множества и рейтинг подозрительных текстовых совпадений."
-concepts:
-  - tuple
-  - n-grams
-  - set
-  - dict
-  - sorting
-  - functions
-difficulty: "начальный+"
-projectId: "case-02"
-time: "15-20 минут"
+title: "Разбор решения: Детектор текстовых совпадений"
+description: "Рейтинг n-грамм и 02-text-matches.json."
 ---
 
-Обращайтесь к этой странице после самостоятельной сборки `copy_paste_detector.py`. Если открыть её раньше, задача сведётся к переписыванию готового ответа.
+Эта страница показывает полную версию программы после выполнения упражнения. Сначала завершите самостоятельную версию и запустите тесты.
 
-## Полный код
+Решение сохраняет результат в JSON для следующего расследования. Поэтому важно проверять не только таблицу в терминале, но и структуру созданного файла.
 
 ```python
 from itertools import combinations
+import json
 from pathlib import Path
 
 from rich.console import Console
@@ -26,7 +17,6 @@ from rich.table import Table
 
 
 def default_data_dir():
-    # resolve() убирает неоднозначность относительного пути при запуске из другой папки.
     script_dir = Path(__file__).resolve().parent
     local_data = script_dir / "data"
     # После копирования рядом будет data; в solution/ она находится уровнем выше.
@@ -36,12 +26,16 @@ def default_data_dir():
 
 
 DATA_DIR = default_data_dir()
+PROJECT_DIR = DATA_DIR.parent
+AUTHORSHIP_PATH = DATA_DIR / "artifacts" / "01-authorship.json"
+ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "02-text-matches.json"
 NGRAM_SIZE = 4
 TOP_EXAMPLES = 3
 
 console = Console()
 
 DISPLAY_NAMES = {
+    "anonymous": "Анонимное предупреждение",
     "report_north_table": "Опись Северного стола",
     "report_tour_draft": "Черновик экскурсии",
     "report_basement_route": "Служебный маршрут подвального коридора",
@@ -51,7 +45,6 @@ DISPLAY_NAMES = {
 
 
 def read_text(path):
-    # Явная UTF-8 кодировка сохраняет одинаковое чтение русского текста на разных системах.
     return path.read_text(encoding="utf-8")
 
 
@@ -60,7 +53,6 @@ def normalize_words(text):
 
     # Заменяем разделители пробелами, чтобы слова по обе стороны знака не склеились.
     for char in text.lower():
-        # isalpha() принимает буквы разных алфавитов; для этого набора это осознанная граница нормализации.
         if char.isalpha():
             cleaned.append(char)
         else:
@@ -70,7 +62,6 @@ def normalize_words(text):
 
 
 def make_ngrams(words, size=NGRAM_SIZE):
-    # Проверяем параметр сразу, чтобы отрицательный диапазон не выглядел как корректный пустой результат.
     if size < 1:
         raise ValueError("N-gram size must be positive")
 
@@ -82,7 +73,6 @@ def make_ngrams(words, size=NGRAM_SIZE):
 
 
 def display_name(path):
-    # Неизвестный stem всё равно получает читаемую подпись, поэтому новый файл не требует правки словаря.
     return DISPLAY_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
@@ -96,7 +86,6 @@ def build_profile(path, ngram_size=NGRAM_SIZE):
         "path": path,
         "title": display_name(path),
         "word_count": len(words),
-        # Это число уникальных фрагментов: повтор одной фразы внутри отчёта не увеличивает счётчик.
         "ngram_count": len(ngrams),
         "ngrams": ngrams,
     }
@@ -107,29 +96,23 @@ def overlap_score(left, right):
     if not left or not right:
         return 0.0
 
-    # Пересечение множеств оставляет только фрагменты, которые встретились в обоих отчётах.
     shared = left & right
     if not shared:
         return 0.0
 
     # containment измеряет долю n-грамм меньшего текста, найденных в другом тексте.
     # Jaccard снижает оценку, если в текстах много несовпадающих n-грамм.
-    # shared не может быть больше меньшего множества, поэтому containment всегда лежит в диапазоне 0–1.
     containment = len(shared) / min(len(left), len(right))
-    # Jaccard симметрично штрафует лишние фрагменты в обоих текстах.
     jaccard = len(shared) / len(left | right)
-    # Округляем score; при равном score пары дополнительно сортируются по shared_count.
     return round(containment * 0.7 + jaccard * 0.3, 3)
 
 
 def compare_profiles(left, right):
-    # compare_profiles() сравнивает множества n-грамм из готовых профилей.
     left_ngrams = left["ngrams"]
     right_ngrams = right["ngrams"]
     # Сортировка делает примеры воспроизводимыми при любом порядке элементов множества.
     shared_ngrams = sorted(left_ngrams & right_ngrams)
 
-    # Результат пары хранит и числовую оценку, и данные для объяснения этой оценки в таблице.
     return {
         "pair": (str(left["title"]), str(right["title"])),
         "score": overlap_score(left_ngrams, right_ngrams),
@@ -140,8 +123,10 @@ def compare_profiles(left, right):
 
 
 def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
-    # glob("report_*.txt") выбирает только файлы отчётов и исключает остальные txt-файлы.
     paths = sorted(data_dir.glob("report_*.txt"))
+    anonymous_path = data_dir / "anonymous.txt"
+    if anonymous_path.exists():
+        paths.append(anonymous_path)
     if not paths:
         raise FileNotFoundError(f"No report_*.txt files found in {data_dir}")
 
@@ -149,7 +134,6 @@ def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
 
 
 def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
-    # Каждый файл нормализуем один раз, а затем переиспользуем профиль во всех попарных сравнениях.
     profiles = load_profiles(data_dir, ngram_size)
     results = []
 
@@ -169,8 +153,66 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
 
 
 def format_ngram(ngram):
-    # N-грамма хранится как кортеж слов; join() объединяет их в строку для вывода.
     return " ".join(ngram)
+
+
+def load_authorship_lead(path=AUTHORSHIP_PATH):
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if data.get("investigation_id") != "I-01":
+        raise ValueError(f"Expected I-01 artifact: {path}")
+    finding = data["findings"][0]
+    return {
+        "finding_id": finding["finding_id"],
+        "candidate": finding["candidates"][0]["name"],
+        "score": finding["candidates"][0]["score"],
+        "limitation": finding["limitation"],
+    }
+
+
+def build_artifact(results, authorship_path=AUTHORSHIP_PATH):
+    matches = []
+    for position, result in enumerate(results, start=1):
+        matches.append(
+            {
+                "rank": position,
+                "pair": list(result["pair"]),
+                "score": result["score"],
+                "shared_count": result["shared_count"],
+                "examples": [format_ngram(item) for item in result["examples"]],
+            }
+        )
+    return {
+        "schema_version": 1,
+        "investigation_id": "I-02",
+        "generated_at": "2026-03-15T06:50:00+03:00",
+        "source_files": [
+            "anonymous.txt",
+            *[path.name for path in sorted(DATA_DIR.glob("report_*.txt"))],
+            "artifacts/01-authorship.json",
+        ],
+        "inputs": {"authorship_lead": load_authorship_lead(authorship_path)},
+        "findings": [
+            {
+                "finding_id": "F-I02-TEXT-MATCHES",
+                "kind": "text-overlap-ranking",
+                "title": "Совпадения n-грамм в материалах архива",
+                "summary": (
+                    f"Самая сильная пара: {' / '.join(matches[0]['pair'])}."
+                    if matches
+                    else "Совпадений n-грамм не найдено."
+                ),
+                "matches": matches,
+            }
+        ],
+    }
+
+
+def save_artifact(artifact, path=ARTIFACT_PATH):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def render_results(results, limit=5):
@@ -181,7 +223,6 @@ def render_results(results, limit=5):
     table.add_column("Общих n-грамм", justify="right")
     table.add_column("Пример")
 
-    # render_results() показывает первые limit элементов полного списка results.
     for position, result in enumerate(results[:limit], start=1):
         left, right = result["pair"]
         examples = result["examples"]
@@ -197,7 +238,6 @@ def render_results(results, limit=5):
 
     console.print(table)
 
-    # Пустой рейтинг допустим: например, если ни одна пара не имеет общей n-граммы.
     if results:
         best = results[0]
         left, right = best["pair"]
@@ -208,26 +248,22 @@ def render_results(results, limit=5):
 
 
 def main():
-    # render_results() форматирует уже отсортированный список results.
-    render_results(rank_overlaps())
+    results = rank_overlaps()
+    render_results(results)
+    save_artifact(build_artifact(results))
+    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
 
 
 if __name__ == "__main__":
     main()
 ```
 
-## Как читать решение
+## Проверка
 
-Данные проходят несколько этапов: каждый файл становится списком слов, список превращается в n-граммы, а n-граммы — во множество. Затем каждая пара профилей получает оценку, и результаты сортируются для отчёта.
+Из папки проекта выполните:
 
-Главное решение — сравнивать не отдельные слова, а соседние группы слов. Отдельные общие слова не повышают оценку, если тексты не содержат одинаковых n-грамм. Повторяющиеся фразы дают больше общих n-грамм и повышают `score`.
+```bash
+python -m unittest discover -s tests
+```
 
-Частые ошибки: вернуть списки вместо кортежей, забыть проверку `size < 1`, сортировать пары только по числу общих n-грамм или печатать все совпадения вместо короткого примера.
-
-Справочник: [list](../../field-guide/list/), [tuple](../../field-guide/tuple/), [set](../../field-guide/set/), [dict](../../field-guide/dict/), [sorting](../../field-guide/sorting/), [functions](../../field-guide/functions/), [Rich](../../field-guide/rich/).
-
-## Что важно заметить
-
-Формула `overlap_score()` объединяет два сигнала. `containment` помогает заметить короткий повторяющийся отчёт внутри длинного текста, а `jaccard` снижает оценку, если у пары много различающихся n-грамм.
-
-Rich используется только в `render_results()`. Чтение файлов, нормализация, n-граммы, множества и сортировка остаются на стандартной библиотеке.
+Все переходы I-01 → I-06 дополнительно проверяет команда сопровождающего `pnpm test:part1-artifacts`.

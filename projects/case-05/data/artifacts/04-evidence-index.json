@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "investigation_id": "I-04",
+  "generated_at": "2026-03-15T07:00:00+03:00",
+  "source_files": [
+    {
+      "path": "artifacts/01-authorship.json",
+      "size": 1269,
+      "sha256": "9b177fde4160fad78549d7a1247f4dff8afcae406b8bd142ef73666a65b00066"
+    },
+    {
+      "path": "artifacts/02-text-matches.json",
+      "size": 2044,
+      "sha256": "a8abc71a20d38b6928c762cb4bf96a8f8cc118af57632f2a53aaabafd67a823f"
+    },
+    {
+      "path": "artifacts/03-mail-review.json",
+      "size": 9208,
+      "sha256": "5e7f1c100b352f699dfb976f494cfb080978321d5d7a0c61391f04b15f02faf9"
+    },
+    {
+      "path": "secret_folder/drafts/timeline.txt",
+      "size": 439,
+      "sha256": "308d14c9ab313ecc84a58a2bdbd30892143adb3889778782f6203b150332b9fa"
+    },
+    {
+      "path": "secret_folder/drafts/timeline_backup.txt",
+      "size": 472,
+      "sha256": "e35ced0a3b76298f705dad4862ace5b78e298b89db435ad5496e76a24ec2325b"
+    },
+    {
+      "path": "secret_folder/evidence/photo_index.txt",
+      "size": 314,
+      "sha256": "d233823d1934bc7a8597fb809fc46568198d364a6a4ce0c9faaf5bcdcdd842e0"
+    },
+    {
+      "path": "secret_folder/evidence/photo_index_copy.txt",
+      "size": 314,
+      "sha256": "d233823d1934bc7a8597fb809fc46568198d364a6a4ce0c9faaf5bcdcdd842e0"
+    },
+    {
+      "path": "secret_folder/notes/access_log_excerpt.txt",
+      "size": 543,
+      "sha256": "62be05b5783d42bf8a8a72a7751913a73ddfd1cdc431e9e6dd7839837da0fa4a"
+    },
+    {
+      "path": "secret_folder/notes/meeting_2026-03-15.txt",
+      "size": 611,
+      "sha256": "f0d8e1852c13acc3bbfebc4b2ae98d1aa15fb0d5764a7f7ebd82b865b1762ee9"
+    }
+  ],
+  "verified_artifacts": [
+    {
+      "investigation_id": "I-01",
+      "path": "artifacts/01-authorship.json",
+      "sha256": "9b177fde4160fad78549d7a1247f4dff8afcae406b8bd142ef73666a65b00066",
+      "finding_ids": [
+        "F-I01-AUTHORSHIP"
+      ]
+    },
+    {
+      "investigation_id": "I-02",
+      "path": "artifacts/02-text-matches.json",
+      "sha256": "a8abc71a20d38b6928c762cb4bf96a8f8cc118af57632f2a53aaabafd67a823f",
+      "finding_ids": [
+        "F-I02-TEXT-MATCHES"
+      ]
+    },
+    {
+      "investigation_id": "I-03",
+      "path": "artifacts/03-mail-review.json",
+      "sha256": "5e7f1c100b352f699dfb976f494cfb080978321d5d7a0c61391f04b15f02faf9",
+      "finding_ids": [
+        "F-I03-LOCKOUT",
+        "F-I03-CAMERA"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "F-I04-DUPLICATES",
+      "kind": "duplicate-files",
+      "title": "Байтовые копии фотоиндекса",
+      "summary": "Два файла фотоиндекса имеют одинаковый SHA-256.",
+      "groups": [
+        {
+          "sha256": "d233823d1934bc7a8597fb809fc46568198d364a6a4ce0c9faaf5bcdcdd842e0",
+          "paths": [
+            "evidence/photo_index.txt",
+            "evidence/photo_index_copy.txt"
+          ]
+        }
+      ]
+    },
+    {
+      "finding_id": "F-I04-TIMELINE",
+      "kind": "timeline-difference",
+      "title": "Расхождение рабочей и резервной хронологий",
+      "summary": "Рабочая версия заканчивается в 22:53, а резервная содержит строку 23:07.",
+      "differences": {
+        "current": [
+          "Рабочая хронология ночного сигнала — 14 марта 2026",
+          "22:53 - начата сверка манифеста."
+        ],
+        "backup": [
+          "Резервная хронология ночного сигнала — 14 марта 2026",
+          "23:07 - резервная копия отправлена архивариусу."
+        ]
+      }
+    },
+    {
+      "finding_id": "F-I04-ACCESS-LOG",
+      "kind": "preserved-log",
+      "title": "Журнал доступа сохранён вместе с отчётами",
+      "summary": "Журнал фиксирует выдачу ключа Никите, сигнал датчика и его объяснение о работе с копией.",
+      "source_file": "secret_folder/notes/access_log_excerpt.txt",
+      "events": [
+        {
+          "occurred_at": "2026-03-14T22:35:00+03:00",
+          "text": "Никита Королев получил ключ для короткой сверки копии фотоиндекса."
+        },
+        {
+          "occurred_at": "2026-03-14T22:41:00+03:00",
+          "text": "Система отметила короткое открытие комнаты хранения."
+        },
+        {
+          "occurred_at": "2026-03-14T22:43:00+03:00",
+          "text": "Никита Королев подтвердил, что работал только с копией списка."
+        },
+        {
+          "occurred_at": "2026-03-14T22:57:00+03:00",
+          "text": "Дежурный попросил не менять исходные файлы до сверки."
+        }
+      ]
+    }
+  ]
+}

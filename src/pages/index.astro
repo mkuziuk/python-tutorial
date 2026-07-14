@@ -96,7 +96,7 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
           </div>
         </div>
         <a class="hero-scroll" href="#progression">
-          <span>Две арки · двенадцать дел</span>
+          <span>Две арки · двенадцать расследований</span>
           <i aria-hidden="true"></i>
         </a>
       </section>
@@ -105,7 +105,7 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
         <p class="section-index">Маршрут курса</p>
         <h2 id="progression-title">Сначала разберём готовый фрагмент кода.<br />Затем дополним программу и проверим на материалах расследования.</h2>
         <p>
-          В Части I вы шаг за шагом создадите шесть программ на Python: сравните тексты, найдёте совпадения, разберёте email, проверите содержимое папки, сохраните материалы дела и сформируете итоговый отчёт. В Части II вы продолжите работу в Jupyter: исследуете данные, обучите модели и проверите их на новых примерах.
+          В Части I вы шаг за шагом создадите шесть программ на Python: сравните тексты, найдёте совпадения, разберёте email, проверите содержимое папки, сохраните материалы расследования и сформируете итоговый отчёт. В Части II вы продолжите работу в Jupyter: исследуете данные, обучите модели и проверите их на новых примерах.
         </p>
       </section>
 
@@ -114,8 +114,8 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
         mode="archive"
         eyebrow="Часть I · Архив"
         title="Северный стол"
-        description="В шести проектах вы сравните тексты, проверите письма и файлы, сохраните материалы дела в JSON и подготовите итоговый отчёт."
-        note="Без опыта программирования · 90–150 минут на дело · Python-скрипты"
+        description="В шести проектах вы сравните тексты, проверите письма и файлы, сохраните материалы расследования в JSON и подготовите итоговый отчёт."
+        note="Без опыта программирования · 90–150 минут на расследование · Python-скрипты"
         overviewHref={withBase(archive.route)}
         overviewLabel="Открыть обзор первой части"
         cases={archiveStory.cases}
@@ -151,7 +151,7 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
         eyebrow="Часть II · Бюро"
         title="Протокол «Компас»"
         description="В шести тетрадях Jupyter вы проверите признаки и разбиения, сравните метрики и проанализируете ошибки моделей."
-        note="После части I · 3–5 часов на дело · финал 6–8 часов · Jupyter Notebook"
+        note="После части I · 3–5 часов на расследование · финал 6–8 часов · Jupyter Notebook"
         overviewHref={withBase(bureau.route)}
         overviewLabel="Открыть обзор Бюро"
         cases={bureauStory.cases}
@@ -159,7 +159,7 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
 
       <section class="method" aria-labelledby="method-title">
         <p class="section-index">Один принцип</p>
-        <h2 id="method-title">Каждое ML-дело состоит из трёх шагов.</h2>
+        <h2 id="method-title">Каждое ML-расследование состоит из трёх шагов.</h2>
         <div class="method-flow">
           <div><span>01</span><strong>Соберите</strong><p>Прочитайте досье и воспроизведите заявленный результат.</p></div>
           <div><span>02</span><strong>Проверьте</strong><p>Найдите утечки, слабые разбиения и систематические ошибки.</p></div>

@@ -1,11 +1,14 @@
 from collections import Counter
+import json
 from pathlib import Path
 import re
 
 from rich.console import Console
 from rich.table import Table
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = PROJECT_DIR / "data"
+ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "01-authorship.json"
 # Шаблон выделяет только цепочки русских букв, включая «ё».
 WORD_RE = re.compile(r"[а-яё]+", re.IGNORECASE)
 PUNCTUATION = ".,;:!?"
@@ -108,6 +111,46 @@ def rank_candidates(data_dir=DATA_DIR):
     return sorted(results, key=lambda item: item[1], reverse=True)
 
 
+def build_artifact(results, data_dir=DATA_DIR):
+    candidates = [
+        {"name": name, "score": score, "rank": position}
+        for position, (name, score) in enumerate(results, start=1)
+    ]
+    return {
+        "schema_version": 1,
+        "investigation_id": "I-01",
+        "generated_at": "2026-03-15T06:45:00+03:00",
+        "source_files": [
+            path.relative_to(data_dir).as_posix()
+            for path in sorted(data_dir.glob("*.txt"))
+        ],
+        "findings": [
+            {
+                "finding_id": "F-I01-AUTHORSHIP",
+                "kind": "authorship-ranking",
+                "title": "Рейтинг сходства с анонимным предупреждением",
+                "summary": (
+                    f"Первое место занимает {candidates[0]['name']}; "
+                    "оценка сравнивает только частые слова, длину слов и пунктуацию."
+                ),
+                "candidates": candidates,
+                "limitation": (
+                    "Выбранные признаки могут совпасть у разных людей, поэтому "
+                    "рейтинг задаёт направление проверки, но не устанавливает автора."
+                ),
+            }
+        ],
+    }
+
+
+def save_artifact(artifact, path=ARTIFACT_PATH):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def render_results(results):
     table = Table(title="Вероятные авторы")
     table.add_column("Место", justify="right", style="cyan")
@@ -121,12 +164,17 @@ def render_results(results):
     winner, score = results[0]
     console.print(
         f"\n[bold]Главная версия:[/bold] {winner} "
-        f"([cyan]{score:.2f}[/cyan]). Это повод проверить текст вручную, а не окончательный приговор."
+        f"([cyan]{score:.2f}[/cyan]). Это лидер по трём выбранным признакам. "
+        "Разные авторы могут использовать похожие слова и пунктуацию, "
+        "поэтому результат нужно сверить с другими материалами."
     )
 
 
 def main():
-    render_results(rank_candidates())
+    results = rank_candidates()
+    render_results(results)
+    save_artifact(build_artifact(results))
+    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
 
 
 if __name__ == "__main__":

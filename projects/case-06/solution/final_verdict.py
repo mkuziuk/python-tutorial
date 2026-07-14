@@ -9,8 +9,9 @@ from typing import Any, Self
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = SCRIPT_DIR.parent if SCRIPT_DIR.name == "solution" else SCRIPT_DIR
-DATA_PATH = PROJECT_DIR / "data" / "evidence_bundle.json"
-OUTPUT_PATH = PROJECT_DIR / "verdict.json"
+BOARD_PATH = PROJECT_DIR / "data" / "artifacts" / "05-case-board.json"
+UPDATES_PATH = PROJECT_DIR / "data" / "morning_updates.json"
+OUTPUT_PATH = PROJECT_DIR / "artifacts" / "06-verdict.json"
 
 
 # StrEnum ограничивает значения, но в JSON они остаются обычными строками.
@@ -163,9 +164,24 @@ class HypothesisAssessment:
         }
 
 
-def load_bundle(path: Path = DATA_PATH) -> CaseBundle:
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    return CaseBundle.from_dict(raw)
+def load_bundle(
+    board_path: Path = BOARD_PATH,
+    updates_path: Path = UPDATES_PATH,
+) -> CaseBundle:
+    board = json.loads(board_path.read_text(encoding="utf-8"))
+    if board.get("investigation_id") != "I-05":
+        raise ValueError(f"Expected I-05 board: {board_path}")
+
+    updates = json.loads(updates_path.read_text(encoding="utf-8"))
+    if updates.get("investigation_id") != "I-06-UPDATES":
+        raise ValueError(f"Expected morning updates: {updates_path}")
+
+    combined = {
+        **board,
+        "analysis_time": updates["analysis_time"],
+        "evidence": [*board.get("evidence", []), *updates.get("evidence", [])],
+    }
+    return CaseBundle.from_dict(combined)
 
 
 def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
@@ -186,7 +202,7 @@ def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
 def classify_assessment(
     support_points: int, conflict_points: int
 ) -> AssessmentStatus:
-    # Пороги ниже определяют AssessmentStatus для этого дела.
+    # Пороги ниже определяют AssessmentStatus для этого расследования.
     # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
         case 0, 0:
@@ -261,6 +277,8 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
     primary = assessments[0]
 
     return {
+        "schema_version": 1,
+        "investigation_id": "I-06",
         "case_id": bundle.case_id,
         "title": bundle.title,
         "generated_at": bundle.analysis_time.isoformat(),
@@ -328,16 +346,18 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
         },
         "limitations": [
             (
-                "Баллы упорядочивают проверяемые гипотезы, но не превращают "
-                "корреляцию в доказанный умысел."
+                "Баллы — сумма вручную назначенных reliability × weight; значения "
+                "не обучались и не калибровались, поэтому они только упорядочивают "
+                "проверяемые гипотезы."
             ),
             (
-                "Аппаратный ключ и локальный сеанс надёжно связывают учётные "
-                "действия, но не заменяют полное интервью и видео."
+                "Аппаратный ключ и локальный сеанс связывают действия с учётной "
+                "записью, но журналы не фиксируют человека за клавиатурой или его "
+                "мотив; для этого нужны интервью и видео."
             ),
             (
-                "Отсутствие следов успешного фишинга не доказывает, что попыток "
-                "больше не будет."
+                "Почтовый аудит охватывает только сохранённые письма и события "
+                "наблюдаемого периода, поэтому он не описывает будущие попытки."
             ),
         ],
     }
@@ -346,12 +366,13 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
 def save_verdict(verdict: dict[str, Any], path: Path = OUTPUT_PATH) -> None:
     # ensure_ascii=False оставляет русский текст читаемым, а финальный \n делает файл удобным для diff и POSIX-инструментов.
     payload = json.dumps(verdict, ensure_ascii=False, indent=2)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"{payload}\n", encoding="utf-8")
 
 
 def render_report(verdict: dict[str, Any]) -> None:
     print("ФИНАЛЬНЫЙ ВЕРДИКТ")
-    print(f"Дело: {verdict['title']}")
+    print(f"Расследование: {verdict['title']}")
     print(f"Событий в хронологии: {len(verdict['timeline'])}")
     print("\nХронология:")
     for item in verdict["timeline"]:
@@ -383,7 +404,7 @@ def render_report(verdict: dict[str, Any]) -> None:
 
 def main() -> None:
     if sys.version_info < (3, 13):
-        raise SystemExit("Для дела 06 нужен Python 3.13 или новее.")
+        raise SystemExit("Для расследования 06 нужен Python 3.13 или новее.")
 
     bundle = load_bundle()
     verdict = build_verdict(bundle)

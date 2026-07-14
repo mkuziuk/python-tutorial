@@ -1,37 +1,11 @@
 ---
-title: "Дело 06. Разбор полного решения"
-description: "Полный код финального отчёта: неизменяемые модели, хронология, объяснимый рейтинг гипотез и осторожное операционное решение."
-concepts:
-  - StrEnum
-  - неизменяемые dataclass
-  - match
-  - JSON
-  - sorting
-  - подсчёт баллов
-difficulty: "продвинутый"
-projectId: "case-06"
-time: "25-35 минут"
+title: "Разбор решения: Вердикт перед открытием"
+description: "Утренние обновления, гипотезы и 06-verdict.json."
 ---
 
-Эта страница раскрывает развязку и предназначена для чтения после самостоятельной сборки `final_verdict.py`. Если вы ещё не проверили промежуточные результаты, вернитесь к [главе дела](../final-verdict/).
+Эта страница показывает полную версию программы после выполнения упражнения. Сначала завершите самостоятельную версию и запустите тесты.
 
-## Что именно установлено
-
-В финальном отчёте разделены три уровня уверенности:
-
-- Алина Морозова подтвердила авторство предупреждения подписанным утренним протоколом. Ранее стилометрия лишь подсказала, кого спросить.
-- `H-NIKITA` — самая сильная рабочая гипотеза о двух правках файлов. Подписанный аудит связывает черновик до 18:00 и перезапись хронологии 23:19 с аппаратно подтвержденными сеансами `nikita.k`, но не доказывает мотив или физическую личность пользователя.
-- Фишинговые письма — отдельный незакрытый вектор. Наблюдаемых признаков успешного компромисса нет, поэтому его нельзя объявить причиной файловых правок.
-
-Открытие откладывается не потому, что программа «назначила виновного», а потому, что целостность описи и рабочей хронологии нарушена. До открытия нужно сохранить обе исходные версии, вернуть строку 23:07 в новую проверенную хронологию, сменить доступы и провести полное интервью.
-
-## Почему первая гипотеза не захардкожена
-
-После сортировки `build_verdict()` берёт `assessments[0]` и переносит в отчёт текст именно этой гипотезы. Если новые материалы изменят рейтинг, первичный вывод тоже изменится. Проверка по строке `H-NIKITA` незаметно подменила бы вычисленный результат заранее известным ответом.
-
-## Полный код
-
-Код ниже можно целиком вставить в пустой корневой файл `final_verdict.py`. Вычисление `PROJECT_DIR` также позволяет запустить ту же версию из папки `solution/`.
+Решение сохраняет результат в JSON для следующего расследования. Поэтому важно проверять не только таблицу в терминале, но и структуру созданного файла.
 
 ```python
 from dataclasses import dataclass
@@ -44,10 +18,10 @@ from typing import Any, Self
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-# Один путь работает и для корневого скрипта ученика, и для копии внутри solution/.
 PROJECT_DIR = SCRIPT_DIR.parent if SCRIPT_DIR.name == "solution" else SCRIPT_DIR
-DATA_PATH = PROJECT_DIR / "data" / "evidence_bundle.json"
-OUTPUT_PATH = PROJECT_DIR / "verdict.json"
+BOARD_PATH = PROJECT_DIR / "data" / "artifacts" / "05-case-board.json"
+UPDATES_PATH = PROJECT_DIR / "data" / "morning_updates.json"
+OUTPUT_PATH = PROJECT_DIR / "artifacts" / "06-verdict.json"
 
 
 # StrEnum ограничивает значения, но в JSON они остаются обычными строками.
@@ -65,14 +39,12 @@ class EvidenceKind(StrEnum):
     EMAIL_AUDIT = "email_audit"
 
 
-# Stance указывает, поддерживает улика гипотезу или противоречит ей; weight задаёт силу связи.
 class Stance(StrEnum):
     SUPPORT = "support"
     CONFLICT = "conflict"
 
 
 class AssessmentStatus(StrEnum):
-    # Категория дополняет точные баллы и не скрывает соотношение «за» и «против».
     STRONGLY_SUPPORTED = "strongly_supported"
     SUPPORTED = "supported"
     UNRESOLVED = "unresolved"
@@ -88,7 +60,6 @@ class Effect:
     weight: int
 
     def __post_init__(self) -> None:
-        # Вес ограничен шкалой 1–3, чтобы одна связь не могла произвольно подавить всё дело.
         if not 1 <= self.weight <= 3:
             raise ValueError("Effect weight must be between 1 and 3")
 
@@ -96,7 +67,6 @@ class Effect:
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             hypothesis_id=str(data["hypothesis_id"]).strip(),
-            # Конструктор Enum сразу отклонит неизвестное значение вместо тихого создания нового статуса.
             stance=Stance(str(data["stance"])),
             weight=int(data["weight"]),
         )
@@ -114,7 +84,6 @@ class Evidence:
     effects: tuple[Effect, ...]
 
     def __post_init__(self) -> None:
-        # Проверки на границе модели не позволяют ошибочным данным попасть в ранжирование.
         if not self.evidence_id:
             raise ValueError("Evidence ID must not be empty")
         if not 1 <= self.reliability <= 5:
@@ -125,7 +94,6 @@ class Evidence:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        # strip() не даёт пробелам создать отдельный ID или незаметно изменить текстовое поле.
         return cls(
             evidence_id=str(data["evidence_id"]).strip(),
             # ISO-строку превращаем в datetime; часовой пояс проверяется выше.
@@ -135,7 +103,6 @@ class Evidence:
             summary=str(data["summary"]).strip(),
             source=str(data["source"]).strip(),
             reliability=int(data["reliability"]),
-            # tuple сохраняет набор связей неизменным после проверки входных данных.
             effects=tuple(Effect.from_dict(item) for item in data.get("effects", [])),
         )
 
@@ -147,7 +114,6 @@ class Hypothesis:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        # strip() не даёт пробелам создать отдельный ID или пустую формулировку версии.
         return cls(
             hypothesis_id=str(data["hypothesis_id"]).strip(),
             claim=str(data["claim"]).strip(),
@@ -166,14 +132,12 @@ class CaseBundle:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        # Время открытия и время анализа сохраняем из входного снимка, а не вычисляем при запуске.
         return cls(
             case_id=str(data["case_id"]),
             title=str(data["title"]),
             incident_date=str(data["incident_date"]),
             scheduled_opening=datetime.fromisoformat(str(data["scheduled_opening"])),
             analysis_time=datetime.fromisoformat(str(data["analysis_time"])),
-            # Гипотезы и улики становятся кортежами: загруженный CaseBundle служит неизменяемым снимком.
             hypotheses=tuple(
                 Hypothesis.from_dict(item) for item in data.get("hypotheses", [])
             ),
@@ -193,7 +157,6 @@ class HypothesisAssessment:
     # @property позволяет читать assessment.score как поле, хотя значение вычисляет метод.
     @property
     def score(self) -> int:
-        # Итоговый балл равен support_points - conflict_points; дополнительные коэффициенты не применяются.
         return self.support_points - self.conflict_points
 
     def to_dict(self, rank: int) -> dict[str, Any]:
@@ -206,16 +169,29 @@ class HypothesisAssessment:
             "score": self.score,
             "support_points": self.support_points,
             "conflict_points": self.conflict_points,
-            # В памяти ID хранятся кортежем, но JSON получает обычный массив.
             "support": list(self.support),
             "conflicts": list(self.conflicts),
         }
 
 
-def load_bundle(path: Path = DATA_PATH) -> CaseBundle:
-    # После разбора словарь сразу проходит через типизированные from_dict() и их проверки.
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    return CaseBundle.from_dict(raw)
+def load_bundle(
+    board_path: Path = BOARD_PATH,
+    updates_path: Path = UPDATES_PATH,
+) -> CaseBundle:
+    board = json.loads(board_path.read_text(encoding="utf-8"))
+    if board.get("investigation_id") != "I-05":
+        raise ValueError(f"Expected I-05 board: {board_path}")
+
+    updates = json.loads(updates_path.read_text(encoding="utf-8"))
+    if updates.get("investigation_id") != "I-06-UPDATES":
+        raise ValueError(f"Expected morning updates: {updates_path}")
+
+    combined = {
+        **board,
+        "analysis_time": updates["analysis_time"],
+        "evidence": [*board.get("evidence", []), *updates.get("evidence", [])],
+    }
+    return CaseBundle.from_dict(combined)
 
 
 def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
@@ -223,7 +199,6 @@ def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
     ordered = sorted(evidence, key=lambda item: (item.occurred_at, item.evidence_id))
     return [
         {
-            # ISO-строка сохраняет смещение UTC, нужное для независимой проверки порядка событий.
             "occurred_at": item.occurred_at.isoformat(),
             "evidence_id": item.evidence_id,
             "kind": item.kind.value,
@@ -237,10 +212,9 @@ def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
 def classify_assessment(
     support_points: int, conflict_points: int
 ) -> AssessmentStatus:
-    # Пороги ниже определяют AssessmentStatus для этого дела.
+    # Пороги ниже определяют AssessmentStatus для этого расследования.
     # match возвращает первую подходящую ветку, поэтому порядок условий важен.
     match support_points, conflict_points:
-        # Если support и conflict равны 0, ни одна улика не связана с гипотезой.
         case 0, 0:
             return AssessmentStatus.NO_EVIDENCE
         # support и conflict получают текущие числа; условие после if проверяет порог статуса.
@@ -257,7 +231,6 @@ def classify_assessment(
 def score_hypothesis(
     hypothesis: Hypothesis, evidence: tuple[Evidence, ...]
 ) -> HypothesisAssessment:
-    # Поддержку и противоречия накапливаем отдельно, чтобы итог оставался объяснимым.
     support_points = 0
     conflict_points = 0
     support: list[str] = []
@@ -271,7 +244,6 @@ def score_hypothesis(
 
             # Баллы задают порядок гипотез в рейтинге.
             # Вклад зависит и от надёжности источника, и от силы его связи.
-            # points рассчитывается как reliability * weight.
             points = item.reliability * effect.weight
             match effect.stance:
                 case Stance.SUPPORT:
@@ -286,7 +258,6 @@ def score_hypothesis(
         hypothesis=hypothesis,
         support_points=support_points,
         conflict_points=conflict_points,
-        # Сортируем ID внутри результата, чтобы отчёт не зависел от порядка улик во входном JSON.
         support=tuple(sorted(support)),
         conflicts=tuple(sorted(conflicts)),
         status=status,
@@ -294,7 +265,6 @@ def score_hypothesis(
 
 
 def rank_hypotheses(bundle: CaseBundle) -> list[HypothesisAssessment]:
-    # Оцениваем каждую объявленную гипотезу по одному и тому же неизменному набору улик.
     assessments = [
         score_hypothesis(hypothesis, bundle.evidence)
         for hypothesis in bundle.hypotheses
@@ -312,16 +282,15 @@ def rank_hypotheses(bundle: CaseBundle) -> list[HypothesisAssessment]:
 
 def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
     timeline = build_timeline(bundle.evidence)
-    # Рейтинг вычисляется один раз и затем одинаково используется в JSON и печатном выводе.
     assessments = rank_hypotheses(bundle)
     # primary получает первую запись рассчитанного рейтинга.
-    # Код требует хотя бы одну гипотезу; первая запись отсортированного рейтинга становится лидером.
     primary = assessments[0]
 
     return {
+        "schema_version": 1,
+        "investigation_id": "I-06",
         "case_id": bundle.case_id,
         "title": bundle.title,
-        # generated_at получает значение bundle.analysis_time.
         "generated_at": bundle.analysis_time.isoformat(),
         "scheduled_opening": bundle.scheduled_opening.isoformat(),
         "timeline": timeline,
@@ -385,19 +354,20 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
                 ),
             ],
         },
-        # Ограничения публикуются рядом с выводом и не теряются в пояснительном тексте страницы.
         "limitations": [
             (
-                "Баллы упорядочивают проверяемые гипотезы, но не превращают "
-                "корреляцию в доказанный умысел."
+                "Баллы — сумма вручную назначенных reliability × weight; значения "
+                "не обучались и не калибровались, поэтому они только упорядочивают "
+                "проверяемые гипотезы."
             ),
             (
-                "Аппаратный ключ и локальный сеанс надёжно связывают учётные "
-                "действия, но не заменяют полное интервью и видео."
+                "Аппаратный ключ и локальный сеанс связывают действия с учётной "
+                "записью, но журналы не фиксируют человека за клавиатурой или его "
+                "мотив; для этого нужны интервью и видео."
             ),
             (
-                "Отсутствие следов успешного фишинга не доказывает, что попыток "
-                "больше не будет."
+                "Почтовый аудит охватывает только сохранённые письма и события "
+                "наблюдаемого периода, поэтому он не описывает будущие попытки."
             ),
         ],
     }
@@ -406,16 +376,16 @@ def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
 def save_verdict(verdict: dict[str, Any], path: Path = OUTPUT_PATH) -> None:
     # ensure_ascii=False оставляет русский текст читаемым, а финальный \n делает файл удобным для diff и POSIX-инструментов.
     payload = json.dumps(verdict, ensure_ascii=False, indent=2)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"{payload}\n", encoding="utf-8")
 
 
 def render_report(verdict: dict[str, Any]) -> None:
     print("ФИНАЛЬНЫЙ ВЕРДИКТ")
-    print(f"Дело: {verdict['title']}")
+    print(f"Расследование: {verdict['title']}")
     print(f"Событий в хронологии: {len(verdict['timeline'])}")
     print("\nХронология:")
     for item in verdict["timeline"]:
-        # Парсим ISO-строку обратно только для человекочитаемого формата даты в терминале.
         moment = datetime.fromisoformat(item["occurred_at"])
         print(f"- {moment:%d.%m %H:%M}  {item['evidence_id']}: {item['title']}")
 
@@ -443,12 +413,10 @@ def render_report(verdict: dict[str, Any]) -> None:
 
 
 def main() -> None:
-    # Проверяем версию до загрузки дела: StrEnum и заявленный учебный контракт требуют Python 3.13+.
     if sys.version_info < (3, 13):
-        raise SystemExit("Для дела 06 нужен Python 3.13 или новее.")
+        raise SystemExit("Для расследования 06 нужен Python 3.13 или новее.")
 
     bundle = load_bundle()
-    # Сначала строим один словарь вердикта, затем и экран, и JSON используют именно его.
     verdict = build_verdict(bundle)
     render_report(verdict)
     save_verdict(verdict)
@@ -461,21 +429,10 @@ if __name__ == "__main__":
 
 ## Проверка
 
-Из корня `case-06` выполните:
+Из папки проекта выполните:
 
 ```bash
-python final_verdict.py
-python -m json.tool verdict.json
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests
 ```
 
-В рейтинге должны появиться четыре взаимоисключающие гипотезы о причине файловых правок. Первой будет `H-NIKITA` с баллом 73, а `H-MISTAKE` останется второй со статусом `unresolved`: материалов за случайную ручную правку почти столько же, сколько против нее.
-
-В `verdict.json` отдельно проверьте:
-
-- `findings.warning_author.status` — `confirmed_by_signed_admission`;
-- `findings.phishing.status` — `unresolved_vector_no_success_evidence`;
-- `operational_decision.opening` — `postpone`;
-- три действия: вернуть строку и сохранить исходные версии, сменить доступы, опросить Никиту Королева.
-
-Число 73 — не процент уверенности. Это воспроизводимый приоритет для следующей проверки. Наиболее важная часть отчёта находится рядом: список противоречий и ограничения вывода.
+Все переходы I-01 → I-06 дополнительно проверяет команда сопровождающего `pnpm test:part1-artifacts`.

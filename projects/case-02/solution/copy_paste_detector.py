@@ -1,4 +1,5 @@
 from itertools import combinations
+import json
 from pathlib import Path
 
 from rich.console import Console
@@ -15,12 +16,16 @@ def default_data_dir():
 
 
 DATA_DIR = default_data_dir()
+PROJECT_DIR = DATA_DIR.parent
+AUTHORSHIP_PATH = DATA_DIR / "artifacts" / "01-authorship.json"
+ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "02-text-matches.json"
 NGRAM_SIZE = 4
 TOP_EXAMPLES = 3
 
 console = Console()
 
 DISPLAY_NAMES = {
+    "anonymous": "Анонимное предупреждение",
     "report_north_table": "Опись Северного стола",
     "report_tour_draft": "Черновик экскурсии",
     "report_basement_route": "Служебный маршрут подвального коридора",
@@ -109,6 +114,9 @@ def compare_profiles(left, right):
 
 def load_profiles(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
     paths = sorted(data_dir.glob("report_*.txt"))
+    anonymous_path = data_dir / "anonymous.txt"
+    if anonymous_path.exists():
+        paths.append(anonymous_path)
     if not paths:
         raise FileNotFoundError(f"No report_*.txt files found in {data_dir}")
 
@@ -136,6 +144,65 @@ def rank_overlaps(data_dir=DATA_DIR, ngram_size=NGRAM_SIZE):
 
 def format_ngram(ngram):
     return " ".join(ngram)
+
+
+def load_authorship_lead(path=AUTHORSHIP_PATH):
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if data.get("investigation_id") != "I-01":
+        raise ValueError(f"Expected I-01 artifact: {path}")
+    finding = data["findings"][0]
+    return {
+        "finding_id": finding["finding_id"],
+        "candidate": finding["candidates"][0]["name"],
+        "score": finding["candidates"][0]["score"],
+        "limitation": finding["limitation"],
+    }
+
+
+def build_artifact(results, authorship_path=AUTHORSHIP_PATH):
+    matches = []
+    for position, result in enumerate(results, start=1):
+        matches.append(
+            {
+                "rank": position,
+                "pair": list(result["pair"]),
+                "score": result["score"],
+                "shared_count": result["shared_count"],
+                "examples": [format_ngram(item) for item in result["examples"]],
+            }
+        )
+    return {
+        "schema_version": 1,
+        "investigation_id": "I-02",
+        "generated_at": "2026-03-15T06:50:00+03:00",
+        "source_files": [
+            "anonymous.txt",
+            *[path.name for path in sorted(DATA_DIR.glob("report_*.txt"))],
+            "artifacts/01-authorship.json",
+        ],
+        "inputs": {"authorship_lead": load_authorship_lead(authorship_path)},
+        "findings": [
+            {
+                "finding_id": "F-I02-TEXT-MATCHES",
+                "kind": "text-overlap-ranking",
+                "title": "Совпадения n-грамм в материалах архива",
+                "summary": (
+                    f"Самая сильная пара: {' / '.join(matches[0]['pair'])}."
+                    if matches
+                    else "Совпадений n-грамм не найдено."
+                ),
+                "matches": matches,
+            }
+        ],
+    }
+
+
+def save_artifact(artifact, path=ARTIFACT_PATH):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def render_results(results, limit=5):
@@ -171,7 +238,10 @@ def render_results(results, limit=5):
 
 
 def main():
-    render_results(rank_overlaps())
+    results = rank_overlaps()
+    render_results(results)
+    save_artifact(build_artifact(results))
+    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
 
 
 if __name__ == "__main__":

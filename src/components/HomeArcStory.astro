@@ -141,7 +141,7 @@ const diagnosticCells = Array.from({ length: 36 });
       </div>
     </div>
 
-    <ol class="story-steps" aria-label={`Шесть дел: ${title}`}>
+    <ol class="story-steps" aria-label={`Шесть расследований: ${title}`}>
       {cases.map((item, index) => (
         <li
           class="case-step"
@@ -169,12 +169,12 @@ const diagnosticCells = Array.from({ length: 36 });
             </div>
           </dl>
 
-          <div class="concept-row" aria-label={`Темы дела ${item.number}`}>
+          <div class="concept-row" aria-label={`Темы расследования ${item.number}`}>
             {item.concepts.map((concept) => <span>{concept}</span>)}
           </div>
 
           <div class="step-footer">
-            <a class="case-action" href={item.href}>Открыть дело {item.number}</a>
+            <a class="case-action" href={item.href}>Открыть расследование {item.number}</a>
             <p>{item.format} · {item.time}</p>
           </div>
         </li>
@@ -828,10 +828,12 @@ const diagnosticCells = Array.from({ length: 36 });
 
     .story-steps {
       order: initial;
+      min-width: 0;
     }
 
     .case-step {
       min-height: auto;
+      min-width: 0;
       transform: none;
     }
 
@@ -850,7 +852,8 @@ const diagnosticCells = Array.from({ length: 36 });
     }
 
     .case-step h3 {
-      font-size: clamp(2.25rem, 12vw, 3.35rem);
+      font-size: clamp(2.25rem, 10vw, 3.35rem);
+      overflow-wrap: break-word;
     }
 
     .case-facts div {
@@ -865,6 +868,7 @@ const diagnosticCells = Array.from({ length: 36 });
 
     .case-action {
       width: 100%;
+      box-sizing: border-box;
     }
   }
 

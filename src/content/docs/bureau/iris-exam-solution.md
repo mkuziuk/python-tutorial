@@ -12,7 +12,7 @@ notebook: projects/part-2/case-01/solution/case-01-solution.ipynb
 
 <span class="bureau-page-scope" aria-hidden="true"></span>
 
-Откройте эту страницу после самостоятельного [дела II-01](../iris-exam/). Полные ячейки, графики и воспроизводимый вывод находятся в готовой тетради:
+Откройте эту страницу после самостоятельного [расследования II-01](../iris-exam/). Полные ячейки, графики и воспроизводимый вывод находятся в готовой тетради:
 
 - [посмотреть тетрадь с решением на GitHub](https://github.com/mkuziuk/python-tutorial/blob/main/projects/part-2/case-01/solution/case-01-solution.ipynb);
 - [запустить тетрадь с решением в Colab](https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-01/solution/case-01-solution.ipynb).
@@ -33,4 +33,4 @@ notebook: projects/part-2/case-01/solution/case-01-solution.ipynb
 
 Конвейер гарантирует, что `StandardScaler` обучается только на обучающей выборке, а затем теми же параметрами преобразует тестовую. Матрица ошибок дополняет accuracy: она показывает не просто число промахов, а направления путаницы классов. Именно эта связка — процедура плюс диагностика — становится минимальным стандартом Бюро.
 
-Следующее дело: [Пассажиры после факта](../passengers-after-the-fact/).
+Следующее расследование: [Пассажиры после факта](../passengers-after-the-fact/).

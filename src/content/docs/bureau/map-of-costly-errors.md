@@ -11,12 +11,12 @@ datasetIds: [sklearn-california-housing-1990-frozen-v1]
 notebook: projects/part-2/case-04/case-04.ipynb
 solutionNotebook: projects/part-2/case-04/solution/case-04-solution.ipynb
 archive: public/downloads/part-2-case-04.zip
-prerequisite: Дела II-01–II-03
+prerequisite: Расследования II-01–II-03
 concepts: [DummyRegressor, линейная регрессия, случайный лес, MAE, RMSE, R², остатки, групповая тестовая выборка]
 ---
 
 <div class="bureau-brief">
-  <p class="bureau-kicker">Аудит переноса · дело II-04</p>
+  <p class="bureau-kicker">Аудит переноса · расследование II-04</p>
   <p><strong>Миссия</strong> сравнить случайное и географическое разбиения, рассчитать MAE, RMSE и R² и нанести абсолютную ошибку в долларах на координаты кварталов.</p>
   <p><strong>Данные</strong> зафиксированная локальная копия California Housing с карточкой происхождения.</p>
   <p><strong>Результат</strong> три варианта регрессионной модели, остатки, случайная и географическая тестовые выборки.</p>

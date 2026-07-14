@@ -1,643 +1,168 @@
 ---
-title: "Дело 06. Вердикт перед открытием"
-description: "Собираем хронологию, ранжируем проверяемые гипотезы и принимаем осторожное решение перед открытием выставки."
+title: "Расследование 06. Вердикт перед открытием"
+description: "Добавляем новые утренние материалы к доске I-05, ранжируем гипотезы и сохраняем решение."
 concepts:
   - StrEnum
-  - неизменяемые dataclass
   - match
-  - JSON
-  - sorting
-  - подсчёт баллов
-  - comprehensions
-  - аннотации типов
+  - dataclasses
   - datetime
-  - unittest
+  - sorting
+  - JSON
 difficulty: "продвинутый"
 projectId: "case-06"
-time: "120-150 минут"
+time: "110-140 минут"
 ---
 
 <div class="case-meta">
-  <p><strong>Миссия</strong> превратить материалы пяти дел в объяснимый итоговый отчёт до открытия выставки утром 15 марта.</p>
-  <p><strong>Инструменты</strong> Python 3.13+, `StrEnum`, неизменяемые `dataclass`, `match`, JSON, сортировка и прозрачная система баллов.</p>
-  <p><strong>Результат</strong> хронология, рейтинг гипотез с опорой и противоречиями, осторожный вывод и файл `verdict.json`.</p>
-  <p><strong>Маршрут</strong> продвинутый · 120–150 минут · Python 3.13+</p>
+  <p><strong>Миссия</strong> объединить доску I-05 с новыми утренними проверками и принять решение об открытии.</p>
+  <p><strong>Инструменты</strong> `StrEnum`, `match`, `datetime`, сортировка и агрегирование баллов.</p>
+  <p><strong>Вход</strong> `05-case-board.json` и `morning_updates.json`.</p>
+  <p><strong>Результат</strong> `artifacts/06-verdict.json`.</p>
 </div>
 
 <div class="materials-panel">
-  <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-06.zip">case-06.zip</a> · <a href="../../materials/">материалы всех дел</a> · <a href="../final-verdict-solution/">разбор решения</a></p>
-  <p><strong>Справочник:</strong> <a href="../../field-guide/dataclasses/">dataclass</a> · <a href="../../field-guide/type-hints/">аннотации типов</a> · <a href="../../field-guide/comprehensions/">включения</a> · <a href="../../field-guide/datetime/">дата и время</a> · <a href="../../field-guide/enums-match/">StrEnum и match</a> · <a href="../../field-guide/json/">JSON</a> · <a href="../../field-guide/pathlib/">pathlib</a> · <a href="../../field-guide/sorting/">сортировка</a> · <a href="../../field-guide/functions/">функции</a> · <a href="../../field-guide/testing/">unittest</a></p>
+  <p><strong>Быстрые ссылки:</strong> <a href="../../downloads/case-06.zip">case-06.zip</a> · <a href="../final-verdict-solution/">разбор решения</a></p>
+  <p><strong>Справочник:</strong> <a href="../../field-guide/enums-match/">StrEnum и match</a> · <a href="../../field-guide/datetime/">datetime</a> · <a href="../../field-guide/json/">JSON</a></p>
 </div>
 
-## Последние часы
+## Что приходит из предыдущего расследования
 
-Ночь 14 марта 2026 года закончилась, но до открытия выставки 15 марта в 10:00 осталось меньше двух часов. Отдельные инструменты уже нашли важные фрагменты:
+`data/artifacts/05-case-board.json` содержит людей, гипотезы, двенадцать улик и их связи. Эти данные не переписываются заново.
 
-- текст анонимного предупреждения похож на рабочие заметки Алины, но сходство текста не устанавливает автора;
-- два фрагмента закрытой описи появились в черновике экскурсии;
-- два письма похожи на фишинг, однако доставка письма ещё не означает успешный взлом;
-- резервная копия содержит строку 23:07 об отправке копии архивариусу, которой нет в рабочей хронологии.
+`data/morning_updates.json` содержит только новые материалы:
 
-Утром появились два новых материала. Алина Морозова дала подписанное подтверждение авторства предупреждения. Неизменяемый аудит `SEC-774` связал запись фрагментов закрытой описи в черновик до 18:00 и перезапись хронологии в 23:19 с аппаратно подтвержденными сеансами `nikita.k`.
+- аудит перезаписи рабочей хронологии;
+- подписанный аудит `SEC-774`;
+- проверку почтового компромисса;
+- проверку синхронизации;
+- проверку согласования поздней передачи;
+- подтверждение Алины.
 
-Аудит связывает обе правки файлов с аппаратно подтверждёнными сеансами учётной записи `nikita.k`. Для установления мотива и личности человека за клавиатурой нужны видеозапись и полное интервью.
+Так видно, какие факты существовали до утра, а какие появились перед финальной оценкой.
 
-Финальный вопрос поэтому состоит из двух частей:
-
-1. Какая гипотеза лучше всего объясняет доступные материалы?
-2. Достаточно ли целостны данные и доступы, чтобы открыть выставку сегодня?
-
-Ответы могут различаться. Даже без судебной уверенности в личности и мотиве можно принять безопасное операционное решение.
-
-Скачайте [case-06.zip](../../downloads/case-06.zip) или откройте `projects/case-06/` в репозитории. Стартовый набор содержит пустой `final_verdict.py`, пакет улик `data/evidence_bundle.json`, тесты, `requirements.txt`, README и файл ожидаемого результата. Папка `solution/` остаётся только в репозитории и не раскрывает готовый код в скачанном наборе.
-
-## Как читать систему баллов
-
-Каждая улика имеет надёжность от 1 до 5. Её связь с конкретной гипотезой имеет вес от 1 до 3 и направление:
-
-- `support` — улика поддерживает гипотезу;
-- `conflict` — улика ей противоречит.
-
-Для каждой связи программа вычисляет `надёжность × вес`. Затем отдельно суммирует баллы «за» и «против»:
-
-```text
-итог = баллы за - баллы против
-```
-
-Баллы ранжируют гипотезы по назначенным аналитиком весам: `reliability × weight`. Отчёт отдельно сохраняет подтверждения, противоречия и ограничения вывода. Вероятность гипотезы и умысел эта формула не оценивает; связанные журналы могут учитывать один источник несколько раз.
-
-Перед кодом откройте `data/evidence_bundle.json` и найдите:
-
-- `EV-SIGNED-AUDIT` — новую сильную, но ограниченную привязку действий;
-- `EV-ALINA-ADMISSION` — утреннее подписанное подтверждение;
-- `EV-MAIL-AUDIT` — отсутствие наблюдаемых признаков успешного взлома;
-- `EV-NIKITA-STATEMENT` — материал, который противоречит основной гипотезе и поэтому не должен исчезнуть из отчёта.
-
-## Подготовка
-
-Проект использует возможности Python 3.13. Сторонних библиотек нет.
-
-### Windows PowerShell
-
-```powershell
-py -3 --version
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Первая команда должна показать Python 3.13 или новее.
-
-### macOS или Linux
-
-```bash
-python3 --version
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Первая команда должна показать Python 3.13 или новее.
-
-Проверьте стартовый файл:
-
-```bash
-python final_verdict.py
-```
-
-Пока программа ничего не выводит: это нормально.
-
-## Шаг 1. Модель, которую нельзя случайно переписать
-
-Добавьте в `final_verdict.py` первый блок. `StrEnum` ограничивает словарь допустимых типов, а `frozen=True, slots=True` делает загруженные факты неизменяемыми. Если анализу понадобится другая версия улики, безопаснее создать новый объект, чем незаметно исправить старый.
+## Шаг 1. Объединить два источника
 
 ```python
-from dataclasses import dataclass
-from datetime import datetime
-from enum import StrEnum
-import json
-from pathlib import Path
-import sys
-from typing import Any, Self
+def load_bundle(board_path=BOARD_PATH, updates_path=UPDATES_PATH):
+    board = json.loads(board_path.read_text(encoding="utf-8"))
+    if board.get("investigation_id") != "I-05":
+        raise ValueError(f"Expected I-05 board: {board_path}")
 
+    updates = json.loads(updates_path.read_text(encoding="utf-8"))
+    combined = {
+        **board,
+        "analysis_time": updates["analysis_time"],
+        "evidence": [*board["evidence"], *updates["evidence"]],
+    }
+    return CaseBundle.from_dict(combined)
+```
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-# Один путь работает и для корневого скрипта ученика, и для копии внутри solution/.
-PROJECT_DIR = SCRIPT_DIR.parent if SCRIPT_DIR.name == "solution" else SCRIPT_DIR
-# Входной снимок не перезаписываем: итог всегда можно пересчитать из прежних данных.
-DATA_PATH = PROJECT_DIR / "data" / "evidence_bundle.json"
-OUTPUT_PATH = PROJECT_DIR / "verdict.json"
+Программа не меняет доску I-05. Она создаёт новый объект для финального расчёта.
 
+## Шаг 2. Ограничить допустимые значения
 
-# StrEnum ограничивает значения, но в JSON они остаются обычными строками.
-class EvidenceKind(StrEnum):
-    ANALYSIS = "analysis"
-    EMAIL = "email"
-    DOCUMENT = "document"
-    ACCESS_LOG = "access_log"
-    SYSTEM_LOG = "system_log"
-    FILE_AUDIT = "file_audit"
-    BACKUP = "backup"
-    POLICY = "policy"
-    INTERVIEW = "interview"
-    OBSERVATION = "observation"
-    EMAIL_AUDIT = "email_audit"
-
-
-# Stance указывает, поддерживает улика гипотезу или противоречит ей; weight задаёт силу связи.
+```python
 class Stance(StrEnum):
     SUPPORT = "support"
     CONFLICT = "conflict"
-
-
-class AssessmentStatus(StrEnum):
-    # Статус сообщает категорию вывода; точные баллы поддержки и противоречий сохраняются отдельно.
-    STRONGLY_SUPPORTED = "strongly_supported"
-    SUPPORTED = "supported"
-    UNRESOLVED = "unresolved"
-    NOT_SUPPORTED = "not_supported"
-    NO_EVIDENCE = "no_evidence"
-
-
-# frozen запрещает менять объект после загрузки, slots фиксирует набор его полей.
-@dataclass(frozen=True, slots=True)
-class Effect:
-    hypothesis_id: str
-    stance: Stance
-    weight: int
-
-    def __post_init__(self) -> None:
-        # Вес ограничен шкалой 1–3, чтобы одна связь не могла произвольно подавить всё дело.
-        if not 1 <= self.weight <= 3:
-            raise ValueError("Effect weight must be between 1 and 3")
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
-        # strip() не даёт пробелам создать отдельный ID или пустую формулировку версии.
-        return cls(
-            hypothesis_id=str(data["hypothesis_id"]).strip(),
-            # Конструктор Enum сразу отклонит неизвестное значение вместо тихого создания нового статуса.
-            stance=Stance(str(data["stance"])),
-            weight=int(data["weight"]),
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class Evidence:
-    evidence_id: str
-    occurred_at: datetime
-    kind: EvidenceKind
-    title: str
-    summary: str
-    source: str
-    # reliability оценивает источник по шкале 1–5, но связь с каждой версией хранится отдельно.
-    reliability: int
-    effects: tuple[Effect, ...]
-
-    def __post_init__(self) -> None:
-        # Проверки сосредоточены в модели: некорректный объект не проходит к ранжированию.
-        if not self.evidence_id:
-            raise ValueError("Evidence ID must not be empty")
-        if not 1 <= self.reliability <= 5:
-            raise ValueError("Evidence reliability must be between 1 and 5")
-        # Без смещения UTC события из разных источников нельзя надёжно упорядочить.
-        if self.occurred_at.tzinfo is None:
-            raise ValueError("Evidence timestamp must include a UTC offset")
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
-        # Преобразуем поля улики на входе, чтобы дальше ранжирование работало с едиными типами.
-        return cls(
-            evidence_id=str(data["evidence_id"]).strip(),
-            # ISO-строку превращаем в datetime; часовой пояс проверяется выше.
-            occurred_at=datetime.fromisoformat(str(data["occurred_at"])),
-            kind=EvidenceKind(str(data["kind"])),
-            title=str(data["title"]).strip(),
-            summary=str(data["summary"]).strip(),
-            source=str(data["source"]).strip(),
-            reliability=int(data["reliability"]),
-            # tuple сохраняет набор связей неизменным после проверки входных данных.
-            effects=tuple(Effect.from_dict(item) for item in data.get("effects", [])),
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class Hypothesis:
-    hypothesis_id: str
-    claim: str
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
-        return cls(
-            hypothesis_id=str(data["hypothesis_id"]).strip(),
-            claim=str(data["claim"]).strip(),
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class CaseBundle:
-    case_id: str
-    title: str
-    incident_date: str
-    scheduled_opening: datetime
-    analysis_time: datetime
-    hypotheses: tuple[Hypothesis, ...]
-    evidence: tuple[Evidence, ...]
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
-        # Время открытия и время анализа сохраняем из входного снимка, а не вычисляем при запуске.
-        return cls(
-            case_id=str(data["case_id"]),
-            title=str(data["title"]),
-            incident_date=str(data["incident_date"]),
-            scheduled_opening=datetime.fromisoformat(str(data["scheduled_opening"])),
-            analysis_time=datetime.fromisoformat(str(data["analysis_time"])),
-            # Гипотезы и улики становятся кортежами: загруженный CaseBundle служит неизменяемым снимком.
-            hypotheses=tuple(
-                Hypothesis.from_dict(item) for item in data.get("hypotheses", [])
-            ),
-            evidence=tuple(Evidence.from_dict(item) for item in data.get("evidence", [])),
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class HypothesisAssessment:
-    hypothesis: Hypothesis
-    support_points: int
-    conflict_points: int
-    support: tuple[str, ...]
-    conflicts: tuple[str, ...]
-    status: AssessmentStatus
-
-    # @property позволяет читать assessment.score как поле, хотя значение вычисляет метод.
-    @property
-    def score(self) -> int:
-        # Итоговый балл равен support_points - conflict_points; дополнительные коэффициенты не применяются.
-        return self.support_points - self.conflict_points
-
-    def to_dict(self, rank: int) -> dict[str, Any]:
-        return {
-            "rank": rank,
-            "hypothesis_id": self.hypothesis.hypothesis_id,
-            "claim": self.hypothesis.claim,
-            # .value записывает строковое значение Enum в JSON.
-            "status": self.status.value,
-            "score": self.score,
-            "support_points": self.support_points,
-            "conflict_points": self.conflict_points,
-            # В памяти ID хранятся кортежем, но JSON получает обычный массив.
-            "support": list(self.support),
-            "conflicts": list(self.conflicts),
-        }
 ```
 
-Обратите внимание на путь. Один и тот же код работает и после вставки в корневой стартовый файл, и из папки `solution/`. Это важно: решение не должно искать `data/` уровнем выше проекта.
+`StrEnum` отклоняет опечатку при загрузке. `frozen=True` не позволяет случайно изменить уже загруженную улику.
 
-## Шаг 2. Загрузка и сортировка хронологии по `datetime`
-
-Добавьте функции ниже классов:
+## Шаг 3. Построить хронологию
 
 ```python
-def load_bundle(path: Path = DATA_PATH) -> CaseBundle:
-    # После разбора словарь сразу проходит через типизированные from_dict() и их проверки.
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    return CaseBundle.from_dict(raw)
-
-
-def build_timeline(evidence: tuple[Evidence, ...]) -> list[dict[str, str]]:
-    # ID — вторичный ключ: он даёт стабильный порядок событий с одинаковым временем.
-    ordered = sorted(evidence, key=lambda item: (item.occurred_at, item.evidence_id))
-    return [
-        {
-            # ISO-строка сохраняет смещение UTC, нужное для независимой проверки порядка событий.
-            "occurred_at": item.occurred_at.isoformat(),
-            "evidence_id": item.evidence_id,
-            "kind": item.kind.value,
-            "title": item.title,
-            "source": item.source,
-        }
-        for item in ordered
-    ]
+ordered = sorted(
+    evidence,
+    key=lambda item: (item.occurred_at, item.evidence_id),
+)
 ```
 
-Первый промежуточный чек не требует законченного `main()`: импортируйте модуль и вызовите готовые функции.
+`occurred_at` преобразуется в `datetime` со смещением часового пояса. ID используется как второй ключ для стабильного порядка событий с одинаковым временем.
 
-```bash
-python -c "import final_verdict as f; b=f.load_bundle(); t=f.build_timeline(b.evidence); print(len(t), t[0]['evidence_id'], t[-1]['evidence_id'])"
-```
+## Шаг 4. Рассчитать поддержку и противоречия
 
-Ожидаётся:
+Каждая связь содержит надёжность улики и вес связи:
 
 ```text
-19 EV-TOUR-DRAFT EV-ALINA-ADMISSION
+баллы связи = reliability × weight
+итог = сумма поддержки − сумма противоречий
 ```
-
-Сортировка использует настоящий `datetime` со смещением часового пояса, а не красивую, но хрупкую строку вида `14.03 9:05`.
-
-## Шаг 3. Баллы «за» и «против»
-
-Добавьте следующий блок. В `score_hypothesis()` оператор `match` заставляет явно обработать каждое допустимое направление связи. Противоречие не получает отрицательный ID и не исчезает: оно хранится в отдельном списке.
 
 ```python
-def classify_assessment(
-    support_points: int, conflict_points: int
-) -> AssessmentStatus:
-    # Пороги ниже определяют AssessmentStatus для этого дела.
-    # match возвращает первую подходящую ветку, поэтому порядок условий важен.
-    match support_points, conflict_points:
-        # Если support и conflict равны 0, ни одна улика не связана с гипотезой.
-        case 0, 0:
-            return AssessmentStatus.NO_EVIDENCE
-        # support и conflict получают текущие числа; условие после if проверяет порог статуса.
-        case support, conflict if support >= 15 and support >= conflict * 2:
-            return AssessmentStatus.STRONGLY_SUPPORTED
-        case support, conflict if support >= 10 and support >= conflict + 5:
-            return AssessmentStatus.SUPPORTED
-        case support, conflict if conflict > support:
-            return AssessmentStatus.NOT_SUPPORTED
-        case _:
-            return AssessmentStatus.UNRESOLVED
-
-
-def score_hypothesis(
-    hypothesis: Hypothesis, evidence: tuple[Evidence, ...]
-) -> HypothesisAssessment:
-    # Поддержку и противоречия накапливаем отдельно, чтобы итог оставался объяснимым.
-    support_points = 0
-    conflict_points = 0
-    support: list[str] = []
-    conflicts: list[str] = []
-
-    for item in evidence:
-        for effect in item.effects:
-            # Одна улика может влиять на несколько версий; здесь берём только связи с текущей.
-            if effect.hypothesis_id != hypothesis.hypothesis_id:
-                continue
-
-            # Баллы задают порядок гипотез в рейтинге.
-            # Вклад зависит и от надёжности источника, и от силы его связи.
-            # points рассчитывается как reliability * weight.
-            points = item.reliability * effect.weight
-            match effect.stance:
-                case Stance.SUPPORT:
-                    support_points += points
-                    support.append(item.evidence_id)
-                case Stance.CONFLICT:
-                    conflict_points += points
-                    conflicts.append(item.evidence_id)
-
-    status = classify_assessment(support_points, conflict_points)
-    return HypothesisAssessment(
-        hypothesis=hypothesis,
-        support_points=support_points,
-        conflict_points=conflict_points,
-        # Сортируем ID внутри результата, чтобы отчёт не зависел от порядка улик во входном JSON.
-        support=tuple(sorted(support)),
-        conflicts=tuple(sorted(conflicts)),
-        status=status,
-    )
-
-
-def rank_hypotheses(bundle: CaseBundle) -> list[HypothesisAssessment]:
-    # Оцениваем каждую объявленную гипотезу по одному и тому же неизменному набору улик.
-    assessments = [
-        score_hypothesis(hypothesis, bundle.evidence)
-        for hypothesis in bundle.hypotheses
-    ]
-    return sorted(
-        assessments,
-        # Минусы дают убывание баллов; ID задаёт стабильный порядок при ничьей.
-        key=lambda item: (
-            -item.score,
-            -item.support_points,
-            item.hypothesis.hypothesis_id,
-        ),
-    )
+points = item.reliability * effect.weight
+match effect.stance:
+    case Stance.SUPPORT:
+        support_points += points
+        support.append(item.evidence_id)
+    case Stance.CONFLICT:
+        conflict_points += points
+        conflicts.append(item.evidence_id)
 ```
 
-Второй чек выводит ID, итоговый балл и статус всех гипотез:
+Итоговый балл — сумма назначенных аналитиком значений `reliability × weight`. Эти значения не обучены на сопоставимых расследованиях, а входные данные не содержат прямого наблюдения мотива или человека за клавиатурой. Поэтому балл только ранжирует четыре гипотезы.
 
-```bash
-python -c "import final_verdict as f; b=f.load_bundle(); print([(a.hypothesis.hypothesis_id, a.score, a.status.value) for a in f.rank_hypotheses(b)])"
-```
-
-Ожидаемый порядок:
-
-```text
-[('H-NIKITA', 73, 'strongly_supported'), ('H-MISTAKE', 2, 'unresolved'), ('H-PHISHING', -16, 'not_supported'), ('H-SYNC', -20, 'not_supported')]
-```
-
-Все четыре гипотезы отвечают на один и тот же вопрос о причине двух правок файлов и поэтому конкурируют друг с другом. Авторство предупреждения не входит в этот рейтинг: оно является отдельным установленным выводом.
-
-Остановитесь и проверьте смысл. `H-PHISHING` спрашивает не о том, были ли опасные письма — они были. Гипотеза утверждает, что **успешный взлом вызвал изменения файлов**. Наблюдаемых подтверждений этому нет. Сам вектор остаётся открытым и требует защитных действий, но его нельзя считать установленной причиной событий этой ночи.
-
-## Шаг 4. Вердикт как данные
-
-Добавьте сборку и сохранение JSON-отчёта. Первая запись рейтинга станет самой сильной рабочей гипотезой; рядом отчёт сохранит ограничения вывода.
+## Шаг 5. Присвоить статус
 
 ```python
-def build_verdict(bundle: CaseBundle) -> dict[str, Any]:
-    timeline = build_timeline(bundle.evidence)
-    # Рейтинг вычисляется один раз и затем одинаково используется в JSON и печатном выводе.
-    assessments = rank_hypotheses(bundle)
-    # primary получает первую запись рассчитанного рейтинга.
-    # Код требует хотя бы одну гипотезу; первая запись отсортированного рейтинга становится лидером.
-    primary = assessments[0]
-
-    return {
-        "case_id": bundle.case_id,
-        "title": bundle.title,
-        # generated_at получает значение bundle.analysis_time.
-        "generated_at": bundle.analysis_time.isoformat(),
-        "scheduled_opening": bundle.scheduled_opening.isoformat(),
-        "timeline": timeline,
-        "ranked_hypotheses": [
-            item.to_dict(rank)
-            for rank, item in enumerate(assessments, start=1)
-        ],
-        "findings": {
-            "warning_author": {
-                "status": "confirmed_by_signed_admission",
-                "finding": "Алина Морозова написала анонимное предупреждение.",
-                "basis": [
-                    "EV-ALINA-ADMISSION",
-                    "EV-TEXT-ANALYSIS",
-                    "EV-WARNING",
-                ],
-            },
-            "primary_hypothesis": {
-                "status": primary.status.value,
-                "hypothesis_id": primary.hypothesis.hypothesis_id,
-                "finding": f"Самая сильная рабочая гипотеза: {primary.hypothesis.claim}",
-                "caveat": (
-                    "Подписанный аудит связывает обе правки с аппаратно "
-                    "подтвержденными сеансами nikita.k, но сам по себе не "
-                    "доказывает мотив или физическую личность пользователя."
-                ),
-            },
-            "phishing": {
-                "status": "unresolved_vector_no_success_evidence",
-                "finding": (
-                    "Фишинговые попытки остаются отдельным нерасследованным "
-                    "вектором; признаков успешного взлома нет."
-                ),
-                "basis": [
-                    "EV-PHISH-LOCKOUT",
-                    "EV-PHISH-CAMERA",
-                    "EV-MAIL-AUDIT",
-                ],
-            },
-        },
-        "operational_decision": {
-            "opening": "postpone",
-            "decision": "Отложить открытие 15 марта 2026 года.",
-            "reason": (
-                "Целостность реестра и рабочей хронологии нарушена, а доступы "
-                "и цепочка передачи еще не проверены полностью."
-            ),
-            "actions": [
-                (
-                    "Вернуть в новую проверенную хронологию строку 23:07 из "
-                    "резервной копии; сохранить исходные рабочую и резервную "
-                    "версии с контрольными суммами."
-                ),
-                (
-                    "Сменить доступы к архиву, почте и рабочей станции экскурсии; "
-                    "отозвать активные токены."
-                ),
-                (
-                    "Опросить Никиту Королева в присутствии второго расследователя "
-                    "и проверить использование аппаратного ключа."
-                ),
-            ],
-        },
-        # Ограничения публикуются рядом с выводом и не теряются в пояснительном тексте страницы.
-        "limitations": [
-            (
-                "Баллы упорядочивают проверяемые гипотезы, но не превращают "
-                "корреляцию в доказанный умысел."
-            ),
-            (
-                "Аппаратный ключ и локальный сеанс надёжно связывают учётные "
-                "действия, но не заменяют полное интервью и видео."
-            ),
-            (
-                "Отсутствие следов успешного фишинга не доказывает, что попыток "
-                "больше не будет."
-            ),
-        ],
-    }
-
-
-def save_verdict(verdict: dict[str, Any], path: Path = OUTPUT_PATH) -> None:
-    # ensure_ascii=False оставляет русский текст читаемым, а финальный \n делает файл удобным для diff и POSIX-инструментов.
-    payload = json.dumps(verdict, ensure_ascii=False, indent=2)
-    path.write_text(f"{payload}\n", encoding="utf-8")
+match support_points, conflict_points:
+    case 0, 0:
+        return AssessmentStatus.NO_EVIDENCE
+    case support, conflict if support >= 15 and support >= conflict * 2:
+        return AssessmentStatus.STRONGLY_SUPPORTED
+    case support, conflict if conflict > support:
+        return AssessmentStatus.NOT_SUPPORTED
+    case _:
+        return AssessmentStatus.UNRESOLVED
 ```
 
-Третий чек проверяет именно решение, не формат терминала:
+Порядок веток важен: `match` возвращает первый подходящий статус.
 
-```bash
-python -c "import final_verdict as f; v=f.build_verdict(f.load_bundle()); print(v['operational_decision']['opening'], v['findings']['phishing']['status'])"
-```
+## Шаг 6. Сформировать решение
 
-Ожидаётся:
+`build_verdict()` сохраняет:
 
-```text
-postpone unresolved_vector_no_success_evidence
-```
+- полную хронологию;
+- рейтинг четырёх гипотез;
+- списки поддержки и противоречий;
+- подтверждённое авторство предупреждения;
+- незакрытую фишинговую ветку;
+- решение отложить открытие и три следующих действия.
 
-## Шаг 5. Отчёт и точка входа
+Канонический результат остаётся осторожным:
 
-Добавьте последние функции. Здесь появляется обязательный `main()` и защита `if __name__ == "__main__"`. `main()` загрузит `evidence_bundle.json`, построит рейтинг гипотез, сохранит `verdict.json` и напечатает отчёт.
+- действия в двух сеансах связаны с учётной записью `nikita.k` и аппаратным ключом;
+- журналы фиксируют сеансы учётной записи `nikita.k` и аппаратный ключ, но не фиксируют, кто находился за клавиатурой и зачем изменил файлы, поэтому они не устанавливают личность пользователя или мотив;
+- данных об успешном фишинговом входе нет;
+- открытие откладывается из-за нарушенной целостности материалов и непроверенных доступов.
 
-```python
-def render_report(verdict: dict[str, Any]) -> None:
-    print("ФИНАЛЬНЫЙ ВЕРДИКТ")
-    print(f"Дело: {verdict['title']}")
-    print(f"Событий в хронологии: {len(verdict['timeline'])}")
-    print("\nХронология:")
-    for item in verdict["timeline"]:
-        # Парсим ISO-строку обратно только для человекочитаемого формата даты в терминале.
-        moment = datetime.fromisoformat(item["occurred_at"])
-        print(f"- {moment:%d.%m %H:%M}  {item['evidence_id']}: {item['title']}")
-
-    print("\nРейтинг гипотез:")
-    for item in verdict["ranked_hypotheses"]:
-        print(
-            f"{item['rank']}. {item['hypothesis_id']} — {item['status']} — "
-            f"{item['score']:+d} (за {item['support_points']}, "
-            f"против {item['conflict_points']})"
-        )
-        print(f"   опора: {', '.join(item['support']) or 'нет'}")
-        print(f"   противоречия: {', '.join(item['conflicts']) or 'нет'}")
-
-    findings = verdict["findings"]
-    print("\nВыводы:")
-    print(f"- {findings['warning_author']['finding']}")
-    print(f"- {findings['primary_hypothesis']['finding']}")
-    print(f"  Ограничение: {findings['primary_hypothesis']['caveat']}")
-    print(f"- {findings['phishing']['finding']}")
-
-    decision = verdict["operational_decision"]
-    print(f"\nРешение: {decision['decision']}")
-    for action in decision["actions"]:
-        print(f"- {action}")
-
-
-def main() -> None:
-    # Проверяем версию до загрузки дела: StrEnum и заявленный учебный контракт требуют Python 3.13+.
-    if sys.version_info < (3, 13):
-        raise SystemExit("Для дела 06 нужен Python 3.13 или новее.")
-
-    bundle = load_bundle()
-    # Сначала строим один словарь вердикта, затем и экран, и JSON используют именно его.
-    verdict = build_verdict(bundle)
-    render_report(verdict)
-    save_verdict(verdict)
-    print(f"\nJSON-вердикт сохранён: {OUTPUT_PATH.name}")
-
-
-if __name__ == "__main__":
-    main()
-```
-
-Запустите завершенную программу:
+## Проверка
 
 ```bash
 python final_verdict.py
-```
-
-Сверьте форму отчёта с `check_result.txt`, затем проверьте созданный JSON:
-
-```bash
-python -m json.tool verdict.json
-```
-
-Последний промежуточный чек запускает тесты. Обычная команда ниже всегда импортирует ваш корневой `final_verdict.py` — и в скачанном наборе, и в репозитории. Эталон из `solution/` отдельно проверяет общая команда сопровождающего `pnpm test:python`, запущенная из корня сайта.
-
-```bash
+python -m json.tool artifacts/06-verdict.json
 python -m unittest discover -s tests -v
 ```
 
-## Развязка
+Ожидаемые контрольные значения:
 
-Код отделяет три разных уровня уверенности:
+- первая гипотеза — `H-NIKITA`, итоговый балл `73`;
+- `H-MISTAKE` — `2`;
+- `H-PHISHING` — `-16`;
+- `H-SYNC` — `-20`;
+- решение `opening` равно `postpone`.
 
-- **Установленный факт:** Алина подтвердила авторство предупреждения подписанной утренней записью и воспроизвела содержание до показа оригинала; раннее сравнение текста согласуется с её словами.
-- **Самая сильная рабочая гипотеза:** Никита Королев скопировал фрагменты закрытой описи в черновик экскурсии и исключил из рабочей хронологии строку 23:07 об отправке резервной копии архивариусу. Подписанный аудит связывает обе записи с его аппаратно подтверждёнными сеансами. Мотив и физическая личность пользователя ещё требуют интервью.
-- **Отдельный нерешенный риск:** фишинговые попытки были, но журнал не показывает успешного компромисса и не связывает письма с изменениями файлов.
+## Что мы использовали
 
-Открытие нужно **отложить** из-за нарушенной целостности описи и рабочей хронологии, а также непроверенных доступов. До открытия команда должна вернуть строку 23:07 в новую проверенную хронологию, сохранить обе исходные версии и их хэши, сменить доступы и токены, а затем провести полное интервью с Никитой в присутствии второго расследователя.
+- результат I-05 вместо нового вручную собранного набора;
+- отдельный файл только для новых утренних материалов;
+- неизменяемые dataclass-объекты;
+- `StrEnum` и `match`;
+- сортировку `datetime`;
+- объяснимое агрегирование поддержки и противоречий.
 
 ## Задания после финала
 
-1. Уберите из временной копии JSON связь `EV-SIGNED-AUDIT` с `H-NIKITA`. Остаётся ли эта гипотеза первой? Запишите, какие независимые материалы удерживают её наверху.
-2. Поменяйте вес `EV-NIKITA-STATEMENT` с 1 на 3. Почему это разумный стресс-тест, но не основание автоматически считать заявление истинным?
-3. Добавьте в `verdict.json` поле `evidence_dependencies`, которое помечает журналы одной рабочей станции как связанные. Баллы не обязаны быть вероятностью; отчёт должен честно показать возможный повторный учёт одного источника.
-4. Напишите тест, который гарантирует: ни одна гипотеза со статусом `not_supported` не превращается в формулировку установленного факта.
-
-Полный файл без промежуточных остановок находится в [разборе решения](../final-verdict-solution/).
+1. Добавьте проверку повторного `evidence_id` при объединении файлов.
+2. Выведите вклад каждой улики в балл гипотезы.
+3. Сформируйте отдельный короткий отчёт только с операционным решением.

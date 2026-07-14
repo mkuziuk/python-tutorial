@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "investigation_id": "I-01",
+  "generated_at": "2026-03-15T06:45:00+03:00",
+  "source_files": [
+    "anonymous.txt",
+    "author_korolev.txt",
+    "author_morozova.txt",
+    "author_sokolov.txt"
+  ],
+  "findings": [
+    {
+      "finding_id": "F-I01-AUTHORSHIP",
+      "kind": "authorship-ranking",
+      "title": "Рейтинг сходства с анонимным предупреждением",
+      "summary": "Первое место занимает Алина Морозова; оценка сравнивает только частые слова, длину слов и пунктуацию.",
+      "candidates": [
+        {
+          "name": "Алина Морозова",
+          "score": 0.688,
+          "rank": 1
+        },
+        {
+          "name": "Никита Королев",
+          "score": 0.528,
+          "rank": 2
+        },
+        {
+          "name": "Илья Соколов",
+          "score": 0.404,
+          "rank": 3
+        }
+      ],
+      "limitation": "Выбранные признаки могут совпасть у разных людей, поэтому рейтинг задаёт направление проверки, но не устанавливает автора."
+    }
+  ]
+}

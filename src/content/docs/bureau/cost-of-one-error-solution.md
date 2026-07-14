@@ -12,7 +12,7 @@ notebook: projects/part-2/case-03/solution/case-03-solution.ipynb
 
 <span class="bureau-page-scope" aria-hidden="true"></span>
 
-Откройте дебриф после [дела II-03](../cost-of-one-error/). Расчёты и таблица порогов находятся в выполненной тетради:
+Откройте дебриф после [расследования II-03](../cost-of-one-error/). Расчёты и таблица порогов находятся в выполненной тетради:
 
 - [посмотреть тетрадь с решением на GitHub](https://github.com/mkuziuk/python-tutorial/blob/main/projects/part-2/case-03/solution/case-03-solution.ipynb);
 - [запустить тетрадь с решением в Colab](https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-03/solution/case-03-solution.ipynb).
@@ -33,4 +33,4 @@ notebook: projects/part-2/case-03/solution/case-03-solution.ipynb
 
 Порог — часть системы принятия решения, а не свойство модели «по умолчанию». Повторный просмотр тестовой выборки ради выбора порога превращает её ещё в одну валидационную выборку. OOF-прогнозы позволяют настроить правило, сохранив внешнюю тестовую выборку независимой.
 
-Следующее дело: [Карта дорогих ошибок](../map-of-costly-errors/).
+Следующее расследование: [Карта дорогих ошибок](../map-of-costly-errors/).

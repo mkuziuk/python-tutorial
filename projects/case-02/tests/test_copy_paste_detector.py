@@ -1,6 +1,8 @@
 from pathlib import Path
+import json
 import os
 import sys
+import tempfile
 import unittest
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -12,11 +14,14 @@ sys.path.insert(0, str(SOURCE_DIR))
 
 from copy_paste_detector import (  # noqa: E402
     build_profile,
+    build_artifact,
+    load_authorship_lead,
     make_ngrams,
     normalize_words,
     overlap_score,
     rank_overlaps,
     render_results,
+    save_artifact,
 )
 
 
@@ -62,6 +67,22 @@ class CopyPasteDetectorTests(unittest.TestCase):
             {"Отчёт охраны", "Отчёт учебного стенда"},
         )
         self.assertEqual(len(ranking), 2)
+
+    def test_artifact_consumes_authorship_result(self):
+        authorship_path = PROJECT_DIR / "data" / "artifacts" / "01-authorship.json"
+        lead = load_authorship_lead(authorship_path)
+        artifact = build_artifact(rank_overlaps(PROJECT_DIR / "data"), authorship_path)
+
+        self.assertEqual(lead["candidate"], "Алина Морозова")
+        self.assertEqual(artifact["investigation_id"], "I-02")
+        self.assertEqual(artifact["inputs"]["authorship_lead"]["finding_id"], "F-I01-AUTHORSHIP")
+        self.assertEqual(artifact["findings"][0]["matches"][0]["pair"], ["Опись Северного стола", "Черновик экскурсии"])
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "02-text-matches.json"
+            save_artifact(artifact, path)
+            restored = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(restored, artifact)
 
     def test_render_results_accepts_ranking(self):
         render_results(

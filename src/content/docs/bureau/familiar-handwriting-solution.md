@@ -12,7 +12,7 @@ notebook: projects/part-2/case-05/solution/case-05-solution.ipynb
 
 <span class="bureau-page-scope" aria-hidden="true"></span>
 
-Сначала выполните [дело II-05](../familiar-handwriting/). Полный поиск и галерея ошибок доступны в тетради:
+Сначала выполните [расследование II-05](../familiar-handwriting/). Полный поиск и галерея ошибок доступны в тетради:
 
 - [посмотреть тетрадь с решением на GitHub](https://github.com/mkuziuk/python-tutorial/blob/main/projects/part-2/case-05/solution/case-05-solution.ipynb);
 - [запустить тетрадь с решением в Colab](https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-05/solution/case-05-solution.ipynb).
@@ -33,4 +33,4 @@ notebook: projects/part-2/case-05/solution/case-05-solution.ipynb
 
 Перебор параметров выбирает из объявленного набора, но не превращает тестовую выборку в инструмент подбора. Macro-F1 усредняет F1 классов с равным весом, поэтому крупный или лёгкий класс не может полностью скрыть слабый. В финале важнее станет другое предположение: действительно ли строки независимы?
 
-Следующее дело: [Экзамен для «Компаса»](../compass-exam/).
+Следующее расследование: [Экзамен для «Компаса»](../compass-exam/).

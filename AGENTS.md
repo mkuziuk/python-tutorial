@@ -12,6 +12,11 @@ checksums with `pnpm build:archives`. Do not change story facts established in
 `PLOT.md` or `PLOT_PART_2.md`, and follow `EDITORIAL_GUIDE_RU.md` for Russian
 terminology and tone.
 
+Part I solution scripts are canonical for the six generated solution pages;
+run `pnpm build:part1-solutions` after changing them. The investigations pass
+JSON artifacts from I-01 through I-06. Run `pnpm build:part1-artifacts` after
+changing a Part I schema, finding, fixture, or solution that affects the handoff.
+
 ## Comments in tutorial code
 
 - State the direct effect of the adjacent line or block and name the relevant
@@ -46,6 +51,10 @@ terminology and tone.
   use. Prefer concrete nouns and existing identifiers over labels such as
   “discipline,” “signal,” “trace,” or “strategy” when those labels do not name
   a specific object in the lesson.
+- When a lesson says that a score is not a probability or that a result does
+  not prove a conclusion, state the concrete reason in the same paragraph:
+  name the manually chosen weights, missing calibration data, unobserved event,
+  or evidence source that the program does not inspect.
 - Keep one main idea per sentence and use active constructions that place the
   learner or program before the action.
 - After changing prominent copy, inspect the rendered page at desktop and

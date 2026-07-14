@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "investigation_id": "I-02",
+  "generated_at": "2026-03-15T06:50:00+03:00",
+  "source_files": [
+    "anonymous.txt",
+    "report_alarm_stand.txt",
+    "report_basement_route.txt",
+    "report_guard_note.txt",
+    "report_north_table.txt",
+    "report_tour_draft.txt",
+    "artifacts/01-authorship.json"
+  ],
+  "inputs": {
+    "authorship_lead": {
+      "finding_id": "F-I01-AUTHORSHIP",
+      "candidate": "Алина Морозова",
+      "score": 0.688,
+      "limitation": "Выбранные признаки могут совпасть у разных людей, поэтому рейтинг задаёт направление проверки, но не устанавливает автора."
+    }
+  },
+  "findings": [
+    {
+      "finding_id": "F-I02-TEXT-MATCHES",
+      "kind": "text-overlap-ranking",
+      "title": "Совпадения n-грамм в материалах архива",
+      "summary": "Самая сильная пара: Опись Северного стола / Черновик экскурсии.",
+      "matches": [
+        {
+          "rank": 1,
+          "pair": [
+            "Опись Северного стола",
+            "Черновик экскурсии"
+          ],
+          "score": 0.273,
+          "shared_count": 49,
+          "examples": [
+            "а сначала отмечает расхождение",
+            "а фотография без записи",
+            "архива простое запись без"
+          ]
+        },
+        {
+          "rank": 2,
+          "pair": [
+            "Отчёт учебного стенда",
+            "Отчёт охраны"
+          ],
+          "score": 0.175,
+          "shared_count": 25,
+          "examples": [
+            "время на контроллере выставлено",
+            "вслух а третий отмечает",
+            "выставлено файл журнала создан"
+          ]
+        }
+      ]
+    }
+  ]
+}

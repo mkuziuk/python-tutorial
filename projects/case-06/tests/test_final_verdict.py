@@ -31,13 +31,17 @@ from final_verdict import (  # noqa: E402
 
 class FinalVerdictTests(unittest.TestCase):
     def setUp(self):
-        self.bundle = load_bundle(PROJECT_DIR / "data" / "evidence_bundle.json")
+        self.bundle = load_bundle(
+            PROJECT_DIR / "data" / "artifacts" / "05-case-board.json",
+            PROJECT_DIR / "data" / "morning_updates.json",
+        )
 
     def test_bundle_loads_modern_typed_models(self):
         self.assertEqual(self.bundle.case_id, "case-06-final-verdict")
-        self.assertEqual(len(self.bundle.evidence), 19)
-        self.assertIs(self.bundle.evidence[0].kind, EvidenceKind.FILE_AUDIT)
-        self.assertIs(self.bundle.evidence[0].effects[0].stance, Stance.SUPPORT)
+        self.assertEqual(len(self.bundle.evidence), 18)
+        self.assertIs(self.bundle.evidence[0].kind, EvidenceKind.DOCUMENT)
+        tour_draft = next(item for item in self.bundle.evidence if item.evidence_id == "EV-TOUR-DRAFT")
+        self.assertIs(tour_draft.effects[0].stance, Stance.SUPPORT)
         with self.assertRaises(FrozenInstanceError):
             self.bundle.evidence[0].title = "changed"
 
@@ -75,6 +79,8 @@ class FinalVerdictTests(unittest.TestCase):
         self.assertIn("EV-BACKUP-2307", ranked[0].support)
         self.assertIn("EV-SIGNED-AUDIT", ranked[0].support)
         self.assertIn("EV-NIKITA-STATEMENT", ranked[0].conflicts)
+        self.assertEqual(ranked[1].score, 2)
+        self.assertEqual(ranked[2].score, -16)
         self.assertEqual(ranked[-1].score, -20)
         self.assertIn("EV-TIMELINE-WORKING", ranked[-1].conflicts)
         self.assertIn("EV-SYNC-HEALTH", ranked[-1].conflicts)
@@ -123,6 +129,7 @@ class FinalVerdictTests(unittest.TestCase):
             restored = json.loads(output_path.read_text(encoding="utf-8"))
 
         self.assertEqual(restored["case_id"], "case-06-final-verdict")
+        self.assertEqual(restored["investigation_id"], "I-06")
         self.assertEqual(restored["ranked_hypotheses"][0]["score"], 73)
         self.assertEqual(restored["operational_decision"]["opening"], "postpone")
 

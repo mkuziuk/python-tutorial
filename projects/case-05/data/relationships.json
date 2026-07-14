@@ -1,0 +1,45 @@
+{
+  "case_id": "case-06-final-verdict",
+  "title": "Ночь перед открытием",
+  "summary": "Доска объединяет проверенные результаты расследований I-01–I-04 и сохраняет происхождение каждой улики.",
+  "incident_date": "2026-03-14",
+  "scheduled_opening": "2026-03-15T10:00:00+03:00",
+  "analysis_time": "2026-03-15T08:30:00+03:00",
+  "people": [
+    {"person_id": "P-ALINA", "name": "Алина Морозова", "role": "редактор архива"},
+    {"person_id": "P-ILYA", "name": "Илья Соколов", "role": "куратор витрины"},
+    {"person_id": "P-NIKITA", "name": "Никита Королев", "role": "технический сотрудник"},
+    {"person_id": "P-VERA", "name": "Вера Климова", "role": "руководитель проверки"}
+  ],
+  "hypotheses": [
+    {
+      "hypothesis_id": "H-NIKITA",
+      "claim": "Никита Королев скопировал фрагменты закрытой описи в черновик экскурсии, затем исключил из рабочей хронологии строку резервной копии 23:07, чтобы скрыть несогласованную позднюю передачу копии архивариусу."
+    },
+    {
+      "hypothesis_id": "H-MISTAKE",
+      "claim": "Обе правки сделал сотрудник вручную, но случайно и без намерения скрыть позднюю передачу."
+    },
+    {
+      "hypothesis_id": "H-SYNC",
+      "claim": "Строка хронологии и фрагменты описи изменились из-за автоматической синхронизации."
+    },
+    {
+      "hypothesis_id": "H-PHISHING",
+      "claim": "Успешный фишинговый взлом стал причиной обеих правок файлов."
+    }
+  ],
+  "links": [
+    {"evidence_id": "EV-TOUR-DRAFT", "hypothesis_id": "H-NIKITA", "stance": "support", "weight": 2},
+    {"evidence_id": "EV-TOUR-DRAFT", "hypothesis_id": "H-MISTAKE", "stance": "support", "weight": 1},
+    {"evidence_id": "EV-PHISH-LOCKOUT", "hypothesis_id": "H-PHISHING", "stance": "support", "weight": 1},
+    {"evidence_id": "EV-PHISH-CAMERA", "hypothesis_id": "H-PHISHING", "stance": "support", "weight": 1},
+    {"evidence_id": "EV-BACKUP-2307", "hypothesis_id": "H-NIKITA", "stance": "support", "weight": 2},
+    {"evidence_id": "EV-BACKUP-2307", "hypothesis_id": "H-MISTAKE", "stance": "support", "weight": 1},
+    {"evidence_id": "EV-KEY", "hypothesis_id": "H-NIKITA", "stance": "support", "weight": 1},
+    {"evidence_id": "EV-SENSOR", "hypothesis_id": "H-NIKITA", "stance": "support", "weight": 1},
+    {"evidence_id": "EV-NIKITA-STATEMENT", "hypothesis_id": "H-NIKITA", "stance": "conflict", "weight": 1},
+    {"evidence_id": "EV-NIKITA-STATEMENT", "hypothesis_id": "H-MISTAKE", "stance": "support", "weight": 1},
+    {"evidence_id": "EV-FREEZE", "hypothesis_id": "H-NIKITA", "stance": "support", "weight": 1}
+  ]
+}

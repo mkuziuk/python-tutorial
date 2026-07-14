@@ -12,7 +12,7 @@ notebook: projects/part-2/case-02/solution/case-02-solution.ipynb
 
 <span class="bureau-page-scope" aria-hidden="true"></span>
 
-Сначала завершите [дело II-02](../passengers-after-the-fact/). Полный конвейер и сравнение вариантов доступны в тетради:
+Сначала завершите [расследование II-02](../passengers-after-the-fact/). Полный конвейер и сравнение вариантов доступны в тетради:
 
 - [посмотреть тетрадь с решением на GitHub](https://github.com/mkuziuk/python-tutorial/blob/main/projects/part-2/case-02/solution/case-02-solution.ipynb);
 - [запустить тетрадь с решением в Colab](https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-02/solution/case-02-solution.ipynb).
@@ -33,4 +33,4 @@ notebook: projects/part-2/case-02/solution/case-02-solution.ipynb
 
 Утечку нельзя надёжно найти только по типу столбца или корреляции. Нужен вопрос о моменте предсказания. `ColumnTransformer` решает другую, техническую задачу: одинаково и без подглядывания обучает разные преобразования числовых и категориальных признаков.
 
-Следующее дело: [Цена одной ошибки](../cost-of-one-error/).
+Следующее расследование: [Цена одной ошибки](../cost-of-one-error/).

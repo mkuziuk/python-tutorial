@@ -1,32 +1,24 @@
 ---
-title: "Разбор полного решения"
-description: "Полный код первого дела и короткий разбор после самостоятельной сборки инструмента."
-concepts:
-  - str
-  - list
-  - dict
-  - set
-  - regex
-  - Counter
-  - Rich
-difficulty: "начальный+"
-projectId: "case-01"
-time: "15-20 минут"
+title: "Разбор решения: Кто оставил предупреждение?"
+description: "Рейтинг авторов и 01-authorship.json."
 ---
 
-Обращайтесь к этой странице после самостоятельной сборки `anonymous_letter.py`. Если открыть её раньше, значительная часть учебной задачи потеряет смысл.
+Эта страница показывает полную версию программы после выполнения упражнения. Сначала завершите самостоятельную версию и запустите тесты.
 
-## Полный код
+Решение сохраняет результат в JSON для следующего расследования. Поэтому важно проверять не только таблицу в терминале, но и структуру созданного файла.
 
 ```python
 from collections import Counter
+import json
 from pathlib import Path
 import re
 
 from rich.console import Console
 from rich.table import Table
 
-DATA_DIR = Path(__file__).with_name("data")
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = PROJECT_DIR / "data"
+ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "01-authorship.json"
 # Шаблон выделяет только цепочки русских букв, включая «ё».
 WORD_RE = re.compile(r"[а-яё]+", re.IGNORECASE)
 PUNCTUATION = ".,;:!?"
@@ -46,13 +38,11 @@ def normalize_words(text):
 
 def punctuation_profile(text):
     # Counter получает только нужные знаки и сам подсчитывает их частоты.
-    # Считаем абсолютные количества здесь; к долям перейдём только при сравнении профилей.
     return Counter(char for char in text if char in PUNCTUATION)
 
 
 def build_profile(name, text):
     words = normalize_words(text)
-    # Останавливаемся до деления: у пустого текста нельзя определить среднюю длину слова.
     if not words:
         raise ValueError(f"Text for {name!r} does not contain Russian words")
 
@@ -70,7 +60,6 @@ def build_profile(name, text):
 
 
 def jaccard(left, right):
-    # Если признака нет в обоих текстах, считаем отсутствие полным совпадением, а не ошибкой.
     if not left and not right:
         return 1.0
     # «&» даёт общие слова, а «|» — все слова из обоих множеств.
@@ -79,12 +68,10 @@ def jaccard(left, right):
 
 def punctuation_similarity(left, right):
     # Единица защищает от деления на ноль, а / 2 приводит результат к диапазону 0–1.
-    # Нормируем на объём каждого текста, чтобы длинный текст не получал преимущество автоматически.
     left_total = sum(left.values()) or 1
     right_total = sum(right.values()) or 1
     distance = 0.0
 
-    # Перебираем фиксированный алфавит знаков, поэтому отсутствующий знак Counter вернёт как ноль.
     for mark in PUNCTUATION:
         distance += abs((left[mark] / left_total) - (right[mark] / right_total))
 
@@ -92,14 +79,12 @@ def punctuation_similarity(left, right):
 
 
 def compare_profiles(anonymous, candidate):
-    # В формулу входит состав частых слов; количества использовались только при отборе двенадцати.
     # Каждый элемент common_words — пара (слово, количество);
     # _ показывает, что количество здесь не используется.
     anonymous_words = {word for word, _ in anonymous["common_words"]}
     candidate_words = {word for word, _ in candidate["common_words"]}
     word_overlap = jaccard(anonymous_words, candidate_words)
 
-    # average_delta измеряется в буквах на слово и сравнивает одинаково определённые признаки.
     average_delta = abs(
         float(anonymous["average_word_length"]) - float(candidate["average_word_length"])
     )
@@ -116,73 +101,102 @@ def compare_profiles(anonymous, candidate):
 
 
 def display_name(path):
-    # Словарь даёт читабельные имена, а запасной вариант позволяет добавить новый файл без правки кода.
     return AUTHOR_NAMES.get(path.stem, path.stem.replace("_", " ").title())
 
 
 def read_text(path):
-    # Явная UTF-8 кодировка делает чтение одинаковым на Windows, macOS и Linux.
     return path.read_text(encoding="utf-8")
 
 
 def rank_candidates(data_dir=DATA_DIR):
-    # Профиль анонимного текста строим один раз и используем при сравнении со всеми авторами.
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
     results = []
 
     # glob("author_*.txt") выбирает образцы авторов, а sorted() фиксирует их порядок.
     for path in sorted(data_dir.glob("author_*.txt")):
         profile = build_profile(display_name(path), read_text(path))
-        # После сравнения полные профили больше не нужны, поэтому сохраняем только имя и итоговый балл.
         results.append((str(profile["name"]), compare_profiles(anonymous, profile)))
 
     # sorted() стабилен: при равных баллах сохранится зафиксированный выше порядок файлов.
     return sorted(results, key=lambda item: item[1], reverse=True)
 
 
+def build_artifact(results, data_dir=DATA_DIR):
+    candidates = [
+        {"name": name, "score": score, "rank": position}
+        for position, (name, score) in enumerate(results, start=1)
+    ]
+    return {
+        "schema_version": 1,
+        "investigation_id": "I-01",
+        "generated_at": "2026-03-15T06:45:00+03:00",
+        "source_files": [
+            path.relative_to(data_dir).as_posix()
+            for path in sorted(data_dir.glob("*.txt"))
+        ],
+        "findings": [
+            {
+                "finding_id": "F-I01-AUTHORSHIP",
+                "kind": "authorship-ranking",
+                "title": "Рейтинг сходства с анонимным предупреждением",
+                "summary": (
+                    f"Первое место занимает {candidates[0]['name']}; "
+                    "оценка сравнивает только частые слова, длину слов и пунктуацию."
+                ),
+                "candidates": candidates,
+                "limitation": (
+                    "Выбранные признаки могут совпасть у разных людей, поэтому "
+                    "рейтинг задаёт направление проверки, но не устанавливает автора."
+                ),
+            }
+        ],
+    }
+
+
+def save_artifact(artifact, path=ARTIFACT_PATH):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def render_results(results):
-    # Отрисовка отделена от расчёта: тесты проверяют результаты без захвата терминала.
     table = Table(title="Вероятные авторы")
     table.add_column("Место", justify="right", style="cyan")
     table.add_column("Кандидат")
     table.add_column("Сходство", justify="right")
 
-    # Нумерация начинается с единицы, потому что это место в пользовательском рейтинге.
     for position, (name, score) in enumerate(results, start=1):
         table.add_row(str(position), name, f"{score:.2f}")
 
     console.print(table)
-    # results[0] требует непустой рейтинг кандидатов.
     winner, score = results[0]
     console.print(
         f"\n[bold]Главная версия:[/bold] {winner} "
-        f"([cyan]{score:.2f}[/cyan]). Это повод проверить текст вручную, а не окончательный приговор."
+        f"([cyan]{score:.2f}[/cyan]). Это лидер по трём выбранным признакам. "
+        "Разные авторы могут использовать похожие слова и пунктуацию, "
+        "поэтому результат нужно сверить с другими материалами."
     )
 
 
 def main():
-    # main связывает расчёт и вывод, не пряча дополнительную обработку между ними.
-    render_results(rank_candidates())
+    results = rank_candidates()
+    render_results(results)
+    save_artifact(build_artifact(results))
+    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
 
 
 if __name__ == "__main__":
     main()
 ```
 
-## Как читать решение
+## Проверка
 
-Данные проходят несколько этапов: файлы превращаются в строки, `normalize_words()` составляет список слов, `build_profile()` собирает словарь признаков, `compare_profiles()` вычисляет оценку, а `render_results()` только печатает таблицу.
+Из папки проекта выполните:
 
-Главное решение — отделить анализ от вывода. Если результат неверен, сначала проверяйте профиль и формулу, а не таблицу Rich.
+```bash
+python -m unittest discover -s tests
+```
 
-Частые ошибки: забыть `ё` в regex, сравнивать все слова вместо частых слов, делить пунктуацию на ноль или считать итоговую оценку без округления.
-
-Справочник: [str](../../field-guide/str/), [regex](../../field-guide/regex/), [list](../../field-guide/list/), [dict](../../field-guide/dict/), [set](../../field-guide/set/), [Counter](../../field-guide/counter/), [functions](../../field-guide/functions/), [Rich](../../field-guide/rich/).
-
-## Что важно заметить
-
-`Rich` подключён только в двух местах: `Console` печатает, а `Table` строит таблицу. Анализ текста остаётся на стандартной библиотеке Python.
-
-`WORD_RE.findall(text.lower())` возвращает список слов, а не итератор совпадений. Для первого проекта это проще читать, чем `finditer()`.
-
-`compare_profiles()` вычисляет прозрачную эвристику: пересечение популярных слов, близость средней длины слова и похожесть пунктуации. Итоговая оценка измеряет сходство этих признаков; для оценки вероятности авторства потребовалась бы отдельная статистическая модель.
+Все переходы I-01 → I-06 дополнительно проверяет команда сопровождающего `pnpm test:part1-artifacts`.

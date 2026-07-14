@@ -1,27 +1,17 @@
 ---
-title: "Дело 05. Разбор полного решения"
-description: "Полный код доски расследования с dataclass-моделями, методами, композицией и JSON-сохранением."
-concepts:
-  - classes
-  - dataclasses
-  - methods
-  - composition
-  - JSON
-  - pathlib
-  - Rich
-difficulty: "средний"
-projectId: "case-05"
-time: "20-30 минут"
+title: "Разбор решения: Доска расследования"
+description: "Объекты, связи и 05-case-board.json."
 ---
 
-Обращайтесь к этой странице после самостоятельной сборки `investigation_system.py`. Если открыть её раньше, можно пропустить важную часть задачи: самостоятельно решить, где должны находиться данные, а где — поведение.
+Эта страница показывает полную версию программы после выполнения упражнения. Сначала завершите самостоятельную версию и запустите тесты.
 
-## Полный код
+Решение сохраняет результат в JSON для следующего расследования. Поэтому важно проверять не только таблицу в терминале, но и структуру созданного файла.
 
 ```python
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import hashlib
 import json
 from pathlib import Path
 
@@ -30,108 +20,90 @@ from rich.table import Table
 
 
 def default_project_dir():
-    # Наличие seed-файла отличает корень проекта от каталога solution/.
     script_dir = Path(__file__).resolve().parent
-    if (script_dir / "data" / "case_seed.json").exists():
-        return script_dir
-    return script_dir.parent
+    return script_dir if (script_dir / "data").exists() else script_dir.parent
 
 
 PROJECT_DIR = default_project_dir()
 DATA_DIR = PROJECT_DIR / "data"
-SEED_PATH = DATA_DIR / "case_seed.json"
-OUTPUT_PATH = PROJECT_DIR / "case_report.json"
+ARTIFACTS_DIR = DATA_DIR / "artifacts"
+RELATIONSHIPS_PATH = DATA_DIR / "relationships.json"
+OUTPUT_PATH = PROJECT_DIR / "artifacts" / "05-case-board.json"
 console = Console()
 
 
-# slots запрещает случайно создать поле с опечаткой и фиксирует заявленную структуру объекта.
+def file_sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 @dataclass(slots=True)
 class Evidence:
     evidence_id: str
     kind: str
     title: str
+    summary: str
     source: str
-    body: str
-    created_at: str
-    # default_factory=list создаёт отдельный список tags для каждого Evidence.
+    occurred_at: str
+    origin_finding_id: str
     tags: list[str] = field(default_factory=list)
     reliability: int = 3
+    effects: list[dict] = field(default_factory=list)
 
     def __post_init__(self):
-        # dataclass вызывает этот метод после __init__: здесь очищаем входные данные.
         self.evidence_id = self.evidence_id.strip()
-        self.kind = self.kind.strip()
         self.title = self.title.strip()
-        self.source = self.source.strip()
-        self.body = self.body.strip()
-        self.created_at = self.created_at.strip()
-        # Множество убирает дубли, а casefold() выравнивает регистр тегов.
         self.tags = sorted({tag.strip().casefold() for tag in self.tags if tag.strip()})
-
-        # __post_init__() отклоняет улики с пустыми evidence_id или created_at.
         if not self.evidence_id:
             raise ValueError("Evidence ID must not be empty")
-        if not self.created_at:
-            raise ValueError("Evidence created_at must not be empty")
+        if not self.origin_finding_id:
+            raise ValueError("Evidence must keep its origin finding ID")
         if not 1 <= self.reliability <= 5:
             raise ValueError("Evidence reliability must be between 1 and 5")
 
     @classmethod
     def from_dict(cls, data):
-        # cls(...) создаёт Evidence и затем автоматически запускает __post_init__().
         return cls(
             evidence_id=str(data["evidence_id"]),
             kind=str(data["kind"]),
             title=str(data["title"]),
+            summary=str(data["summary"]),
             source=str(data["source"]),
-            body=str(data["body"]),
-            created_at=str(data["created_at"]),
-            # Отсутствующие tags превращаются в новый пустой список, а не в общий изменяемый объект.
+            occurred_at=str(data["occurred_at"]),
+            origin_finding_id=str(data["origin_finding_id"]),
             tags=[str(tag) for tag in data.get("tags", [])],
             reliability=int(data.get("reliability", 3)),
+            effects=[dict(effect) for effect in data.get("effects", [])],
         )
 
     def to_dict(self):
-        # Имена ключей повторяют входную схему, поэтому объект можно сохранить и затем загрузить снова.
         return {
             "evidence_id": self.evidence_id,
+            "occurred_at": self.occurred_at,
             "kind": self.kind,
             "title": self.title,
+            "summary": self.summary,
             "source": self.source,
-            "body": self.body,
-            "created_at": self.created_at,
-            "tags": self.tags,
             "reliability": self.reliability,
+            "effects": self.effects,
+            "origin_finding_id": self.origin_finding_id,
+            "tags": self.tags,
         }
 
     def matches(self, query):
-        normalized_query = query.casefold().strip()
-        # Пустой запрос означает «без фильтра», поэтому подходит любая улика.
-        if not normalized_query:
+        normalized = query.casefold().strip()
+        if not normalized:
             return True
-
-        haystack = " ".join(
-            [
-                self.evidence_id,
-                self.kind,
-                self.title,
-                self.source,
-                self.body,
-                self.created_at,
-                # *self.tags вставляет каждый тег отдельным элементом в общий текст для поиска.
-                *self.tags,
-            ]
-        ).casefold()
-        # matches() ищет query как подстроку в полях улики.
-        return normalized_query in haystack
-
-    def short_body(self, limit=90):
-        # Нормализуем пробелы до обрезки, чтобы limit применялся к отображаемой строке.
-        compact = " ".join(self.body.split())
-        # limit измеряется в символах уже после нормализации пробелов.
-        if len(compact) <= limit:
-            return compact
-        return f"{compact[: limit - 3].rstrip()}..."
+        values = [
+            self.evidence_id,
+            self.kind,
+            self.title,
+            self.summary,
+            self.source,
+            self.occurred_at,
+            self.origin_finding_id,
+            *self.tags,
+        ]
+        return normalized in " ".join(values).casefold()
 
 
 @dataclass(slots=True)
@@ -139,53 +111,61 @@ class Person:
     person_id: str
     name: str
     role: str
-    contact: str
-    # У каждого участника свой список заметок; изменения одного Person не затронут другого.
-    notes: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data):
-        return cls(
-            person_id=str(data["person_id"]),
-            name=str(data["name"]),
-            role=str(data["role"]),
-            contact=str(data["contact"]),
-            notes=[str(note) for note in data.get("notes", [])],
-        )
+        return cls(str(data["person_id"]), str(data["name"]), str(data["role"]))
 
     def to_dict(self):
-        return {
-            "person_id": self.person_id,
-            "name": self.name,
-            "role": self.role,
-            "contact": self.contact,
-            "notes": self.notes,
-        }
-
-    def label(self):
-        # label() возвращает текст для интерфейса.
-        return f"{self.name} - {self.role}"
+        return {"person_id": self.person_id, "name": self.name, "role": self.role}
 
 
 @dataclass(slots=True)
-class CaseNote:
-    author: str
-    text: str
-    created_at: str
+class Hypothesis:
+    hypothesis_id: str
+    claim: str
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(str(data["hypothesis_id"]), str(data["claim"]))
+
+    def to_dict(self):
+        return {"hypothesis_id": self.hypothesis_id, "claim": self.claim}
+
+
+@dataclass(slots=True)
+class EvidenceLink:
+    evidence_id: str
+    hypothesis_id: str
+    stance: str
+    weight: int
+
+    def __post_init__(self):
+        if self.stance not in {"support", "conflict"}:
+            raise ValueError(f"Unknown stance: {self.stance}")
+        if not 1 <= self.weight <= 3:
+            raise ValueError("Link weight must be between 1 and 3")
 
     @classmethod
     def from_dict(cls, data):
         return cls(
-            author=str(data["author"]),
-            text=str(data["text"]),
-            created_at=str(data["created_at"]),
+            str(data["evidence_id"]),
+            str(data["hypothesis_id"]),
+            str(data["stance"]),
+            int(data["weight"]),
         )
+
+    def to_effect(self):
+        return {
+            "hypothesis_id": self.hypothesis_id,
+            "stance": self.stance,
+            "weight": self.weight,
+        }
 
     def to_dict(self):
         return {
-            "author": self.author,
-            "text": self.text,
-            "created_at": self.created_at,
+            "evidence_id": self.evidence_id,
+            **self.to_effect(),
         }
 
 
@@ -194,183 +174,233 @@ class Investigation:
     case_id: str
     title: str
     summary: str
+    incident_date: str
+    scheduled_opening: str
+    analysis_time: str
     people: list[Person] = field(default_factory=list)
+    hypotheses: list[Hypothesis] = field(default_factory=list)
     evidence: list[Evidence] = field(default_factory=list)
-    # Заметки дела хранятся объектами CaseNote, чтобы автор и время не потерялись рядом с текстом.
-    notes: list[CaseNote] = field(default_factory=list)
+    links: list[EvidenceLink] = field(default_factory=list)
+    source_artifacts: list[dict] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data):
-        # Вложенные словари превращаем в объекты, из которых состоит дело.
         return cls(
             case_id=str(data["case_id"]),
             title=str(data["title"]),
             summary=str(data["summary"]),
+            incident_date=str(data["incident_date"]),
+            scheduled_opening=str(data["scheduled_opening"]),
+            analysis_time=str(data["analysis_time"]),
             people=[Person.from_dict(item) for item in data.get("people", [])],
+            hypotheses=[Hypothesis.from_dict(item) for item in data.get("hypotheses", [])],
             evidence=[Evidence.from_dict(item) for item in data.get("evidence", [])],
-            notes=[CaseNote.from_dict(item) for item in data.get("notes", [])],
+            links=[EvidenceLink.from_dict(item) for item in data.get("links", [])],
+            source_artifacts=[dict(item) for item in data.get("source_artifacts", [])],
         )
 
     def to_dict(self):
-        # Для JSON разворачиваем композицию обратно в словари и списки.
         return {
+            "schema_version": 1,
+            "investigation_id": "I-05",
+            "generated_at": self.analysis_time,
             "case_id": self.case_id,
             "title": self.title,
             "summary": self.summary,
+            "incident_date": self.incident_date,
+            "scheduled_opening": self.scheduled_opening,
+            "analysis_time": self.analysis_time,
+            "source_artifacts": self.source_artifacts,
             "people": [person.to_dict() for person in self.people],
+            "hypotheses": [item.to_dict() for item in self.hypotheses],
             "evidence": [item.to_dict() for item in self.evidence],
-            "notes": [note.to_dict() for note in self.notes],
+            "links": [item.to_dict() for item in self.links],
         }
-
-    def add_evidence(self, item):
-        # ID сравниваются без учёта регистра: EV-01 и ev-01 — одна логическая улика.
-        if self.evidence_by_id(item.evidence_id) is not None:
-            raise ValueError(f"Evidence {item.evidence_id!r} already exists")
-        # Список изменяем только после проверки, чтобы ошибка не оставила дело в промежуточном состоянии.
-        self.evidence.append(item)
-
-    def add_note(self, author, text, created_at):
-        # Создаём CaseNote внутри метода, сохраняя единый формат добавления заметок.
-        self.notes.append(CaseNote(author=author, text=text, created_at=created_at))
 
     def evidence_by_id(self, evidence_id):
-        # Поиск ID нечувствителен к регистру, но возвращает исходный объект без копирования.
-        normalized_id = evidence_id.casefold()
-        for item in self.evidence:
-            if item.evidence_id.casefold() == normalized_id:
-                return item
-        return None
+        target = evidence_id.casefold()
+        return next(
+            (item for item in self.evidence if item.evidence_id.casefold() == target),
+            None,
+        )
+
+    def add_evidence(self, item):
+        if self.evidence_by_id(item.evidence_id) is not None:
+            raise ValueError(f"Evidence {item.evidence_id!r} already exists")
+        self.evidence.append(item)
 
     def find_evidence(self, query):
-        # Investigation перебирает улики, а Evidence.matches() проверяет совпадение с запросом.
         return [item for item in self.evidence if item.matches(query)]
 
-    def priority_evidence(self, limit=3):
-        # При равной надёжности ID служит дополнительным ключом и сохраняет стабильный порядок.
-        # Минус превращает обычную сортировку по возрастанию в порядок от надёжных улик к слабым.
-        return sorted(self.evidence, key=lambda item: (-item.reliability, item.evidence_id))[:limit]
-
-    def tag_index(self):
-        # Одна улика попадёт в несколько списков, если у неё несколько тегов.
-        index = {}
-        for item in self.evidence:
-            for tag in item.tags:
-                index.setdefault(tag, []).append(item)
-        # Сортируем и теги, и улики, чтобы JSON и таблицы не зависели от порядка входных данных.
-        return {
-            tag: sorted(items, key=lambda item: item.evidence_id)
-            for tag, items in sorted(index.items())
+    def evidence_for_hypothesis(self, hypothesis_id):
+        ids = {
+            link.evidence_id
+            for link in self.links
+            if link.hypothesis_id == hypothesis_id
         }
+        return [item for item in self.evidence if item.evidence_id in ids]
+
+    def verified_evidence(self):
+        return [item for item in self.evidence if item.origin_finding_id]
 
 
-# CaseRepository читает и записывает JSON, а Investigation содержит правила поиска и изменения дела.
 class CaseRepository:
     def __init__(self, path):
         self.path = path
 
     def load(self):
-        # Репозиторий возвращает готовый объект, чтобы остальной код не зависел от структуры JSON.
-        raw_data = json.loads(self.path.read_text(encoding="utf-8"))
-        return Investigation.from_dict(raw_data)
+        return Investigation.from_dict(json.loads(self.path.read_text(encoding="utf-8")))
 
     def save(self, investigation):
-        # parents=True создаёт недостающие родительские папки,
-        # а exist_ok=True разрешает уже существующую папку.
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        # to_dict() задаёт точные ключи и значения выходного JSON.
         payload = json.dumps(investigation.to_dict(), ensure_ascii=False, indent=2)
-        self.path.write_text(f"{payload}\n", encoding="utf-8")
+        self.path.write_text(payload + "\n", encoding="utf-8")
 
 
-def render_overview(investigation):
-    console.print(f"[bold cyan]Дело: {investigation.title}[/bold cyan]")
-    console.print(investigation.summary)
-    console.print(f"Участников: {len(investigation.people)}")
-    console.print(f"Улик: {len(investigation.evidence)}")
-    console.print(f"Заметок: {len(investigation.notes)}")
+def load_artifacts(artifacts_dir=ARTIFACTS_DIR):
+    artifacts = {}
+    for path in sorted(artifacts_dir.glob("0[1-4]-*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        artifacts[data["investigation_id"]] = {"path": path, "data": data}
+    if set(artifacts) != {"I-01", "I-02", "I-03", "I-04"}:
+        raise ValueError("The board requires artifacts from I-01 through I-04")
 
-    people_table = Table(title="Участники")
-    people_table.add_column("ID", style="cyan")
-    people_table.add_column("Имя")
-    people_table.add_column("Роль")
-
-    for person in investigation.people:
-        people_table.add_row(person.person_id, person.name, person.role)
-
-    evidence_table = Table(title="Приоритетные улики")
-    evidence_table.add_column("ID", style="cyan")
-    evidence_table.add_column("Тип")
-    evidence_table.add_column("Название")
-    evidence_table.add_column("Теги")
-    evidence_table.add_column("Надёжность", justify="right")
-
-    # Здесь limit равен числу улик: сортируем все записи, а не только обычную тройку приоритетов.
-    for item in investigation.priority_evidence(limit=len(investigation.evidence)):
-        evidence_table.add_row(
-            item.evidence_id,
-            item.kind,
-            item.title,
-            ", ".join(item.tags),
-            f"{item.reliability}/5",
-        )
-
-    console.print(people_table)
-    console.print(evidence_table)
+    verified = {
+        item["investigation_id"]: item
+        for item in artifacts["I-04"]["data"]["verified_artifacts"]
+    }
+    for investigation_id in ("I-01", "I-02", "I-03"):
+        expected = verified[investigation_id]["sha256"]
+        actual = file_sha256(artifacts[investigation_id]["path"])
+        if actual != expected:
+            raise ValueError(f"Hash mismatch for {investigation_id}")
+    return artifacts
 
 
-def render_search_results(query, results):
-    # render_search_results() форматирует уже отфильтрованный список results.
-    table = Table(title=f"Поиск: {query}")
-    table.add_column("ID", style="cyan")
-    table.add_column("Название")
-    table.add_column("Фрагмент")
-
-    for item in results:
-        table.add_row(item.evidence_id, item.title, item.short_body())
-
-    console.print(table)
+def finding(artifacts, investigation_id, finding_id):
+    for item in artifacts[investigation_id]["data"].get("findings", []):
+        if item["finding_id"] == finding_id:
+            return item
+    raise ValueError(f"Finding {finding_id} not found in {investigation_id}")
 
 
-def build_report(seed_path=SEED_PATH, output_path=OUTPUT_PATH):
-    # Читаем seed, а пишем в отдельный файл, чтобы исходная версия дела оставалась неизменной.
-    investigation = CaseRepository(seed_path).load()
-    access_matches = investigation.find_evidence("доступ")
-    investigation.add_note(
-        author="Доска расследования",
-        text=f"Автоматический поиск по слову 'доступ' нашел улик: {len(access_matches)}.",
-        # Фиксированное время делает учебный JSON воспроизводимым при каждом запуске.
-        created_at="2026-03-15T08:30:00+03:00",
+def make_evidence(artifacts):
+    authorship = finding(artifacts, "I-01", "F-I01-AUTHORSHIP")
+    matches = finding(artifacts, "I-02", "F-I02-TEXT-MATCHES")
+    lockout = finding(artifacts, "I-03", "F-I03-LOCKOUT")
+    camera = finding(artifacts, "I-03", "F-I03-CAMERA")
+    duplicates = finding(artifacts, "I-04", "F-I04-DUPLICATES")
+    timeline = finding(artifacts, "I-04", "F-I04-TIMELINE")
+    access = finding(artifacts, "I-04", "F-I04-ACCESS-LOG")
+
+    evidence = [
+        Evidence("EV-WARNING", "document", "Анонимное предупреждение", authorship["summary"], "01-authorship.json", "2026-03-14T18:20:00+03:00", authorship["finding_id"], ["текст", "авторство"], 5),
+        Evidence("EV-TEXT-ANALYSIS", "analysis", authorship["title"], authorship["summary"], "01-authorship.json", "2026-03-15T06:45:00+03:00", authorship["finding_id"], ["текст", "авторство"], 3),
+        Evidence("EV-TOUR-DRAFT", "analysis", matches["title"], matches["summary"], "02-text-matches.json", "2026-03-14T17:48:00+03:00", matches["finding_id"], ["текст", "копирование"], 5),
+        Evidence("EV-PHISH-LOCKOUT", "email", lockout["title"], lockout["summary"], lockout["source_file"], lockout["occurred_at"], lockout["finding_id"], ["почта", "доступ"], 5),
+        Evidence("EV-PHISH-CAMERA", "email", camera["title"], camera["summary"], camera["source_file"], camera["occurred_at"], camera["finding_id"], ["почта", "камера"], 4),
+        Evidence("EV-PHOTO-DUPLICATE", "backup", duplicates["title"], duplicates["summary"], "04-evidence-index.json", "2026-03-14T22:48:00+03:00", duplicates["finding_id"], ["файлы", "хеш"], 5),
+        Evidence("EV-WORKING-2253", "document", "Рабочая хронология заканчивается в 22:53", timeline["summary"], "timeline.txt", "2026-03-14T22:53:00+03:00", timeline["finding_id"], ["хронология"], 5),
+        Evidence("EV-BACKUP-2307", "backup", "Резервная хронология содержит строку 23:07", timeline["summary"], "timeline_backup.txt", "2026-03-14T23:07:00+03:00", timeline["finding_id"], ["хронология", "резервная копия"], 5),
+    ]
+
+    event_specs = {
+        "22:35": ("EV-KEY", "access_log", "Никита Королев получил ключ", ["доступ", "королев"], 5),
+        "22:41": ("EV-SENSOR", "access_log", "Датчик отметил открытие комнаты", ["доступ", "датчик"], 5),
+        "22:43": ("EV-NIKITA-STATEMENT", "interview", "Никита сообщил, что работал только с копией", ["королев", "объяснение"], 2),
+        "22:57": ("EV-FREEZE", "policy", "Дежурный запретил менять исходные файлы", ["целостность", "доступ"], 5),
+    }
+    for event in access["events"]:
+        key = event["occurred_at"][11:16]
+        evidence_id, kind, title, tags, reliability = event_specs[key]
+        evidence.append(Evidence(evidence_id, kind, title, event["text"], access["source_file"], event["occurred_at"], access["finding_id"], tags, reliability))
+    return evidence
+
+
+def build_board(artifacts_dir=ARTIFACTS_DIR, relationships_path=RELATIONSHIPS_PATH):
+    artifacts = load_artifacts(artifacts_dir)
+    relationships = json.loads(relationships_path.read_text(encoding="utf-8"))
+    links = [EvidenceLink.from_dict(item) for item in relationships["links"]]
+    evidence = make_evidence(artifacts)
+    evidence_by_id = {item.evidence_id: item for item in evidence}
+    hypothesis_ids = {item["hypothesis_id"] for item in relationships["hypotheses"]}
+    for link in links:
+        if link.evidence_id not in evidence_by_id:
+            raise ValueError(f"Unknown evidence in link: {link.evidence_id}")
+        if link.hypothesis_id not in hypothesis_ids:
+            raise ValueError(f"Unknown hypothesis in link: {link.hypothesis_id}")
+        evidence_by_id[link.evidence_id].effects.append(link.to_effect())
+
+    source_artifacts = [
+        {
+            "investigation_id": investigation_id,
+            "path": item["path"].name,
+            "sha256": file_sha256(item["path"]),
+        }
+        for investigation_id, item in sorted(artifacts.items())
+    ]
+    return Investigation(
+        case_id=relationships["case_id"],
+        title=relationships["title"],
+        summary=relationships["summary"],
+        incident_date=relationships["incident_date"],
+        scheduled_opening=relationships["scheduled_opening"],
+        analysis_time=relationships["analysis_time"],
+        people=[Person.from_dict(item) for item in relationships["people"]],
+        hypotheses=[Hypothesis.from_dict(item) for item in relationships["hypotheses"]],
+        evidence=evidence,
+        links=links,
+        source_artifacts=source_artifacts,
     )
+
+
+def build_report(artifacts_dir=ARTIFACTS_DIR, relationships_path=RELATIONSHIPS_PATH, output_path=OUTPUT_PATH):
+    investigation = build_board(artifacts_dir, relationships_path)
     CaseRepository(output_path).save(investigation)
     return investigation
 
 
+def render_overview(investigation):
+    console.print(f"[bold cyan]Расследование: {investigation.title}[/bold cyan]")
+    console.print(f"Проверенных входных отчётов: {len(investigation.source_artifacts)}")
+    console.print(f"Улик на доске: {len(investigation.evidence)}")
+    console.print(f"Связей с гипотезами: {len(investigation.links)}")
+
+    table = Table(title="Материалы доски")
+    table.add_column("ID", style="cyan")
+    table.add_column("Источник")
+    table.add_column("Название")
+    for item in investigation.evidence:
+        table.add_row(item.evidence_id, item.origin_finding_id, item.title)
+    console.print(table)
+
+
+def render_search_results(query, results):
+    table = Table(title=f"Поиск: {query}")
+    table.add_column("ID", style="cyan")
+    table.add_column("Название")
+    for item in results:
+        table.add_row(item.evidence_id, item.title)
+    console.print(table)
+
+
 def main():
-    # Один и тот же объект используем для общего обзора и отдельного поискового отчёта.
     investigation = build_report()
     render_overview(investigation)
-    render_search_results("доступ", investigation.find_evidence("доступ"))
-    console.print(f"\n[green]JSON-снимок сохранён:[/green] {OUTPUT_PATH.name}")
+    render_search_results("хронология", investigation.find_evidence("хронология"))
+    console.print(f"[green]Доска сохранена:[/green] {OUTPUT_PATH.name}")
 
 
 if __name__ == "__main__":
     main()
 ```
 
-## Как читать решение
+## Проверка
 
-Данные проходят несколько этапов: `CaseRepository.load()` превращает JSON в `Investigation`, объект дела хранит списки `Person`, `Evidence` и `CaseNote`, методы выполняют поиск и добавляют заметку, а `CaseRepository.save()` записывает результат обратно в JSON.
+Из папки проекта выполните:
 
-Главное решение — разделить предметную модель и хранение. `Evidence` проверяет и ищет данные одной улики, `Investigation` работает с коллекциями объектов, а `CaseRepository` загружает и сохраняет JSON.
+```bash
+python -m unittest discover -s tests
+```
 
-Частые ошибки: оставить сырые словари внутри `Investigation`, забыть `field(default_factory=list)`, потерять `created_at` при обратной записи JSON, разрешить дубликаты `evidence_id` или смешать сохранение JSON с логикой поиска.
-
-Справочник: [classes](../../field-guide/classes/), [dataclasses](../../field-guide/dataclasses/), [JSON](../../field-guide/json/), [pathlib](../../field-guide/pathlib/), [dict](../../field-guide/dict/), [list](../../field-guide/list/), [functions](../../field-guide/functions/), [Rich](../../field-guide/rich/).
-
-## Что важно заметить
-
-`Evidence`, `Person` и `CaseNote` не знают, где лежит JSON-файл. Они отвечают только за свои данные и небольшие связанные с ними операции. `created_at` остаётся строкой, чтобы сохранить исходную точность без домыслов: для большинства улик известна временная метка, а для EV-006 — только дата и ограничение «до 18:00» в описании.
-
-`Investigation` собирает объекты вместе. Это центр предметной логики: поиск, добавление заметки, защита от дубликатов и индекс по тегам.
-
-`CaseRepository` занимается хранением. Благодаря этому сохранение можно заменить позже: например, писать не в файл, а в базу данных, не переписывая методы `Evidence.matches()` или `Investigation.find_evidence()`.
+Все переходы I-01 → I-06 дополнительно проверяет команда сопровождающего `pnpm test:part1-artifacts`.
