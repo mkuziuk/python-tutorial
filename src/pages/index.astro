@@ -102,11 +102,32 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
       </section>
 
       <section class="progression" id="progression" aria-labelledby="progression-title">
-        <p class="section-index">Маршрут курса</p>
-        <h2 id="progression-title">Сначала разберём готовый фрагмент кода.<br />Затем дополним программу и проверим на материалах расследования.</h2>
-        <p>
-          В Части I вы шаг за шагом создадите четыре программы на Python: сравните тексты, найдёте совпадения, разберёте email и соберёте улики в финальный отчёт. В Части II вы продолжите работу в Jupyter: исследуете данные, обучите модели и проверите их на новых примерах.
-        </p>
+        <div class="progression-heading">
+          <p class="section-index">Маршрут курса</p>
+          <h2 id="progression-title">От готового кода к своему решению.</h2>
+          <p class="progression-lede">
+            Разберите рабочий пример, дополните программу и проверьте результат на материалах расследования.
+          </p>
+        </div>
+
+        <ol class="progression-steps" aria-label="Две части курса">
+          <li>
+            <span class="progression-number">01</span>
+            <div>
+              <p class="progression-phase">Часть I · Python</p>
+              <h3>Четыре программы</h3>
+              <p>Сравните тексты, найдите совпадения, разберите email и соберите улики в финальный отчёт.</p>
+            </div>
+          </li>
+          <li>
+            <span class="progression-number">02</span>
+            <div>
+              <p class="progression-phase">Часть II · Jupyter</p>
+              <h3>Шесть исследований</h3>
+              <p>Исследуйте данные, обучите модели и проверьте их на новых примерах.</p>
+            </div>
+          </li>
+        </ol>
       </section>
 
       <HomeArcStory
@@ -420,15 +441,70 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
   .progression {
     width: min(78rem, calc(100% - 2rem));
     margin-inline: auto;
-    padding: clamp(5rem, 9vw, 9rem) 0;
+    padding: clamp(5rem, 8vw, 8rem) 0;
     display: grid;
-    grid-template-columns: minmax(8rem,.42fr) minmax(0,1.05fr) minmax(22rem,.85fr);
-    gap: clamp(1.5rem,4vw,4rem);
+    grid-template-columns: minmax(0, 1.18fr) minmax(26rem, .82fr);
+    gap: clamp(4rem, 6vw, 6rem);
     align-items: start;
   }
-  .progression h2 { font-size: clamp(2.4rem, 3.6vw, 3.8rem); line-height: .98; letter-spacing: -.045em; }
+  .progression-heading { max-width: 42rem; }
+  .progression h2 {
+    max-width: 13ch;
+    margin-top: 1.2rem;
+    font-size: clamp(3.2rem, 4.6vw, 4.85rem);
+    line-height: .91;
+    letter-spacing: -.055em;
+    text-wrap: balance;
+  }
+  .progression-lede {
+    max-width: 36rem;
+    margin-top: 1.5rem;
+    color: rgba(246,234,212,.68);
+    font-size: clamp(1.05rem, 1.35vw, 1.2rem);
+    line-height: 1.65;
+  }
+  .progression-steps {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+    list-style: none;
+  }
+  .progression-steps li {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: clamp(1rem, 2vw, 1.6rem);
+    padding: clamp(1.6rem, 3vw, 2.25rem) 0;
+    border-bottom: 1px solid var(--line);
+    transition: border-color 180ms ease, transform 180ms ease;
+  }
+  .progression-steps li:hover { border-color: rgba(32,214,191,.62); transform: translateX(.35rem); }
+  .progression-number,
+  .progression-phase {
+    color: var(--teal);
+    font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+    font-size: .73rem;
+    font-weight: 760;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .progression-phase { margin: 0; }
+  .progression-steps h3 { margin-top: .55rem; font-size: clamp(1.45rem, 2.1vw, 1.9rem); letter-spacing: -.035em; }
+  .progression-steps li p:last-child { margin-top: .7rem; color: rgba(246,234,212,.66); line-height: 1.62; }
   .method h2, .course-close h2 { font-size: clamp(2.7rem, 6vw, 6.2rem); line-height: .93; letter-spacing: -.055em; }
-  .progression p:last-child { color: rgba(246,234,212,.7); font-size: 1.05rem; line-height: 1.7; }
+
+  @supports (animation-timeline: view()) {
+    .progression-heading,
+    .progression-steps {
+      animation: progression-enter both;
+      animation-timeline: view();
+      animation-range: entry 12% cover 34%;
+    }
+    .progression-steps { animation-delay: .08s; }
+  }
+  @keyframes progression-enter {
+    from { opacity: 0; transform: translateY(1.5rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   .text-link { display: inline-flex; gap: .55rem; font-weight: 850; text-underline-offset: .25em; transition: transform 180ms ease; }
 
@@ -487,8 +563,10 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
     .hero-image { object-position: 64% center; }
     .hero-content h1 > span { font-size: clamp(3.8rem,15vw,7rem); }
     .hero-scroll { display: none; }
-    .progression { grid-template-columns: 1fr; }
-    .progression h2 { max-width: 13ch; }
+    .progression { grid-template-columns: 1fr; gap: 3.5rem; }
+    .progression-heading { max-width: 44rem; }
+    .progression h2 { max-width: 12ch; }
+    .progression-steps { max-width: 44rem; }
     .method-flow { grid-template-columns: 1fr; }
     .method-flow div { min-height: auto; padding: 1.2rem 0 2rem; }
     .method-flow div + div { border-left: 0; padding-left: 0; }
@@ -507,6 +585,9 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
     .hero-shade { background: linear-gradient(90deg,rgba(5,7,8,.94),rgba(5,7,8,.64)), linear-gradient(0deg,rgba(5,7,8,.88),transparent); }
     .hero-content h1 > span { font-size: clamp(2.3rem,11.5vw,4.25rem); }
     .hero-content h1 small { font-size: 1.55rem; }
+    .progression { gap: 2.75rem; }
+    .progression h2 { font-size: clamp(2.75rem, 13vw, 4.2rem); }
+    .progression-steps li { grid-template-columns: 2rem minmax(0, 1fr); }
     .hero-actions, .close-actions { align-items: stretch; flex-direction: column; }
     .button { width: 100%; }
     .dark-link { margin: .4rem 0 0; justify-content: center; }
