@@ -202,7 +202,7 @@ jupyter lab
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/part-2/case-01/</code></p>
-  <p><strong>Данные:</strong> <a href="../datasets/iris.csv" download><code>iris.csv</code></a> · <a href="../datasets/iris.csv.sha256">SHA-256</a> · замороженный offline snapshot <code>sklearn-iris</code></p>
+  <p><strong>Данные:</strong> <a href="../datasets/iris.csv" download><code>iris.csv</code></a> · <a href="../datasets/iris.csv.sha256">SHA-256</a> · зафиксированная локальная копия <code>sklearn-iris</code></p>
   <p><strong>Архив:</strong> <a href="../downloads/part-2-case-01.zip">part-2-case-01.zip</a></p>
   <p><strong>Notebook:</strong> <code>case-01.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-01/case-01.ipynb">Open in Colab</a></p>
   <p><strong>Главы:</strong> <a href="../bureau/iris-exam/">брифинг</a> · <a href="../bureau/iris-exam-solution/">дебриф</a></p>
@@ -242,7 +242,7 @@ jupyter lab
 
 <div class="materials-panel">
   <p><strong>Проект:</strong> <code>projects/part-2/case-05/</code></p>
-  <p><strong>Данные:</strong> <a href="../datasets/digits.csv" download><code>digits.csv</code></a> · <a href="../datasets/digits.csv.sha256">SHA-256</a> · замороженный offline snapshot <code>sklearn-digits-8x8-v1</code></p>
+  <p><strong>Данные:</strong> <a href="../datasets/digits.csv" download><code>digits.csv</code></a> · <a href="../datasets/digits.csv.sha256">SHA-256</a> · зафиксированная локальная копия <code>sklearn-digits-8x8-v1</code></p>
   <p><strong>Архив:</strong> <a href="../downloads/part-2-case-05.zip">part-2-case-05.zip</a></p>
   <p><strong>Notebook:</strong> <code>case-05.ipynb</code> · <a href="https://colab.research.google.com/github/mkuziuk/python-tutorial/blob/main/projects/part-2/case-05/case-05.ipynb">Open in Colab</a></p>
   <p><strong>Главы:</strong> <a href="../bureau/familiar-handwriting/">брифинг</a> · <a href="../bureau/familiar-handwriting-solution/">дебриф</a></p>

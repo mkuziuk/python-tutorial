@@ -1,6 +1,6 @@
 ---
 title: "Графики: увидеть структуру, не украсить отчёт"
-description: "Минимальные приёмы Matplotlib и seaborn для распределёний, связей, остатков, ошибок и честных подписей."
+description: "Минимальные приёмы Matplotlib и seaborn для распределений, связей, остатков, ошибок и информативных подписей."
 concept: plotting
 usedIn: [part-2-case-01, part-2-case-02, part-2-case-03, part-2-case-04, part-2-case-05, part-2-case-06]
 order: 33
