@@ -18,9 +18,23 @@ export default defineConfig({
           lang: 'ru',
         },
       },
-      customCss: ['./src/styles/starlight.css'],
+      customCss: [
+        './src/styles/starlight.css',
+        './src/styles/journal-chrome.css',
+        './src/styles/journal-content.css',
+      ],
       components: {
+        Head: './src/components/Head.astro',
+        PageTitle: './src/components/PageTitle.astro',
         Sidebar: './src/components/Sidebar.astro',
+      },
+      expressiveCode: {
+        styleOverrides: {
+          borderRadius: '6px',
+          borderColor: 'var(--journal-rule-strong)',
+          codePaddingBlock: '0.85rem',
+          codePaddingInline: '1.1rem',
+        },
       },
       favicon: '/images/favicon.svg',
       sidebar: [

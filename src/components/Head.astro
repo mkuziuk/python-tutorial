@@ -1,0 +1,21 @@
+---
+import DefaultHead from '@astrojs/starlight/components/Head.astro';
+import { getJournalScope } from '../utils/journal-scope';
+
+const scope = getJournalScope(Astro.locals.starlightRoute.id);
+---
+
+<DefaultHead />
+{
+	scope && (
+		<script define:vars={{ arc: scope.arc, variant: scope.variant }}>
+			// Edition scope for the «Полевой журнал» design system. The values are
+			// rendered into the page on the server, so the scope is deterministic;
+			// running synchronously in <head> applies it before first paint, the
+			// same pattern Starlight's ThemeProvider uses for `data-theme`.
+			const root = document.documentElement;
+			root.dataset.arc = arc;
+			root.dataset.variant = variant;
+		</script>
+	)
+}

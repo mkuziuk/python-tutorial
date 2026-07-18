@@ -1,0 +1,46 @@
+---
+import { getJournalScope } from '../utils/journal-scope';
+
+/** Matches Starlight's `PAGE_TITLE_ID` (see `@astrojs/starlight/constants`), used by the skip link. */
+const PAGE_TITLE_ID = '_top';
+
+const { entry } = Astro.locals.starlightRoute;
+const { title, description } = entry.data;
+const scope = getJournalScope(Astro.locals.starlightRoute.id);
+
+// Case marks come from authored frontmatter, never from Markdown body markup:
+// Part I carries `projectId: case-01`, Part II carries `caseNumber: II-01`.
+let mark: string | null = null;
+if (scope?.arc === 'part-1' && entry.data.projectId) {
+	mark = entry.data.projectId.replace(/^case-/, 'I-');
+} else if (scope?.arc === 'part-2' && entry.data.caseNumber) {
+	mark = entry.data.caseNumber;
+}
+
+let arcLabel: string | null = null;
+let variantLabel: string | null = null;
+let stamp: string | null = null;
+if (scope) {
+	arcLabel = scope.arc === 'part-1' ? 'Часть I · Архив' : 'Часть II · Бюро';
+	if (scope.variant === 'overview') {
+		variantLabel = scope.arc === 'part-1' ? 'Полевой журнал' : 'Протокол «Компас»';
+	} else if (scope.variant === 'solution') {
+		variantLabel = scope.arc === 'part-1' ? 'Разбор решения' : 'Дебриф';
+		stamp = scope.arc === 'part-1' ? 'Разбор' : 'Дебриф';
+	} else {
+		variantLabel = 'Расследование';
+	}
+}
+
+const kicker = scope ? [mark, arcLabel, variantLabel].filter(Boolean).join(' · ') : null;
+const standfirst = scope?.variant === 'overview' && description ? description : null;
+---
+
+<header class="journal-title">
+	{kicker && <p class="journal-kicker">{kicker}</p>}
+	<div class="journal-title-row">
+		<h1 id={PAGE_TITLE_ID}>{title}</h1>
+		{stamp && <span class="journal-stamp" aria-hidden="true">{stamp}</span>}
+	</div>
+	{standfirst && <p class="journal-standfirst">{standfirst}</p>}
+</header>

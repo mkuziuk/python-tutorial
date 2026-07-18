@@ -1,0 +1,243 @@
+/* ════════════════════════════════════════════════════════════════════════
+   «Полевой журнал» · edition chrome — masthead, sidebar, marginalia rail,
+   pagination, footer. No cards, no pills: hairline rules, ledger columns,
+   and the arc's stamp ink carry the structure.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Skip link ──────────────────────────────────────────────────────────── */
+.sl-skip-link {
+  border-radius: 0;
+  background-color: var(--journal-stamp);
+  color: var(--journal-paper);
+  font-family: var(--sl-font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Masthead ───────────────────────────────────────────────────────────── */
+.page > header {
+  background-color: var(--journal-paper);
+  border-bottom: 1px solid var(--journal-rule-strong);
+  box-shadow: 0 1px 0 var(--journal-rule-2);
+}
+
+.site-title {
+  font-family: var(--journal-font-display);
+  font-size: 1.18rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  color: var(--journal-ink);
+}
+
+/* Press mark before the edition name; inked per arc. */
+.site-title::before {
+  content: "";
+  flex-shrink: 0;
+  width: 1.35rem;
+  border-top: 2px solid var(--journal-stamp);
+  translate: 0 1px;
+}
+
+.site-title:hover {
+  color: var(--journal-stamp);
+}
+
+/* Search trigger: a quiet ruled field, not a dashboard chip. */
+site-search button[data-open-modal] {
+  border: 1px solid var(--journal-rule);
+  border-radius: 2px;
+  background-color: transparent;
+  color: var(--journal-muted);
+  font-size: 0.85rem;
+  transition:
+    border-color 0.15s ease-out,
+    color 0.15s ease-out;
+}
+site-search button[data-open-modal]:hover {
+  border-color: var(--journal-stamp);
+  color: var(--journal-ink);
+}
+site-search button[data-open-modal] kbd {
+  border: 1px solid var(--journal-rule);
+  border-radius: 2px;
+  background-color: transparent;
+  font-family: var(--sl-font-mono);
+}
+
+/* ── Sidebar: the edition's table of contents ───────────────────────────── */
+
+/* Running head above the navigation on arc pages. */
+[data-arc] .sidebar-content::before {
+  content: var(--journal-running);
+  margin-bottom: 0.9rem;
+  padding: 0.5rem 0.5rem 0.55rem;
+  border-bottom: 1px solid var(--journal-rule-strong);
+  color: var(--journal-stamp);
+  font-family: var(--sl-font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+/* Top-level entries read as section kickers. */
+.sidebar-content .top-level > li + li {
+  margin-top: 1.05rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--journal-rule-2);
+}
+
+.sidebar-content .large {
+  color: var(--journal-muted);
+  font-family: var(--sl-font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sidebar-content summary {
+  border-radius: 0;
+}
+
+.sidebar-content summary:hover .large,
+.sidebar-content summary:hover .caret {
+  color: var(--journal-ink);
+}
+
+.sidebar-content a {
+  border-radius: 0;
+  color: var(--journal-muted);
+}
+
+.sidebar-content a:hover,
+.sidebar-content a:focus {
+  color: var(--journal-ink);
+}
+
+/* Current page: an inked edge, never a filled pill. */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+  background-color: transparent;
+  box-shadow: inset 2px 0 0 var(--journal-stamp);
+  color: var(--journal-ink);
+  font-weight: 600;
+}
+
+/* ── Marginalia rail (on-this-page TOC) ─────────────────────────────────── */
+.right-sidebar-panel h2 {
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--journal-rule-strong);
+  color: var(--journal-muted);
+  font-family: var(--sl-font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.right-sidebar-panel :where(a) {
+  border-radius: 0;
+  color: var(--journal-muted);
+}
+
+.right-sidebar-panel :where(a):hover {
+  color: var(--journal-ink);
+}
+
+.right-sidebar-panel a[aria-current='true'] {
+  box-shadow: inset 2px 0 0 var(--journal-stamp);
+  color: var(--journal-stamp);
+  font-weight: 600;
+}
+
+/* Mobile TOC bar keeps the same ruled-paper surface. */
+#starlight__on-this-page--mobile {
+  background-color: var(--journal-paper);
+  border-bottom: 1px solid var(--journal-rule);
+  color: var(--journal-muted);
+  font-family: var(--sl-font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#starlight__mobile-toc .dropdown {
+  border: 1px solid var(--journal-rule-strong);
+  border-radius: 0;
+  background-color: var(--journal-paper);
+  box-shadow: var(--sl-shadow-md);
+}
+
+/* ── Footer: colophon and leaf-turn navigation ──────────────────────────── */
+footer .meta {
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--journal-rule-2);
+  color: var(--journal-muted);
+  font-family: var(--sl-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+/* Pagination: two leaves separated by rules — flat, borderless, shadowless. */
+.pagination-links {
+  gap: 1.5rem;
+}
+
+.pagination-links a {
+  gap: 0.75rem;
+  padding: 0.9rem 0.1rem 0.2rem;
+  border: 0;
+  border-top: 1px solid var(--journal-rule-strong);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--journal-muted);
+  transition: border-color 0.15s ease-out;
+}
+
+.pagination-links a:hover {
+  border-color: var(--journal-stamp);
+}
+
+.pagination-links a > span {
+  font-family: var(--sl-font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pagination-links a svg {
+  color: var(--journal-stamp);
+}
+
+.pagination-links .link-title {
+  color: var(--journal-ink);
+  font-family: var(--journal-font-display);
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.3;
+  text-transform: none;
+  transition: color 0.15s ease-out;
+}
+
+.pagination-links a:hover .link-title {
+  color: var(--journal-stamp);
+}
+
+/* ── Print ──────────────────────────────────────────────────────────────── */
+@media print {
+  .page > header {
+    position: relative;
+    border-bottom: 2px solid var(--journal-ink);
+    box-shadow: none;
+  }
+
+  .pagination-links a {
+    border-top-color: var(--journal-rule-strong);
+  }
+}

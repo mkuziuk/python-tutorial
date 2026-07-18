@@ -1,149 +1,166 @@
+/* ════════════════════════════════════════════════════════════════════════
+   «Полевой журнал — рабочее издание» · design tokens
+
+   One long-form reading skeleton for the whole edition. Part I (/cases/) is
+   warm archive paper stamped with teal ink; Part II (/bureau/) is a cooler
+   lab protocol stamped with indigo ink. The arc is selected by the
+   `data-arc` / `data-variant` attributes that src/components/Head.astro
+   sets on <html> from the route before first paint.
+
+   Journal tokens (`--journal-*`) are the source of truth; Starlight tokens
+   (`--sl-color-*`) are aliases, so stock chrome (search dialog, mobile menu,
+   Expressive Code frames) follows the edition automatically.
+   ════════════════════════════════════════════════════════════════════════ */
+
 @import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource/spectral/500.css';
+@import '@fontsource/spectral/500-italic.css';
+@import '@fontsource/spectral/600.css';
+@import '@fontsource/spectral/600-italic.css';
+@import '@fontsource/spectral/700.css';
 
+/* ── Dark · Part I — warm archive (edition default) ─────────────────────── */
 :root {
-  --sl-color-accent-low: #173b38;
-  --sl-color-accent: #2bb3a3;
-  --sl-color-accent-high: #cffcf5;
-  --sl-color-white: #f7f2e8;
-  --sl-color-gray-1: #ece5d8;
-  --sl-color-gray-2: #c9c0b2;
-  --sl-color-gray-3: #948b7d;
-  --sl-color-gray-4: #615b52;
-  --sl-color-gray-5: #3b3834;
-  --sl-color-gray-6: #242526;
-  --sl-color-black: #111416;
+  --journal-paper: #171410;
+  --journal-recess: #13100c;
+  --journal-raise: #211c14;
+  --journal-ink: #f0e8d4;
+  --journal-ink-2: #ddd3ba;
+  --journal-text: #c9bfa6;
+  --journal-muted: #988d73;
+  --journal-faint: #665e4b;
+  --journal-rule: #3d3728;
+  --journal-rule-2: #2a2619;
+  --journal-rule-strong: #554e39;
+  --journal-stamp: #34b3a4;
+  --journal-stamp-high: #c9f4ee;
+  --journal-stamp-low: #123b36;
+
+  --journal-font-display: "Spectral", "PT Serif", Georgia, "Times New Roman", serif;
+  --journal-text-body: 1rem;
+  --journal-measure: 44.5rem;
+
+  --sl-color-white: var(--journal-ink);
+  --sl-color-gray-1: var(--journal-ink-2);
+  --sl-color-gray-2: var(--journal-text);
+  --sl-color-gray-3: var(--journal-muted);
+  --sl-color-gray-4: var(--journal-faint);
+  --sl-color-gray-5: var(--journal-rule);
+  --sl-color-gray-6: var(--journal-rule-2);
+  --sl-color-gray-7: var(--journal-raise);
+  --sl-color-black: var(--journal-paper);
+  --sl-color-accent-low: var(--journal-stamp-low);
+  --sl-color-accent: var(--journal-stamp);
+  --sl-color-accent-high: var(--journal-stamp-high);
+  --sl-color-bg-nav: var(--journal-paper);
+  --sl-color-bg-sidebar: var(--journal-recess);
+  --sl-color-bg-inline-code: var(--journal-raise);
+  --sl-color-hairline-light: var(--journal-rule);
+  --sl-color-hairline: var(--journal-rule-2);
+  --sl-color-hairline-shade: var(--journal-rule-strong);
+  --sl-color-backdrop-overlay: rgb(12 10 7 / 0.7);
+
+  --sl-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.24);
+  --sl-shadow-md: 0 6px 18px -6px rgb(0 0 0 / 0.4);
+  --sl-shadow-lg: 0 18px 44px -12px rgb(0 0 0 / 0.55);
+
   --sl-font: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --sl-font-mono: "JetBrains Mono Variable", "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 }
 
-:root:has(.bureau-brief),
-:root:has(.bureau-page-scope) {
-  --sl-color-accent-low: #1a285c;
-  --sl-color-accent: #7189ff;
-  --sl-color-accent-high: #e3e8ff;
+/* ── Dark · Part II — cool lab protocol ─────────────────────────────────── */
+:root[data-arc='part-2'] {
+  --journal-paper: #13151c;
+  --journal-recess: #101218;
+  --journal-raise: #1a1d27;
+  --journal-ink: #e9ebf5;
+  --journal-ink-2: #ccd1e3;
+  --journal-text: #b3b9cd;
+  --journal-muted: #8b92ab;
+  --journal-faint: #606780;
+  --journal-rule: #333849;
+  --journal-rule-2: #252936;
+  --journal-rule-strong: #454b61;
+  --journal-stamp: #8ea1ff;
+  --journal-stamp-high: #e0e6ff;
+  --journal-stamp-low: #1d2547;
+
+  --sl-color-backdrop-overlay: rgb(8 9 14 / 0.7);
 }
 
+/* ── Light · Part I — archive paper ─────────────────────────────────────── */
 :root[data-theme='light'] {
-  --sl-color-accent-low: #d9fbf4;
-  --sl-color-accent: #087c72;
-  --sl-color-accent-high: #063c38;
-  --sl-color-white: #111416;
-  --sl-color-gray-1: #242526;
-  --sl-color-gray-2: #4c4943;
-  --sl-color-gray-3: #767065;
-  --sl-color-gray-4: #a9a194;
-  --sl-color-gray-5: #ded7ca;
-  --sl-color-gray-6: #f2ede4;
-  --sl-color-gray-7: #faf8f3;
-  --sl-color-black: #ffffff;
+  --journal-paper: #f7f1e5;
+  --journal-recess: #f0e9d8;
+  --journal-raise: #fdfaf1;
+  --journal-ink: #28221a;
+  --journal-ink-2: #3e3729;
+  --journal-text: #4a4332;
+  --journal-muted: #7a7059;
+  --journal-faint: #a2987e;
+  --journal-rule: #d9cfb4;
+  --journal-rule-2: #ece4d0;
+  --journal-rule-strong: #bfb393;
+  --journal-stamp: #0b6e63;
+  --journal-stamp-high: #07423b;
+  --journal-stamp-low: #d6ede8;
+
+  --sl-color-backdrop-overlay: rgb(74 64 44 / 0.35);
+
+  --sl-shadow-sm: 0 1px 2px rgb(74 64 44 / 0.12);
+  --sl-shadow-md: 0 6px 18px -6px rgb(74 64 44 / 0.18);
+  --sl-shadow-lg: 0 18px 44px -12px rgb(74 64 44 / 0.28);
 }
 
-:root[data-theme='light']:has(.bureau-brief),
-:root[data-theme='light']:has(.bureau-page-scope) {
-  --sl-color-accent-low: #e6ebff;
-  --sl-color-accent: #3656d4;
-  --sl-color-accent-high: #17285f;
+/* ── Light · Part II — lab paper ────────────────────────────────────────── */
+:root[data-theme='light'][data-arc='part-2'] {
+  --journal-paper: #f5f6fa;
+  --journal-recess: #edeff6;
+  --journal-raise: #fcfdff;
+  --journal-ink: #22252f;
+  --journal-ink-2: #363b49;
+  --journal-text: #454b5d;
+  --journal-muted: #6c7387;
+  --journal-faint: #9aa0b3;
+  --journal-rule: #d6dae6;
+  --journal-rule-2: #e7eaf2;
+  --journal-rule-strong: #b9c0d2;
+  --journal-stamp: #2f4ac2;
+  --journal-stamp-high: #1b2c78;
+  --journal-stamp-low: #dfe4fa;
 }
 
-.sl-markdown-content h2 {
-  letter-spacing: 0;
+/* ── Running heads, reading measure ─────────────────────────────────────── */
+:root[data-arc='part-1'] {
+  --journal-running: "Часть I · Архив · Полевой журнал";
+}
+:root[data-arc='part-2'] {
+  --journal-running: "Часть II · Бюро · Протокол «Компас»";
 }
 
-.sl-markdown-content a {
-  text-underline-offset: 0.2em;
+[data-arc] {
+  --sl-content-width: var(--journal-measure);
 }
 
-.sl-markdown-content code:not(pre code) {
-  border-radius: 8px;
-  padding: 0.12rem 0.3rem;
+/* Centre the reading column between sidebar and marginalia rail. */
+[data-arc] .main-pane {
+  --sl-content-margin-inline: auto;
 }
 
-.sl-markdown-content pre {
-  border-radius: 14px;
+@media (min-width: 50rem) {
+  :root {
+    --journal-text-body: 1.0625rem;
+  }
 }
 
-.sl-markdown-content blockquote {
-  border-inline-start-color: var(--sl-color-accent);
+/* ── Shared chrome tokens ───────────────────────────────────────────────── */
+::selection {
+  background: color-mix(in srgb, var(--journal-stamp) 30%, transparent);
+  color: var(--journal-ink);
 }
 
-.case-meta {
-  display: grid;
-  gap: 0.85rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-  margin-block: 1.25rem 2rem;
-}
-
-.case-meta p {
-  border: 1px solid var(--sl-color-gray-5);
-  border-radius: 14px;
-  margin: 0;
-  padding: 0.85rem;
-}
-
-.case-meta strong {
-  color: var(--sl-color-white);
-  display: block;
-  font-size: 0.82rem;
-  margin-block-end: 0.2rem;
-}
-
-.checklist li {
-  margin-block: 0.45rem;
-}
-
-.materials-panel {
-  display: grid;
-  gap: 0.55rem;
-  margin-block: 1rem;
-  border: 1px solid var(--sl-color-gray-5);
-  border-radius: 16px;
-  padding: 1rem;
-  background: color-mix(in srgb, var(--sl-color-gray-6) 74%, transparent);
-}
-
-.materials-panel p {
-  margin: 0;
-}
-
-.bureau-brief {
-  --bureau-accent: #5f7cff;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bureau-accent) 15%, transparent), transparent 62%),
-    color-mix(in srgb, var(--sl-color-gray-6) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--bureau-accent) 55%, var(--sl-color-gray-5));
-  border-radius: 18px;
-  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--bureau-accent) 82%, transparent);
-  display: grid;
-  gap: 0.65rem;
-  margin-block: 1.25rem 2rem;
-  padding: clamp(1rem, 3vw, 1.4rem);
-}
-
-.bureau-brief p {
-  margin: 0;
-}
-
-.bureau-brief strong {
-  color: color-mix(in srgb, var(--bureau-accent) 65%, var(--sl-color-white));
-}
-
-.bureau-kicker {
-  color: color-mix(in srgb, var(--bureau-accent) 72%, var(--sl-color-white));
-  font-family: var(--sl-font-mono);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.bureau-actions {
-  border-color: color-mix(in srgb, #5f7cff 44%, var(--sl-color-gray-5));
-}
-
-:root[data-theme='light'] .bureau-brief {
-  --bureau-accent: #244dd8;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bureau-accent) 9%, transparent), transparent 64%),
-    color-mix(in srgb, var(--sl-color-gray-7) 92%, transparent);
+:focus-visible {
+  outline: 2px solid var(--journal-stamp);
+  outline-offset: 2px;
 }

@@ -1,0 +1,517 @@
+/* ════════════════════════════════════════════════════════════════════════
+   «Полевой журнал» · content — the long-form reading skeleton.
+
+   Page title block, body hierarchy, code and inline code, ledger tables,
+   margin-note admonitions, and the three route-agnostic Markdown hooks
+   (.case-meta, .materials-panel, .bureau-brief). Arc and variant styling is
+   keyed off the pre-paint `data-arc` / `data-variant` attributes on <html>.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Reading skeleton ───────────────────────────────────────────────────── */
+
+/* The title block already ends in a double rule; drop the panel divider. */
+.content-panel + .content-panel {
+  border-top: 0;
+}
+
+.sl-markdown-content {
+  font-size: var(--journal-text-body);
+}
+
+/* ── Page title block (src/components/PageTitle.astro) ──────────────────── */
+.journal-title {
+  margin-top: 1rem;
+  padding-bottom: 1.15rem;
+  border-bottom: 3px double var(--journal-rule-strong);
+}
+
+.journal-kicker {
+  margin: 0 0 0.55rem;
+  color: var(--journal-stamp);
+  font-family: var(--sl-font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.journal-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.25rem;
+}
+
+.journal-title h1 {
+  margin: 0;
+  color: var(--journal-ink);
+  font-family: var(--journal-font-display);
+  font-size: clamp(1.85rem, 1.55rem + 1.4vw, 2.45rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.14;
+}
+
+/* The stamp that marks a solved case; pressed in by an animation below. */
+.journal-stamp {
+  align-self: center;
+  margin-inline-start: auto;
+  padding: 0.32em 0.62em;
+  border: 1.5px solid var(--journal-stamp);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--journal-stamp) 35%, transparent);
+  color: var(--journal-stamp);
+  font-family: var(--sl-font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  opacity: 0.92;
+  text-transform: uppercase;
+  transform: rotate(-4deg);
+  white-space: nowrap;
+}
+
+.journal-standfirst {
+  max-width: 38rem;
+  margin: 0.7rem 0 0;
+  color: var(--journal-ink-2);
+  font-family: var(--journal-font-display);
+  font-size: 1.12rem;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ── Heading hierarchy ──────────────────────────────────────────────────── */
+
+/* h2 sections open with a rule and a serif line — a new journal section. */
+.sl-markdown-content .sl-heading-wrapper.level-h2 {
+  margin-top: 2.6rem;
+  padding-top: 1.35rem;
+  border-top: 1px solid var(--journal-rule-strong);
+}
+
+.sl-markdown-content h2 {
+  color: var(--journal-ink);
+  font-family: var(--journal-font-display);
+  font-size: 1.62rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.sl-markdown-content h3 {
+  color: var(--journal-ink);
+  font-size: 1.22rem;
+  font-weight: 650;
+  letter-spacing: 0.005em;
+}
+
+.sl-markdown-content h4 {
+  color: var(--journal-ink-2);
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+/* On overview leaves the h3 entries are a catalogue: set them in the serif. */
+[data-variant='overview'] .sl-markdown-content h3 {
+  font-family: var(--journal-font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* Catalogue entry titles are links; they should read as titles, not links. */
+[data-variant='overview'] .sl-markdown-content :is(h2, h3) a {
+  color: inherit;
+  text-decoration-color: color-mix(in srgb, var(--journal-stamp) 45%, transparent);
+}
+
+.sl-anchor-link {
+  color: var(--journal-faint);
+}
+.sl-anchor-link:hover {
+  color: var(--journal-stamp);
+}
+
+/* ── Text elements ──────────────────────────────────────────────────────── */
+.sl-markdown-content strong {
+  color: var(--journal-ink);
+}
+
+.sl-markdown-content a {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--journal-stamp) 45%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+.sl-markdown-content a:hover {
+  color: var(--journal-ink);
+  text-decoration-color: var(--journal-stamp);
+}
+
+.sl-markdown-content li::marker {
+  color: var(--journal-stamp);
+}
+
+.sl-markdown-content blockquote {
+  border-inline-start: 2px solid var(--journal-stamp);
+  padding-inline-start: 1.1rem;
+  color: var(--journal-ink-2);
+  font-family: var(--journal-font-display);
+  font-size: 1.06em;
+  font-style: italic;
+}
+
+.sl-markdown-content hr {
+  border: 0;
+  border-top: 3px double var(--journal-rule-strong);
+}
+
+.sl-markdown-content dfn {
+  font-style: italic;
+}
+
+.sl-markdown-content kbd {
+  padding: 0.08em 0.42em;
+  border: 1px solid var(--journal-rule-strong);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background-color: var(--journal-raise);
+  font-family: var(--sl-font-mono);
+  font-size: 0.8em;
+}
+
+/* ── Inline code ────────────────────────────────────────────────────────── */
+.sl-markdown-content code:not(:where(.not-content *)) {
+  margin-block: -0.125rem;
+  padding: 0.1em 0.34em;
+  border: 1px solid color-mix(in srgb, var(--journal-stamp) 24%, var(--journal-rule));
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--journal-stamp) 7%, var(--journal-raise));
+  color: var(--journal-ink-2);
+  font-size: 0.82em;
+}
+
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6) code {
+  font-size: 0.78em;
+}
+
+/* ── Code blocks (Expressive Code frames) ───────────────────────────────── */
+.expressive-code {
+  --ec-brdCol: var(--journal-rule-strong);
+  --ec-uiFntSz: 0.78rem;
+
+  margin-block: 0.35rem;
+}
+
+.expressive-code .frame {
+  box-shadow: none;
+}
+
+/* Frame title bars read as figure plates, not window chrome. */
+.expressive-code .frame.has-title:not(.is-terminal) .header {
+  border-bottom: 1px solid var(--journal-rule-2);
+}
+
+.expressive-code .frame .title {
+  font-family: var(--sl-font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* ── Tables: booktabs ledger, no zebra, no vertical rules ───────────────── */
+.sl-markdown-content table:not(:where(.not-content *)) {
+  border-top: 2px solid var(--journal-rule-strong);
+  border-bottom: 2px solid var(--journal-rule-strong);
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.sl-markdown-content thead th:not(:where(.not-content *)) {
+  padding: 0.55rem 1rem 0.5rem 0;
+  border-bottom: 1px solid var(--journal-rule-strong);
+  color: var(--journal-muted);
+  font-family: var(--sl-font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-align: start;
+  text-transform: uppercase;
+}
+
+.sl-markdown-content tbody td:not(:where(.not-content *)) {
+  padding: 0.55rem 1rem 0.55rem 0;
+  border-bottom: 1px solid var(--journal-rule);
+  font-variant-numeric: tabular-nums;
+}
+
+.sl-markdown-content tbody tr:last-child td:not(:where(.not-content *)) {
+  border-bottom: 0;
+}
+
+.sl-markdown-content tbody tr:hover td:not(:where(.not-content *)) {
+  background-color: color-mix(in srgb, var(--journal-stamp) 5%, transparent);
+}
+
+/* ── Admonitions: marginal notes, not alert banners ─────────────────────── */
+.starlight-aside {
+  padding: 0.9rem 1.1rem;
+  border-inline-start: 2px solid var(--sl-color-asides-border);
+  border-radius: 0;
+  background-color: color-mix(in srgb, var(--sl-color-asides-border) 6%, transparent);
+}
+
+.starlight-aside__title {
+  font-family: var(--sl-font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+/* ── Case title-page ledger (.case-meta) ────────────────────────────────── */
+.case-meta,
+.materials-panel,
+.bureau-brief {
+  margin-block: 1.5rem 2rem;
+}
+
+.case-meta p,
+.materials-panel p,
+.bureau-brief p {
+  margin: 0;
+}
+
+.case-meta {
+  padding: 0.3rem 0;
+  border-top: 3px double var(--journal-rule-strong);
+  border-bottom: 3px double var(--journal-rule-strong);
+}
+
+.case-meta p {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr;
+  gap: 0.15rem 1rem;
+  padding-block: 0.55rem;
+}
+
+.case-meta p + p {
+  border-top: 1px solid var(--journal-rule-2);
+}
+
+/* ── Route strip (.materials-panel) ─────────────────────────────────────── */
+.materials-panel {
+  padding: 0.25rem 0;
+  border-top: 1px solid var(--journal-rule-strong);
+  border-bottom: 1px solid var(--journal-rule-strong);
+  font-size: 0.86em;
+}
+
+.materials-panel p {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 0.15rem 1rem;
+  padding-block: 0.45rem;
+}
+
+.materials-panel p + p {
+  border-top: 1px solid var(--journal-rule-2);
+}
+
+/* Shared ledger labels. */
+.case-meta strong,
+.materials-panel strong,
+.bureau-brief p:not(.bureau-kicker) strong {
+  padding-top: 0.24em;
+  color: var(--journal-muted);
+  font-family: var(--sl-font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+/* ── Protocol header (.bureau-brief) ────────────────────────────────────── */
+.bureau-brief {
+  padding: 0.8rem 1.15rem 0.85rem;
+  border-top: 2px solid var(--journal-stamp);
+  border-bottom: 1px solid var(--journal-rule-strong);
+  border-inline-start: 3px solid var(--journal-stamp);
+  background-color: color-mix(in srgb, var(--journal-stamp) 5%, transparent);
+}
+
+.bureau-kicker {
+  margin-bottom: 0.6rem;
+  color: var(--journal-stamp);
+  font-family: var(--sl-font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bureau-brief p:not(.bureau-kicker) {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr;
+  gap: 0.15rem 1rem;
+  padding-block: 0.5rem;
+}
+
+.bureau-brief p:not(.bureau-kicker) + p {
+  border-top: 1px solid color-mix(in srgb, var(--journal-stamp) 18%, var(--journal-rule-2));
+}
+
+@media (max-width: 40rem) {
+  .case-meta p,
+  .materials-panel p,
+  .bureau-brief p:not(.bureau-kicker) {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .case-meta strong,
+  .materials-panel strong,
+  .bureau-brief p:not(.bureau-kicker) strong {
+    padding-top: 0;
+  }
+}
+
+/* ── Formula hooks ──────────────────────────────────────────────────────── */
+/* A centred display line for formulas and scoring expressions. Usage in
+   Markdown: <div class="formula">score = 0.45·words + 0.25·length + 0.30·punct</div> */
+.sl-markdown-content .formula {
+  padding: 0.8rem 1rem;
+  border-top: 1px solid var(--journal-rule);
+  border-bottom: 1px solid var(--journal-rule);
+  font-family: var(--sl-font-mono);
+  font-size: 0.92em;
+  overflow-x: auto;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ── Orientation motion (reduced-motion safe) ───────────────────────────── */
+@keyframes journal-settle {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes journal-stamp-press {
+  from {
+    opacity: 0;
+    transform: rotate(-9deg) scale(1.6);
+  }
+  to {
+    opacity: 0.92;
+    transform: rotate(-4deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* The edition page settles into place on navigation — a quiet orientation cue. */
+  [data-arc] .content-panel > .sl-container {
+    animation: journal-settle 0.32s ease-out both;
+  }
+
+  .journal-stamp {
+    animation: journal-stamp-press 0.4s cubic-bezier(0.2, 1.2, 0.4, 1) 0.1s backwards;
+  }
+
+  .sl-anchor-link,
+  .sidebar-content a,
+  .right-sidebar-panel :where(a) {
+    transition: color 0.15s ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Print: the edition leaves the screen as a clean workbook ───────────── */
+@page {
+  margin: 18mm 16mm;
+}
+
+@media print {
+  :root {
+    --journal-paper: #ffffff;
+    --journal-recess: #ffffff;
+    --journal-raise: #f4f2ea;
+    --journal-ink: #191510;
+    --journal-ink-2: #38322a;
+    --journal-text: #443d31;
+    --journal-muted: #6b6353;
+    --journal-faint: #8d8471;
+    --journal-rule: #cfc8b6;
+    --journal-rule-2: #e3ddcf;
+    --journal-rule-strong: #a89f88;
+    --journal-stamp: #0a5d53;
+    --journal-stamp-high: #07423b;
+    --journal-stamp-low: #e2efec;
+  }
+
+  :root[data-arc='part-2'] {
+    --journal-raise: #f1f2f7;
+    --journal-stamp: #2a3fa0;
+    --journal-stamp-high: #1b2c78;
+    --journal-stamp-low: #e4e7f6;
+  }
+
+  .sl-markdown-content {
+    font-size: 10.5pt;
+  }
+
+  .journal-title h1 {
+    font-size: 21pt;
+  }
+
+  .journal-title,
+  .case-meta,
+  .bureau-brief,
+  .materials-panel,
+  .starlight-aside,
+  .sl-heading-wrapper,
+  .expressive-code,
+  .sl-markdown-content table {
+    break-inside: avoid;
+  }
+
+  .sl-markdown-content tr {
+    break-inside: avoid;
+  }
+
+  /* External references print with their addresses; internal links stay clean. */
+  .sl-markdown-content a[href^='http']::after {
+    content: " (" attr(href) ")";
+    color: var(--journal-muted);
+    font-family: var(--sl-font-mono);
+    font-size: 0.78em;
+    overflow-wrap: anywhere;
+  }
+
+  .journal-stamp {
+    animation: none;
+  }
+}
