@@ -5,7 +5,6 @@ import '@fontsource-variable/jetbrains-mono';
 
 import archiveDesk from '../assets/case-desk-hero.png';
 import bureauLab from '../assets/bureau-data-lab.png';
-import HomeArcStory from '../components/HomeArcStory.astro';
 import course from '../data/course.json';
 import { homeStoryDetails } from '../data/home-stories';
 
@@ -17,18 +16,20 @@ const withBase = (path: string) => `${base}${path.replace(/^\//, '')}`;
 const archive = course.arcs.find((arc) => arc.id === 'part-1')!;
 const bureau = course.arcs.find((arc) => arc.id === 'part-2')!;
 
-const prepareStoryArc = (arc: (typeof course.arcs)[number]) => ({
-  ...arc,
-  cases: arc.cases.map((item) => {
+const prepareCases = (arc: (typeof course.arcs)[number], offset = 0) =>
+  arc.cases.map((item, index) => {
     const detail = homeStoryDetails[item.number];
     if (!detail) throw new Error(`Missing homepage story metadata for ${item.number}`);
-    return { ...item, ...detail, href: withBase(item.route) };
-  }),
-});
+    return {
+      ...item,
+      ...detail,
+      entry: String(index + offset + 1).padStart(2, '0'),
+      href: withBase(item.route),
+    };
+  });
 
-const archiveStory = prepareStoryArc(archive);
-const bureauStory = prepareStoryArc(bureau);
-
+const archiveCases = prepareCases(archive);
+const bureauCases = prepareCases(bureau, archiveCases.length);
 const guideLink = withBase('/field-guide/');
 const materialsLink = withBase('/materials/');
 const skillMapLink = withBase('/skill-map/');
@@ -44,163 +45,247 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
       name="description"
       content="Десять учебных проектов: четыре Python-скрипта и шесть тетрадей Jupyter по анализу данных и машинному обучению."
     />
-    <meta name="theme-color" content="#0b0e12" />
+    <meta name="theme-color" content="#f4eddc" />
     <meta property="og:title" content="Python-расследования" />
     <meta
       property="og:description"
-      content="Сначала создаём программы на Python. Затем анализируем данные и обучаем модели."
+      content="Учитесь на практике: создайте четыре программы на Python, затем проведите шесть исследований в Jupyter."
     />
     <meta property="og:type" content="website" />
     {canonical && <link rel="canonical" href={canonical} />}
-    <title>Python-расследования · от улик к моделям</title>
+    <title>Python-расследования · десять учебных дел</title>
     <link rel="icon" href={`${base}images/favicon.svg`} />
   </head>
   <body data-phase="archive">
     <a class="skip-link" href="#course-main">К основному содержанию</a>
 
-    <header class="site-header" data-site-header>
-      <a class="header-brand" href={base} aria-current="page">Python-расследования</a>
+    <header class="site-header">
+      <a class="header-brand" href={base} aria-current="page">
+        <span aria-hidden="true">P/10</span>
+        Python-расследования
+      </a>
       <nav aria-label="Основная навигация">
-        <a href={withBase(archive.route)}>Часть I</a>
-        <a href={withBase(bureau.route)}>Часть II</a>
+        <a href="#archive">Часть I</a>
+        <a href="#bureau">Часть II</a>
         <a href={materialsLink}>Материалы</a>
         <a href={guideLink}>Справочник</a>
       </nav>
+      <a class="header-start" href={archiveCases[0].href}>Начать <span aria-hidden="true">↗</span></a>
     </header>
 
     <main id="course-main">
-      <section class="course-hero" aria-labelledby="home-title">
-        <Image
-          class="hero-image"
-          src={archiveDesk}
-          widths={[768, 1280, 1680, 2200]}
-          sizes="100vw"
-          format="avif"
-          loading="eager"
-          fetchpriority="high"
-          alt="Ночной рабочий стол с ноутбуком, документами и материалами расследования"
-        />
-        <div class="hero-shade" aria-hidden="true"></div>
-        <div class="hero-content">
-          <p class="hero-kicker">Проектный учебник · Python и ML</p>
-          <h1 id="home-title">
-            <span>Python-<br />расследования</span>
-            <small>Сначала создаём программы на Python.<br />Затем анализируем данные и обучаем модели.</small>
-          </h1>
-          <p class="hero-summary">
-            Курс состоит из десяти проектов: четырёх Python-скриптов и шести тетрадей Jupyter по анализу данных и машинному обучению.
-          </p>
-          <div class="hero-actions" aria-label="Выбрать маршрут">
-            <a class="button primary" href={withBase(archive.route)}>Начать с части I</a>
-            <a class="button glass" href={withBase(bureau.route)}>Перейти к части II</a>
+      <section class="course-hero" aria-labelledby="home-title" data-arc-phase="archive">
+        <div class="margin-rule" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <p class="eyebrow">Проектный учебник · Python и машинное обучение</p>
+            <h1 id="home-title">Python-<br />расследования</h1>
+            <p class="hero-lede">
+              Десять учебных дел: четыре программы на Python и шесть тетрадей Jupyter.
+              Разберите готовый пример, дополните код и проверьте вывод на материалах расследования.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-ink" href={archiveCases[0].href}>Начать с дела № 01</a>
+              <a class="text-link" href="#archive">Смотреть все 10 дел <span aria-hidden="true">↓</span></a>
+            </div>
+            <div class="manifest" aria-label="В курсе 10 дел: 4 Python-скрипта и 6 тетрадей Jupyter">
+              <span class="manifest-prompt" aria-hidden="true">›</span>
+              <span class="manifest-copy">дел: 10 · скриптов python: 4 · тетрадей jupyter: 6</span>
+              <i aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <figure class="evidence-photo hero-photo reveal-photo">
+            <span class="tape tape-top" aria-hidden="true"></span>
+            <span class="tape tape-side" aria-hidden="true"></span>
+            <Image
+              src={archiveDesk}
+              widths={[640, 960, 1280]}
+              sizes="(min-width: 900px) 48vw, 92vw"
+              format="avif"
+              loading="eager"
+              fetchpriority="high"
+              alt="Ночной рабочий стол с ноутбуком, документами и материалами расследования"
+            />
+            <figcaption>фото 01 — северный стол, архив</figcaption>
+            <span class="stamp stamp-open" aria-hidden="true">вскрыто</span>
+          </figure>
+        </div>
+
+        <div class="ledger-preview" aria-hidden="true">
+          <span>№ дела</span>
+          <span>учебная задача</span>
+          <span>инструмент</span>
+          <span>время</span>
+          <span>статус</span>
+        </div>
+      </section>
+
+      <section class="course-section archive-section" id="archive" aria-labelledby="archive-title" data-arc-phase="archive">
+        <div class="section-shell">
+          <header class="section-heading">
+            <div>
+              <p class="eyebrow">Часть I · Архив · записи 01–04</p>
+              <h2 id="archive-title">Четыре дела —<br />четыре программы на Python</h2>
+            </div>
+            <p>
+              Сравните тексты, найдите совпадения, разберите письмо и соберите улики
+              в итоговый отчёт. Опыт программирования не требуется.
+            </p>
+          </header>
+
+          <div class="course-ledger">
+            <div class="ledger-head" aria-hidden="true">
+              <span>№</span>
+              <span>Дело и результат</span>
+              <span>Темы</span>
+              <span>Формат</span>
+              <span>Готово</span>
+            </div>
+            <ol aria-label="Четыре проекта первой части">
+              {archiveCases.map((item) => (
+                <li class="ledger-item reveal-row">
+                  <a href={item.href}>
+                    <span class="entry-number">Д-{item.entry}</span>
+                    <span class="entry-main">
+                      <strong>{item.title}</strong>
+                      <span>{item.outcome}</span>
+                    </span>
+                    <span class="entry-topics">{item.concepts.slice(0, 3).join(' · ')}</span>
+                    <span class="entry-meta">{item.format}<br />{item.time}</span>
+                    <span class="entry-check" aria-hidden="true">[ ]</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div class="section-action">
+            <a class="line-link" href={withBase(archive.route)}>
+              Открыть обзор части I <span aria-hidden="true">↗</span>
+            </a>
+            <span>4 проекта · Python-скрипты · 90–150 минут каждый</span>
           </div>
         </div>
-        <a class="hero-scroll" href="#progression">
-          <span>Две арки · десять расследований</span>
-          <i aria-hidden="true"></i>
-        </a>
       </section>
 
-      <section class="progression" id="progression" aria-labelledby="progression-title">
-        <div class="progression-heading">
-          <p class="section-index">Маршрут курса</p>
-          <h2 id="progression-title">От готового кода к своему решению.</h2>
-          <p class="progression-lede">
-            Разберите рабочий пример, дополните программу и проверьте результат на материалах расследования.
-          </p>
-        </div>
+      <section class="handoff" aria-labelledby="handoff-title" data-arc-phase="bureau">
+        <div class="handoff-inner">
+          <figure class="evidence-photo bureau-photo reveal-photo">
+            <span class="tape tape-top" aria-hidden="true"></span>
+            <Image
+              src={bureauLab}
+              widths={[768, 1280, 1717]}
+              sizes="(min-width: 900px) 56vw, 92vw"
+              format="avif"
+              loading="lazy"
+              alt="Аналитик сверяет таблицу с графиками и матрицей ошибок на ноутбуке"
+            />
+            <figcaption>фото 02 — аналитическая лаборатория, бюро</figcaption>
+            <span class="stamp stamp-recruit" aria-hidden="true">вербовка<br />04.2026</span>
+          </figure>
 
-        <ol class="progression-steps" aria-label="Две части курса">
-          <li>
-            <span class="progression-number">01</span>
+          <div class="handoff-copy">
+            <p class="eyebrow">Запись 05 · смена инструмента</p>
+            <h2 id="handoff-title">Дальше — Бюро:<br />вместо документов — данные.</h2>
+            <p>
+              Та же привычка проверять выводы, но теперь в Jupyter:
+              таблицы, модели, метрики и ошибки на новых примерах.
+            </p>
+            <a class="line-link" href="#bureau">Перейти к части II <span aria-hidden="true">↓</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="course-section bureau-section" id="bureau" aria-labelledby="bureau-title" data-arc-phase="bureau">
+        <div class="section-shell">
+          <header class="section-heading">
             <div>
-              <p class="progression-phase">Часть I · Python</p>
-              <h3>Четыре программы</h3>
-              <p>Сравните тексты, найдите совпадения, разберите email и соберите улики в финальный отчёт.</p>
+              <p class="eyebrow">Часть II · Бюро · записи 05–10</p>
+              <h2 id="bureau-title">Шесть расследований —<br />шесть тетрадей Jupyter</h2>
             </div>
-          </li>
-          <li>
-            <span class="progression-number">02</span>
-            <div>
-              <p class="progression-phase">Часть II · Jupyter</p>
-              <h3>Шесть исследований</h3>
-              <p>Исследуйте данные, обучите модели и проверьте их на новых примерах.</p>
+            <p>
+              Подготовьте данные, разделите выборку, сравните модели и разберите ошибки.
+              Каждая тетрадь заканчивается проверяемым результатом.
+            </p>
+          </header>
+
+          <div class="course-ledger">
+            <div class="ledger-head" aria-hidden="true">
+              <span>№</span>
+              <span>Расследование и вывод</span>
+              <span>Темы</span>
+              <span>Формат</span>
+              <span>Готово</span>
             </div>
-          </li>
-        </ol>
-      </section>
+            <ol start="5" aria-label="Шесть проектов второй части">
+              {bureauCases.map((item) => (
+                <li class="ledger-item reveal-row">
+                  <a href={item.href}>
+                    <span class="entry-number">Д-{item.entry}</span>
+                    <span class="entry-main">
+                      <strong>{item.title}</strong>
+                      <span>{item.outcome}</span>
+                    </span>
+                    <span class="entry-topics">{item.concepts.slice(0, 3).join(' · ')}</span>
+                    <span class="entry-meta">{item.format}<br />{item.time}</span>
+                    <span class="entry-check" aria-hidden="true">[ ]</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </div>
 
-      <HomeArcStory
-        id="archive-story"
-        mode="archive"
-        eyebrow="Часть I · Архив"
-        title="Северный стол"
-        description="В четырёх проектах вы сравните тексты, проверите письма, соберёте материалы расследования в JSON и раскроете дело."
-        note="Без опыта программирования · 90–150 минут на расследование · Python-скрипты"
-        overviewHref={withBase(archive.route)}
-        overviewLabel="Открыть обзор первой части"
-        cases={archiveStory.cases}
-      />
-
-      <section
-        class="handoff"
-        data-arc-phase="bureau"
-        aria-labelledby="handoff-title"
-      >
-        <Image
-          class="handoff-image"
-          src={bureauLab}
-          widths={[768, 1280, 1717]}
-          sizes="100vw"
-          format="avif"
-          loading="lazy"
-          alt="Аналитик сверяет печатную таблицу с графиками и матрицей ошибок на ноутбуке"
-        />
-        <div class="handoff-shade" aria-hidden="true"></div>
-        <div class="handoff-copy">
-          <p class="section-index">Вербовка · апрель 2026</p>
-          <h2 id="handoff-title">Во второй части вы перейдёте от Python-скриптов к Jupyter и машинному обучению.</h2>
-          <p>
-            Вы подготовите данные, разделите их на обучающую и тестовую выборки, сравните модели и разберёте ошибки.
-          </p>
+          <div class="section-action">
+            <a class="line-link" href={withBase(bureau.route)}>
+              Открыть обзор части II <span aria-hidden="true">↗</span>
+            </a>
+            <span>6 проектов · Jupyter Notebook · от 3 часов</span>
+          </div>
         </div>
       </section>
 
-      <HomeArcStory
-        id="bureau-story"
-        mode="bureau"
-        eyebrow="Часть II · Бюро"
-        title="Протокол «Компас»"
-        description="В шести тетрадях Jupyter вы проверите признаки и разбиения, сравните метрики и проанализируете ошибки моделей."
-        note="После части I · 3–5 часов на расследование · финал 6–8 часов · Jupyter Notebook"
-        overviewHref={withBase(bureau.route)}
-        overviewLabel="Открыть обзор Бюро"
-        cases={bureauStory.cases}
-      />
+      <section class="back-cover" aria-labelledby="method-title">
+        <div class="back-cover-inner">
+          <div class="method">
+            <p class="eyebrow">Рабочий порядок</p>
+            <h2 id="method-title">Как устроено каждое расследование</h2>
+            <ol>
+              <li>
+                <span>01</span>
+                <p><strong>Воспроизведите</strong> результат из досье</p>
+              </li>
+              <li>
+                <span>02</span>
+                <p><strong>Проверьте</strong> данные, разбиение и ошибки</p>
+              </li>
+              <li>
+                <span>03</span>
+                <p><strong>Запишите</strong> метрики и ограничения модели</p>
+              </li>
+            </ol>
+          </div>
 
-      <section class="method" aria-labelledby="method-title">
-        <p class="section-index">Один принцип</p>
-        <h2 id="method-title">Каждое ML-расследование состоит из трёх шагов.</h2>
-        <div class="method-flow">
-          <div><span>01</span><strong>Соберите</strong><p>Прочитайте досье и воспроизведите заявленный результат.</p></div>
-          <div><span>02</span><strong>Проверьте</strong><p>Найдите утечки, слабые разбиения и систематические ошибки.</p></div>
-          <div><span>03</span><strong>Сформулируйте</strong><p>Запишите полученные метрики, объясните их значение, перечислите ограничения модели и решите, можно ли её использовать.</p></div>
-        </div>
-      </section>
-
-      <section class="course-close" aria-labelledby="close-title">
-        <p class="section-index">Выберите точку входа</p>
-        <h2 id="close-title">Начните с основ Python<br />или перейдите к машинному обучению.</h2>
-        <div class="close-actions">
-          <a class="button paper" href={withBase(archive.route)}>Начать часть I</a>
-          <a class="button cobalt" href={withBase(bureau.route)}>Начать часть II</a>
-          <a class="text-link dark-link" href={skillMapLink}>Сравнить навыки двух частей</a>
+          <div class="closing">
+            <p class="eyebrow">Выберите точку входа</p>
+            <h2>С чего начать</h2>
+            <p>
+              Новичкам — первый скрипт. Если уверенно работаете с функциями,
+              коллекциями и файлами — переходите к Jupyter.
+            </p>
+            <div class="closing-actions">
+              <a class="button button-paper" href={archiveCases[0].href}>Часть I — первый скрипт</a>
+              <a class="button button-blue" href={bureauCases[0].href}>Часть II — первая тетрадь</a>
+              <a class="line-link light-link" href={skillMapLink}>Сравнить навыки двух частей</a>
+            </div>
+          </div>
         </div>
       </section>
     </main>
 
     <footer>
-      <a href={base}>Python-расследования</a>
+      <a class="footer-brand" href={base}>Python-расследования</a>
+      <p>Проектный учебник по Python и классическому машинному обучению.</p>
       <nav aria-label="Ссылки в подвале">
         <a href={materialsLink}>Материалы</a>
         <a href={guideLink}>Справочник</a>
@@ -210,395 +295,1232 @@ const canonical = Astro.site ? new URL(base, Astro.site) : null;
 
     <script is:inline type="module">
       const body = document.body;
-      const stories = Array.from(document.querySelectorAll("[data-arc-story]"));
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-      let frame = 0;
 
-      const clamp = (value, min = 0, max = 1) => Math.min(Math.max(value, min), max);
+      if (!reduceMotion.matches && "IntersectionObserver" in window) {
+        body.classList.add("motion-ready");
 
-      function setActive(story, index) {
-        const steps = Array.from(story.querySelectorAll("[data-case-step]"));
-        const visuals = Array.from(story.querySelectorAll("[data-visual-case]"));
-        const safeIndex = clamp(index, 0, Math.max(0, steps.length - 1));
+        const revealObserver = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add("is-visible");
+              if (entry.target.classList.contains("reveal-row")) {
+                const check = entry.target.querySelector(".entry-check");
+                if (check) check.textContent = "[x]";
+              }
+              revealObserver.unobserve(entry.target);
+            });
+          },
+          { rootMargin: "0px 0px -16% 0px", threshold: 0.18 }
+        );
 
-        story.dataset.activeIndex = String(safeIndex);
-        steps.forEach((step, stepIndex) => {
-          step.dataset.active = stepIndex === safeIndex ? "true" : "false";
-        });
-        visuals.forEach((visual, visualIndex) => {
-          visual.dataset.active = visualIndex === safeIndex ? "true" : "false";
-        });
-      }
-
-      function closestStepIndex(story) {
-        const steps = Array.from(story.querySelectorAll("[data-case-step]"));
-        const viewportCenter = window.innerHeight * 0.5;
-        let bestIndex = 0;
-        let bestDistance = Number.POSITIVE_INFINITY;
-
-        steps.forEach((step, index) => {
-          const rect = step.getBoundingClientRect();
-          const distance = Math.abs(rect.top + rect.height * 0.5 - viewportCenter);
-          if (distance < bestDistance) {
-            bestDistance = distance;
-            bestIndex = index;
-          }
-        });
-
-        return bestIndex;
-      }
-
-      function updateStories() {
-        frame = 0;
-        stories.forEach((story) => {
-          const rect = story.getBoundingClientRect();
-          const scrollable = Math.max(1, story.offsetHeight - window.innerHeight);
-          const progress = clamp(-rect.top / scrollable);
-          story.style.setProperty("--story-progress", progress.toFixed(4));
-          setActive(story, closestStepIndex(story));
+        document.querySelectorAll(".reveal-row, .reveal-photo").forEach((item) => {
+          revealObserver.observe(item);
         });
       }
-
-      function requestStoryUpdate() {
-        if (frame) return;
-        frame = window.requestAnimationFrame(updateStories);
-      }
-
-      stories.forEach((story) => {
-        story.querySelectorAll("[data-case-step]").forEach((step) => {
-          const activate = () => setActive(story, Number(step.dataset.caseIndex));
-          step.addEventListener("pointerenter", activate);
-          step.addEventListener("focusin", activate);
-        });
-      });
-
-      window.addEventListener("scroll", requestStoryUpdate, { passive: true });
-      window.addEventListener("resize", requestStoryUpdate);
-      window.addEventListener("pageshow", requestStoryUpdate);
-      reduceMotion.addEventListener("change", requestStoryUpdate);
 
       if ("IntersectionObserver" in window) {
-        const phases = document.querySelectorAll("[data-arc-phase]");
-        const observer = new IntersectionObserver(
+        const phaseObserver = new IntersectionObserver(
           (entries) => {
-            const visible = entries
+            const active = entries
               .filter((entry) => entry.isIntersecting)
               .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-            if (visible) body.dataset.phase = visible.target.dataset.arcPhase;
+            if (active) body.dataset.phase = active.target.dataset.arcPhase;
           },
-          { rootMargin: "-28% 0px -48%", threshold: 0 }
+          { rootMargin: "-32% 0px -56% 0px", threshold: 0 }
         );
-        phases.forEach((phase) => observer.observe(phase));
-      }
 
-      updateStories();
+        document.querySelectorAll("[data-arc-phase]").forEach((section) => {
+          phaseObserver.observe(section);
+        });
+      }
     </script>
   </body>
 </html>
 
 <style>
   :root {
-    color-scheme: dark;
+    color-scheme: light;
     font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --ink: #0b0e12;
-    --cream: #f6ead4;
-    --paper: #e9dbc0;
-    --paper-ink: #16120c;
-    --teal: #20d3bd;
-    --cobalt: #6d87ff;
-    --cobalt-deep: #101b46;
-    --line: rgba(246, 234, 212, 0.18);
-    background: var(--ink);
-    color: var(--cream);
+    --paper-warm: #f4eddc;
+    --paper-warm-deep: #e9dec7;
+    --paper-cool: #edf0f6;
+    --paper-cool-deep: #dce2ee;
+    --ink: #17140d;
+    --ink-cool: #10131c;
+    --graph-warm: rgba(23, 20, 13, 0.065);
+    --graph-cool: rgba(34, 51, 96, 0.07);
+    --hairline: rgba(23, 20, 13, 0.18);
+    --hairline-cool: rgba(37, 52, 91, 0.2);
+    --marker-teal: #14786d;
+    --cobalt: #4054d6;
+    --stamp-red: #b93627;
+    --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+    background: var(--paper-warm);
+    color: var(--ink);
   }
 
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { min-width: 320px; margin: 0; background: #0b0e12; }
-  a { color: inherit; }
-  h1, h2, p, ol { margin: 0; }
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 320px;
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    overflow-x: hidden;
+    background: var(--paper-warm);
+    color: var(--ink);
+  }
+
+  a {
+    color: inherit;
+  }
+
+  h1,
+  h2,
+  p,
+  figure,
+  ol {
+    margin: 0;
+  }
 
   .skip-link {
     position: fixed;
     top: 0.75rem;
     left: 0.75rem;
     z-index: 100;
-    padding: 0.75rem 1rem;
-    border-radius: 999px;
-    background: #fff;
-    color: #111;
-    font-weight: 850;
+    padding: 0.8rem 1rem;
+    background: var(--ink);
+    color: var(--paper-warm);
+    font-weight: 800;
     transform: translateY(-160%);
   }
-  .skip-link:focus { transform: translateY(0); }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
 
   .site-header {
     position: fixed;
-    inset: 0.9rem 1rem auto;
-    z-index: 20;
-    width: min(78rem, calc(100% - 2rem));
-    min-height: 3.5rem;
-    margin-inline: auto;
+    inset: 0 0 auto;
+    z-index: 30;
+    min-height: 4.75rem;
+    display: grid;
+    grid-template-columns: minmax(15rem, 1fr) auto minmax(15rem, 1fr);
+    align-items: center;
+    gap: 2rem;
+    padding: 0.75rem max(1rem, calc((100vw - 86rem) / 2));
+    border-bottom: 1px solid var(--hairline);
+    background: color-mix(in srgb, var(--paper-warm) 90%, transparent);
+    backdrop-filter: blur(16px);
+    transition: color 350ms ease, background 350ms ease, border-color 350ms ease;
+  }
+
+  body[data-phase="bureau"] .site-header {
+    border-color: var(--hairline-cool);
+    background: color-mix(in srgb, var(--paper-cool) 90%, transparent);
+    color: var(--ink-cool);
+  }
+
+  .header-brand {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    border: 1px solid rgba(255,255,255,.16);
-    border-radius: 999px;
-    padding: 0.55rem 0.65rem 0.55rem 1rem;
-    background: rgba(9, 12, 15, 0.72);
-    backdrop-filter: blur(18px) saturate(130%);
-    box-shadow: 0 1rem 3rem rgba(0,0,0,.2);
-    transition: border-color 400ms ease, background 400ms ease;
-  }
-  body[data-phase="bureau"] .site-header { border-color: rgba(109,135,255,.45); background: rgba(9,14,28,.82); }
-  .header-brand { font-size: 1rem; font-weight: 900; text-decoration: none; white-space: nowrap; }
-  .site-header nav { display: flex; align-items: center; gap: 0.1rem; }
-  .site-header nav a {
-    border-radius: 999px;
-    padding: 0.65rem 0.82rem;
-    color: rgba(246,234,212,.72);
-    font-size: 0.9rem;
-    font-weight: 760;
+    gap: 0.75rem;
+    font-size: 0.93rem;
+    font-weight: 850;
     text-decoration: none;
+    white-space: nowrap;
   }
-  .site-header nav a:hover, .site-header nav a:focus-visible { background: rgba(255,255,255,.09); color: #fff; }
+
+  .header-brand span {
+    display: grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    place-items: center;
+    background: var(--ink);
+    color: var(--paper-warm);
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    letter-spacing: -0.04em;
+  }
+
+  body[data-phase="bureau"] .header-brand span {
+    background: var(--cobalt);
+    color: white;
+  }
+
+  .site-header nav {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+  }
+
+  .site-header nav a,
+  .header-start {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .site-header nav a {
+    padding-block: 0.5rem;
+    border-bottom: 1px solid transparent;
+  }
+
+  .site-header nav a:hover,
+  .site-header nav a:focus-visible {
+    border-color: currentColor;
+  }
+
+  .header-start {
+    justify-self: end;
+    padding: 0.7rem 0.9rem;
+    background: var(--ink);
+    color: var(--paper-warm);
+  }
+
+  body[data-phase="bureau"] .header-start {
+    background: var(--cobalt);
+    color: white;
+  }
 
   .course-hero {
     position: relative;
     min-height: 100svh;
     overflow: hidden;
+    padding: clamp(7rem, 13vh, 9rem) max(1rem, calc((100vw - 86rem) / 2)) 0;
+    background-color: var(--paper-warm);
+    background-image:
+      linear-gradient(var(--graph-warm) 1px, transparent 1px),
+      linear-gradient(90deg, var(--graph-warm) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .course-hero::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    background: radial-gradient(circle at 35% 40%, transparent 0, rgba(244, 237, 220, 0.52) 74%);
+  }
+
+  .margin-rule {
+    position: absolute;
+    z-index: 1;
+    top: 4.75rem;
+    bottom: 0;
+    left: max(2.75rem, calc((100vw - 93rem) / 2));
+    width: 1px;
+    background: rgba(185, 54, 39, 0.56);
+    transform-origin: top;
+    animation: draw-rule 1.2s 0.2s both ease-out;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    width: min(86rem, 100%);
+    min-height: calc(100svh - clamp(7rem, 13vh, 9rem) - 5.3rem);
+    margin-inline: auto;
     display: grid;
-    align-items: end;
-    padding: clamp(7rem, 12vh, 10rem) max(1rem, calc((100vw - 78rem) / 2)) clamp(5rem, 10vh, 7rem);
+    grid-template-columns: minmax(0, 0.94fr) minmax(28rem, 0.82fr);
+    gap: clamp(3rem, 6vw, 7rem);
+    align-items: center;
+    padding-block: clamp(2rem, 5vh, 4rem) 4rem;
   }
-  .hero-image, .hero-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .hero-image { object-fit: cover; object-position: 56% center; }
-  .hero-shade {
-    background:
-      linear-gradient(90deg, rgba(5,7,8,.94) 0%, rgba(5,7,8,.7) 42%, rgba(5,7,8,.14) 75%),
-      linear-gradient(0deg, rgba(5,7,8,.82) 0%, transparent 45%);
+
+  .hero-copy {
+    min-width: 0;
   }
-  .hero-content { position: relative; z-index: 2; width: min(63rem, 100%); min-width: 0; }
-  .hero-kicker, .section-index {
-    color: var(--teal);
-    font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
-    font-size: 0.76rem;
-    font-weight: 760;
-    letter-spacing: .12em;
+
+  .eyebrow {
+    color: var(--marker-teal);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    line-height: 1.5;
     text-transform: uppercase;
   }
-  .hero-content h1 { margin-top: 0.8rem; font-weight: 850; letter-spacing: -0.055em; line-height: .83; }
-  .hero-content h1 > span { display: block; max-width: 9.7ch; font-size: clamp(4.4rem, 10vw, 9.4rem); }
-  .hero-content h1 small {
-    display: block;
-    margin-top: 1.3rem;
-    font-size: clamp(1.75rem, 3.4vw, 3.4rem);
-    font-weight: 620;
-    letter-spacing: -0.045em;
-    line-height: .98;
+
+  .hero-copy .eyebrow {
+    animation: hero-enter 650ms 80ms both ease-out;
   }
-  .hero-summary { max-width: 43rem; margin-top: 1.25rem; color: rgba(246,234,212,.74); font-size: clamp(1.02rem, 1.5vw, 1.22rem); line-height: 1.6; }
-  .hero-actions, .close-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1.5rem; }
+
+  h1 {
+    max-width: 10ch;
+    margin-top: 0.85rem;
+    font-size: clamp(4.15rem, 6.8vw, 6.8rem);
+    font-weight: 850;
+    letter-spacing: -0.065em;
+    line-height: 0.78;
+    text-wrap: balance;
+    animation: hero-enter 780ms 140ms both ease-out;
+  }
+
+  .hero-lede {
+    max-width: 43rem;
+    margin-top: clamp(1.7rem, 3vh, 2.5rem);
+    font-size: clamp(1.03rem, 1.45vw, 1.22rem);
+    line-height: 1.65;
+    animation: hero-enter 780ms 240ms both ease-out;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 1.75rem;
+    animation: hero-enter 780ms 320ms both ease-out;
+  }
+
   .button {
-    min-height: 3rem;
+    min-height: 3.25rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
-    border-radius: 999px;
-    padding: 0.75rem 1.08rem;
+    padding: 0.8rem 1.1rem;
+    font-size: 0.92rem;
     font-weight: 850;
     text-decoration: none;
-    transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+    transition: transform 180ms ease, background 180ms ease, color 180ms ease;
   }
-  .button:hover, .button:focus-visible, .text-link:hover, .text-link:focus-visible { transform: translateY(-2px); }
-  .button.primary { background: var(--teal); color: #06120f; }
-  .button.glass { border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); color: #fff; backdrop-filter: blur(12px); }
-  .hero-scroll {
-    position: absolute;
-    right: max(1rem, calc((100vw - 78rem) / 2));
-    bottom: 2rem;
-    z-index: 2;
+
+  .button:hover,
+  .button:focus-visible,
+  .line-link:hover,
+  .line-link:focus-visible,
+  .text-link:hover,
+  .text-link:focus-visible {
+    transform: translateY(-2px);
+  }
+
+  .button-ink {
+    background: var(--ink);
+    color: var(--paper-warm);
+  }
+
+  .button-ink:hover,
+  .button-ink:focus-visible {
+    background: var(--marker-teal);
+  }
+
+  .text-link,
+  .line-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 800;
+    text-underline-offset: 0.22em;
+    transition: transform 180ms ease;
+  }
+
+  .text-link {
+    font-size: 0.9rem;
+  }
+
+  .manifest {
+    width: fit-content;
+    max-width: 100%;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    color: rgba(246,234,212,.68);
-    font-family: "JetBrains Mono Variable", "JetBrains Mono", monospace;
-    font-size: .72rem;
-    text-decoration: none;
+    gap: 0.6rem;
+    margin-top: clamp(2.5rem, 6vh, 4.5rem);
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--hairline);
+    color: rgba(23, 20, 13, 0.72);
+    font-family: var(--mono);
+    font-size: clamp(0.66rem, 1vw, 0.78rem);
+    white-space: nowrap;
+  }
+
+  .manifest-prompt {
+    color: var(--marker-teal);
+    font-weight: 800;
+  }
+
+  .manifest-copy {
+    display: inline-block;
+    overflow: hidden;
+    width: 54ch;
+    max-width: 100%;
+    animation: type-manifest 1.8s 750ms steps(54, end) both;
+  }
+
+  .manifest i {
+    width: 0.55em;
+    height: 1.15em;
+    background: var(--marker-teal);
+    animation: cursor-blink 850ms step-end infinite;
+  }
+
+  .evidence-photo {
+    position: relative;
+    padding: 0.62rem 0.62rem 2.3rem;
+    background: #fffdf7;
+    box-shadow: 0 1.5rem 4rem rgba(47, 38, 21, 0.22);
+    transform: rotate(-1.2deg);
+  }
+
+  .evidence-photo img {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .evidence-photo figcaption {
+    position: absolute;
+    right: 0.8rem;
+    bottom: 0.78rem;
+    left: 0.8rem;
+    color: rgba(23, 20, 13, 0.7);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.02em;
+  }
+
+  .tape {
+    position: absolute;
+    z-index: 2;
+    display: block;
+    background: rgba(223, 205, 162, 0.72);
+    box-shadow: 0 0 0 1px rgba(102, 84, 45, 0.05);
+    backdrop-filter: blur(2px);
+  }
+
+  .tape-top {
+    top: -1.1rem;
+    left: 39%;
+    width: 7rem;
+    height: 2.1rem;
+    transform: rotate(2.5deg);
+  }
+
+  .tape-side {
+    right: -1.7rem;
+    bottom: 23%;
+    width: 4.8rem;
+    height: 1.7rem;
+    transform: rotate(-5deg);
+  }
+
+  .stamp {
+    position: absolute;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    border: 0.23rem double currentColor;
+    color: var(--stamp-red);
+    font-family: var(--mono);
+    font-weight: 900;
+    letter-spacing: 0.09em;
+    line-height: 1.05;
+    text-align: center;
+    text-transform: uppercase;
+    mix-blend-mode: multiply;
+  }
+
+  .stamp-open {
+    right: -0.75rem;
+    bottom: 1.65rem;
+    width: 7.2rem;
+    height: 2.8rem;
+    font-size: 0.82rem;
+    transform: rotate(-7deg);
+  }
+
+  .ledger-preview {
+    position: relative;
+    z-index: 3;
+    width: min(86rem, 100%);
+    height: 5.3rem;
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: 7rem 1fr 14rem 10rem 5rem;
+    align-items: center;
+    border-top: 1px solid var(--ink);
+    color: rgba(23, 20, 13, 0.56);
+    font-family: var(--mono);
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  .hero-scroll i { width: 3.5rem; height: 1px; background: var(--teal); transform-origin: left; animation: scan 2.4s ease-in-out infinite; }
 
-  .hero-kicker { animation: enter .7s .08s both; }
-  .hero-content h1 { animation: enter .9s .16s both; }
-  .hero-summary { animation: enter .9s .28s both; }
-  .hero-actions { animation: enter .9s .38s both; }
-  @keyframes enter { from { opacity: 0; transform: translateY(2rem); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes scan { 0%,100% { transform: scaleX(.25); opacity: .35; } 50% { transform: scaleX(1); opacity: 1; } }
-
-  .progression {
-    width: min(78rem, calc(100% - 2rem));
-    margin-inline: auto;
-    padding: clamp(5rem, 8vw, 8rem) 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1.18fr) minmax(26rem, .82fr);
-    gap: clamp(4rem, 6vw, 6rem);
-    align-items: start;
+  .course-section {
+    position: relative;
+    padding: clamp(6rem, 10vw, 10rem) max(1rem, calc((100vw - 86rem) / 2));
   }
-  .progression-heading { max-width: 42rem; }
-  .progression h2 {
-    max-width: 13ch;
-    margin-top: 1.2rem;
-    font-size: clamp(3.2rem, 4.6vw, 4.85rem);
-    line-height: .91;
-    letter-spacing: -.055em;
+
+  .archive-section {
+    background:
+      linear-gradient(90deg, transparent calc(50% - 1px), rgba(23, 20, 13, 0.035) 50%, transparent calc(50% + 1px)),
+      var(--paper-warm);
+    color: var(--ink);
+  }
+
+  .bureau-section {
+    background-color: var(--paper-cool);
+    background-image:
+      linear-gradient(var(--graph-cool) 1px, transparent 1px),
+      linear-gradient(90deg, var(--graph-cool) 1px, transparent 1px);
+    background-size: 32px 32px;
+    color: var(--ink-cool);
+  }
+
+  .section-shell {
+    width: min(86rem, 100%);
+    margin-inline: auto;
+  }
+
+  .section-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(20rem, 0.62fr);
+    gap: clamp(3rem, 7vw, 8rem);
+    align-items: end;
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+
+  .section-heading h2,
+  .handoff h2,
+  .back-cover h2 {
+    margin-top: 0.9rem;
+    font-size: clamp(2.8rem, 5.3vw, 5.3rem);
+    font-weight: 820;
+    letter-spacing: -0.055em;
+    line-height: 0.93;
     text-wrap: balance;
   }
-  .progression-lede {
-    max-width: 36rem;
-    margin-top: 1.5rem;
-    color: rgba(246,234,212,.68);
-    font-size: clamp(1.05rem, 1.35vw, 1.2rem);
-    line-height: 1.65;
+
+  .section-heading > p {
+    max-width: 31rem;
+    font-size: 1.03rem;
+    line-height: 1.7;
   }
-  .progression-steps {
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--line);
-    list-style: none;
+
+  .bureau-section .eyebrow,
+  .handoff .eyebrow {
+    color: var(--cobalt);
   }
-  .progression-steps li {
+
+  .course-ledger {
+    border-top: 2px solid currentColor;
+    border-bottom: 1px solid currentColor;
+  }
+
+  .ledger-head,
+  .ledger-item > a {
     display: grid;
-    grid-template-columns: 2.5rem minmax(0, 1fr);
-    gap: clamp(1rem, 2vw, 1.6rem);
-    padding: clamp(1.6rem, 3vw, 2.25rem) 0;
-    border-bottom: 1px solid var(--line);
-    transition: border-color 180ms ease, transform 180ms ease;
+    grid-template-columns: 7rem minmax(20rem, 1.2fr) minmax(13rem, 0.7fr) 10rem 5rem;
+    column-gap: 1rem;
+    align-items: center;
   }
-  .progression-steps li:hover { border-color: rgba(32,214,191,.62); transform: translateX(.35rem); }
-  .progression-number,
-  .progression-phase {
-    color: var(--teal);
-    font-family: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
-    font-size: .73rem;
-    font-weight: 760;
-    letter-spacing: .1em;
+
+  .ledger-head {
+    min-height: 3.5rem;
+    border-bottom: 1px solid currentColor;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 750;
+    letter-spacing: 0.07em;
+    opacity: 0.58;
     text-transform: uppercase;
   }
-  .progression-phase { margin: 0; }
-  .progression-steps h3 { margin-top: .55rem; font-size: clamp(1.45rem, 2.1vw, 1.9rem); letter-spacing: -.035em; }
-  .progression-steps li p:last-child { margin-top: .7rem; color: rgba(246,234,212,.66); line-height: 1.62; }
-  .method h2, .course-close h2 { font-size: clamp(2.7rem, 6vw, 6.2rem); line-height: .93; letter-spacing: -.055em; }
 
-  @supports (animation-timeline: view()) {
-    .progression-heading,
-    .progression-steps {
-      animation: progression-enter both;
-      animation-timeline: view();
-      animation-range: entry 12% cover 34%;
-    }
-    .progression-steps { animation-delay: .08s; }
-  }
-  @keyframes progression-enter {
-    from { opacity: 0; transform: translateY(1.5rem); }
-    to { opacity: 1; transform: translateY(0); }
+  .course-ledger ol {
+    padding: 0;
+    list-style: none;
   }
 
-  .text-link { display: inline-flex; gap: .55rem; font-weight: 850; text-underline-offset: .25em; transition: transform 180ms ease; }
+  .ledger-item {
+    position: relative;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .bureau-section .ledger-item {
+    border-color: var(--hairline-cool);
+  }
+
+  .ledger-item:last-child {
+    border-bottom: 0;
+  }
+
+  .ledger-item::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    content: "";
+    background: rgba(255, 221, 74, 0.38);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 300ms ease;
+  }
+
+  .bureau-section .ledger-item::before {
+    background: rgba(100, 124, 255, 0.16);
+  }
+
+  .ledger-item:hover::before,
+  .ledger-item:focus-within::before {
+    transform: scaleX(1);
+  }
+
+  .ledger-item > a {
+    position: relative;
+    z-index: 1;
+    min-height: 9rem;
+    padding-block: 1.35rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .entry-number,
+  .entry-topics,
+  .entry-meta,
+  .entry-check {
+    font-family: var(--mono);
+  }
+
+  .entry-number {
+    align-self: start;
+    padding-top: 0.15rem;
+    color: var(--marker-teal);
+    font-size: 0.78rem;
+    font-weight: 850;
+  }
+
+  .bureau-section .entry-number,
+  .bureau-section .entry-check {
+    color: var(--cobalt);
+  }
+
+  .entry-main {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .entry-main strong {
+    font-size: clamp(1.35rem, 2.1vw, 2rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  .entry-main > span {
+    max-width: 43rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    opacity: 0.68;
+  }
+
+  .entry-topics,
+  .entry-meta {
+    font-size: 0.67rem;
+    line-height: 1.65;
+    opacity: 0.67;
+  }
+
+  .entry-check {
+    justify-self: end;
+    color: var(--marker-teal);
+    font-size: 0.8rem;
+    font-weight: 850;
+  }
+
+  .section-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-top: 2rem;
+  }
+
+  .line-link {
+    width: fit-content;
+    font-size: 0.92rem;
+  }
+
+  .section-action > span {
+    font-family: var(--mono);
+    font-size: 0.67rem;
+    opacity: 0.6;
+  }
 
   .handoff {
-    position: relative;
-    min-height: min(86svh, 52rem);
+    padding: clamp(6rem, 10vw, 10rem) max(1rem, calc((100vw - 86rem) / 2));
     overflow: hidden;
+    background: var(--paper-cool-deep);
+    color: var(--ink-cool);
+  }
+
+  .handoff-inner {
+    width: min(86rem, 100%);
+    margin-inline: auto;
     display: grid;
-    align-items: end;
-    padding: clamp(5rem, 10vw, 9rem) max(1rem, calc((100vw - 78rem) / 2));
-    background: #090f22;
-    color: #f3f4ff;
+    grid-template-columns: minmax(28rem, 1.15fr) minmax(20rem, 0.62fr);
+    gap: clamp(4rem, 8vw, 9rem);
+    align-items: center;
   }
-  .handoff-image,
-  .handoff-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .handoff-image { object-fit: cover; object-position: center; }
-  .handoff-shade {
+
+  .bureau-photo {
+    transform: rotate(1.1deg);
+  }
+
+  .bureau-photo img {
+    aspect-ratio: 16 / 10;
+  }
+
+  .bureau-photo .tape-top {
+    left: 11%;
+    transform: rotate(-3deg);
+  }
+
+  .stamp-recruit {
+    right: -1.2rem;
+    bottom: 1.1rem;
+    width: 7.4rem;
+    height: 4.1rem;
+    font-size: 0.7rem;
+    transform: rotate(5deg);
+  }
+
+  .handoff-copy > p:not(.eyebrow) {
+    max-width: 31rem;
+    margin-top: 1.5rem;
+    font-size: 1.03rem;
+    line-height: 1.7;
+  }
+
+  .handoff-copy .line-link {
+    margin-top: 1.7rem;
+  }
+
+  .back-cover {
+    padding: clamp(6rem, 10vw, 10rem) max(1rem, calc((100vw - 86rem) / 2));
     background:
-      linear-gradient(90deg, rgba(5,9,22,.93) 0%, rgba(5,9,22,.68) 52%, rgba(5,9,22,.18) 82%),
-      linear-gradient(0deg, rgba(5,9,22,.86), transparent 58%);
-  }
-  .handoff-copy { position: relative; z-index: 2; width: min(56rem, 100%); }
-  .handoff .section-index { color: #aebaff; }
-  .handoff h2 { max-width: 15ch; margin: .85rem 0 0; font-size: clamp(3rem, 7vw, 7rem); line-height: .91; letter-spacing: -.06em; }
-  .handoff-copy > p:last-child { max-width: 40rem; margin-top: 1.25rem; color: rgba(239,242,255,.72); font-size: 1.08rem; line-height: 1.65; }
-
-  .method { padding: clamp(5rem,10vw,10rem) max(1rem, calc((100vw - 78rem) / 2)); background: #090c12; }
-  .method h2 { max-width: 12ch; margin-top: .9rem; }
-  .method-flow { margin-top: clamp(3rem,7vw,7rem); display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-top: 1px solid var(--line); }
-  .method-flow div { min-height: 15rem; padding: 1.2rem 1.5rem 1.5rem 0; border-bottom: 1px solid var(--line); }
-  .method-flow div + div { border-left: 1px solid var(--line); padding-left: 1.5rem; }
-  .method-flow span { display: block; color: var(--teal); font-family: "JetBrains Mono Variable", "JetBrains Mono", monospace; font-size: .75rem; }
-  .method-flow strong { display: block; margin-top: 4rem; font-size: 1.55rem; }
-  .method-flow p { max-width: 25rem; margin-top: .55rem; color: rgba(246,234,212,.64); line-height: 1.55; }
-
-  .course-close { padding: clamp(5rem,10vw,10rem) max(1rem, calc((100vw - 78rem) / 2)); background: #e8dcc6; color: #16120c; }
-  .course-close .section-index { color: #334ba9; }
-  .course-close h2 { margin-top: .9rem; }
-  .button.paper { background: #18140e; color: #fff6e5; }
-  .button.cobalt { background: #526ee8; color: #fff; }
-  .dark-link { margin-left: .35rem; color: #2c3976; }
-
-  footer { display: flex; justify-content: space-between; gap: 2rem; padding: 2rem max(1rem, calc((100vw - 78rem) / 2)); background: #07090d; color: rgba(246,234,212,.66); }
-  footer > a { color: #fff; font-weight: 850; text-decoration: none; }
-  footer nav { display: flex; flex-wrap: wrap; gap: 1.2rem; }
-  footer nav a { text-underline-offset: .2em; }
-
-  :focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
-  .course-close :focus-visible { outline-color: #16120c; }
-
-  @media (max-width: 900px) {
-    .site-header { position: absolute; align-items: flex-start; flex-direction: column; border-radius: 1.2rem; }
-    .site-header nav { width: 100%; overflow-x: auto; padding-bottom: .1rem; }
-    .site-header nav a { flex: 0 0 auto; padding-inline: .6rem; }
-    .course-hero { min-height: 46rem; padding-top: 9.5rem; }
-    .hero-image { object-position: 64% center; }
-    .hero-content h1 > span { font-size: clamp(3.8rem,15vw,7rem); }
-    .hero-scroll { display: none; }
-    .progression { grid-template-columns: 1fr; gap: 3.5rem; }
-    .progression-heading { max-width: 44rem; }
-    .progression h2 { max-width: 12ch; }
-    .progression-steps { max-width: 44rem; }
-    .method-flow { grid-template-columns: 1fr; }
-    .method-flow div { min-height: auto; padding: 1.2rem 0 2rem; }
-    .method-flow div + div { border-left: 0; padding-left: 0; }
-    .method-flow strong { margin-top: 2rem; }
+      linear-gradient(rgba(255, 255, 255, 0.026) 1px, transparent 1px),
+      #12120f;
+    background-size: 100% 2.8rem;
+    color: var(--paper-warm);
   }
 
-  @media (max-width: 560px) {
-    .course-hero { min-height: 42rem; }
-    .site-header nav {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      overflow: visible;
-      padding-bottom: 0;
+  .back-cover .eyebrow {
+    color: #6ed4c5;
+  }
+
+  .back-cover-inner {
+    width: min(86rem, 100%);
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(24rem, 0.72fr);
+    gap: clamp(5rem, 10vw, 12rem);
+  }
+
+  .method h2 {
+    max-width: 11ch;
+  }
+
+  .method ol {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding: 0;
+    border-top: 1px solid rgba(244, 237, 220, 0.3);
+    list-style: none;
+  }
+
+  .method li {
+    min-height: 5.5rem;
+    display: grid;
+    grid-template-columns: 4.5rem 1fr;
+    align-items: center;
+    border-bottom: 1px solid rgba(244, 237, 220, 0.2);
+  }
+
+  .method li > span {
+    color: #6ed4c5;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+  }
+
+  .method li p {
+    font-size: 1rem;
+  }
+
+  .method li strong {
+    font-size: 1.24rem;
+  }
+
+  .closing {
+    align-self: end;
+    padding-bottom: 0.2rem;
+  }
+
+  .closing h2 {
+    font-size: clamp(3.2rem, 6vw, 6rem);
+  }
+
+  .closing > p:not(.eyebrow) {
+    max-width: 30rem;
+    margin-top: 1.5rem;
+    color: rgba(244, 237, 220, 0.68);
+    line-height: 1.65;
+  }
+
+  .closing-actions {
+    display: grid;
+    justify-items: start;
+    gap: 0.8rem;
+    margin-top: 2rem;
+  }
+
+  .button-paper {
+    background: var(--paper-warm);
+    color: var(--ink);
+  }
+
+  .button-paper:hover,
+  .button-paper:focus-visible {
+    background: #6ed4c5;
+  }
+
+  .button-blue {
+    background: var(--cobalt);
+    color: white;
+  }
+
+  .button-blue:hover,
+  .button-blue:focus-visible {
+    background: #687bf0;
+  }
+
+  .light-link {
+    margin-top: 0.55rem;
+    color: rgba(244, 237, 220, 0.82);
+  }
+
+  footer {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 2rem;
+    min-height: 7rem;
+    padding: 1.5rem max(1rem, calc((100vw - 86rem) / 2));
+    background: #090a09;
+    color: rgba(244, 237, 220, 0.72);
+  }
+
+  .footer-brand {
+    font-weight: 850;
+    text-decoration: none;
+  }
+
+  footer p {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+  }
+
+  footer nav {
+    justify-self: end;
+    display: flex;
+    gap: 1.25rem;
+  }
+
+  footer nav a {
+    font-size: 0.78rem;
+    text-underline-offset: 0.2em;
+  }
+
+  .motion-ready .reveal-row,
+  .motion-ready .reveal-photo {
+    opacity: 0;
+  }
+
+  .motion-ready .reveal-row {
+    transform: translateY(1.5rem);
+    transition: opacity 500ms ease, transform 500ms ease;
+  }
+
+  .motion-ready .reveal-row.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .motion-ready .reveal-photo {
+    transform: translateY(2rem) rotate(-3deg);
+    transition: opacity 700ms ease, transform 850ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .motion-ready .bureau-photo.reveal-photo {
+    transform: translateY(2rem) rotate(3deg);
+  }
+
+  .motion-ready .reveal-photo.is-visible {
+    opacity: 1;
+    transform: translateY(0) rotate(-1.2deg);
+  }
+
+  .motion-ready .bureau-photo.reveal-photo.is-visible {
+    transform: translateY(0) rotate(1.1deg);
+  }
+
+  .motion-ready .reveal-photo .stamp {
+    opacity: 0;
+    transform: rotate(10deg) scale(1.4);
+    transition: opacity 250ms 380ms ease, transform 450ms 380ms cubic-bezier(0.2, 1.2, 0.3, 1);
+  }
+
+  .motion-ready .reveal-photo.is-visible .stamp-open {
+    opacity: 1;
+    transform: rotate(-7deg) scale(1);
+  }
+
+  .motion-ready .reveal-photo.is-visible .stamp-recruit {
+    opacity: 1;
+    transform: rotate(5deg) scale(1);
+  }
+
+  @keyframes hero-enter {
+    from {
+      opacity: 0;
+      transform: translateY(1.75rem);
     }
-    .site-header nav a { text-align: center; }
-    .hero-shade { background: linear-gradient(90deg,rgba(5,7,8,.94),rgba(5,7,8,.64)), linear-gradient(0deg,rgba(5,7,8,.88),transparent); }
-    .hero-content h1 > span { font-size: clamp(2.3rem,11.5vw,4.25rem); }
-    .hero-content h1 small { font-size: 1.55rem; }
-    .progression { gap: 2.75rem; }
-    .progression h2 { font-size: clamp(2.75rem, 13vw, 4.2rem); }
-    .progression-steps li { grid-template-columns: 2rem minmax(0, 1fr); }
-    .hero-actions, .close-actions { align-items: stretch; flex-direction: column; }
-    .button { width: 100%; }
-    .dark-link { margin: .4rem 0 0; justify-content: center; }
-    .handoff { min-height: 42rem; }
-    .handoff-image { object-position: 58% center; }
-    .handoff-shade { background: linear-gradient(90deg,rgba(5,9,22,.94),rgba(5,9,22,.62)), linear-gradient(0deg,rgba(5,9,22,.9),transparent); }
-    footer { align-items: flex-start; flex-direction: column; }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes type-manifest {
+    from {
+      width: 0;
+    }
+  }
+
+  @keyframes cursor-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes draw-rule {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+
+  @media (max-width: 1120px) {
+    .site-header {
+      grid-template-columns: 1fr auto;
+    }
+
+    .site-header nav {
+      display: none;
+    }
+
+    .hero-inner {
+      grid-template-columns: minmax(0, 1fr) minmax(24rem, 0.78fr);
+      gap: 3rem;
+    }
+
+    .ledger-preview {
+      grid-template-columns: 6rem 1fr 11rem 8rem 4rem;
+    }
+
+    .ledger-head,
+    .ledger-item > a {
+      grid-template-columns: 5rem minmax(18rem, 1.2fr) minmax(11rem, 0.65fr) 8rem 3rem;
+    }
+
+    .entry-main > span {
+      font-size: 0.84rem;
+    }
+  }
+
+  @media (max-width: 860px) {
+    html {
+      scroll-padding-top: 4.25rem;
+    }
+
+    .site-header {
+      min-height: 4.25rem;
+    }
+
+    .hero-inner,
+    .section-heading,
+    .handoff-inner,
+    .back-cover-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .course-hero {
+      min-height: auto;
+      padding-top: 5.75rem;
+    }
+
+    .hero-inner {
+      min-height: auto;
+      gap: 4rem;
+      padding-block: 3.5rem 5rem;
+    }
+
+    .hero-copy {
+      max-width: 42rem;
+    }
+
+    .hero-photo {
+      width: min(39rem, 94%);
+      justify-self: center;
+    }
+
+    .ledger-preview {
+      display: none;
+    }
+
+    .margin-rule {
+      top: 4.25rem;
+      left: 1.85rem;
+    }
+
+    .section-heading {
+      gap: 2rem;
+    }
+
+    .ledger-head {
+      display: none;
+    }
+
+    .ledger-item > a {
+      grid-template-columns: 4.5rem minmax(0, 1fr) 2.5rem;
+      gap: 1rem;
+      min-height: 0;
+      padding-block: 1.5rem;
+    }
+
+    .entry-number {
+      grid-row: 1 / span 2;
+    }
+
+    .entry-main {
+      grid-column: 2;
+    }
+
+    .entry-topics,
+    .entry-meta {
+      grid-column: 2;
+    }
+
+    .entry-check {
+      grid-column: 3;
+      grid-row: 1;
+      align-self: start;
+    }
+
+    .handoff-inner {
+      gap: 4rem;
+    }
+
+    .back-cover-inner {
+      gap: 6rem;
+    }
+
+    footer {
+      grid-template-columns: 1fr auto;
+    }
+
+    footer p {
+      display: none;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .site-header {
+      padding-inline: 0.75rem;
+    }
+
+    .header-brand {
+      font-size: 0.78rem;
+    }
+
+    .header-brand span {
+      width: 2rem;
+      height: 2rem;
+      font-size: 0.56rem;
+    }
+
+    .header-start {
+      padding: 0.62rem 0.72rem;
+      font-size: 0.62rem;
+    }
+
+    .course-hero {
+      padding-inline: 1.25rem;
+      background-size: 24px 24px;
+    }
+
+    h1 {
+      max-width: none;
+      font-size: clamp(3rem, 12.4vw, 4.25rem);
+      line-height: 0.84;
+    }
+
+    .hero-lede {
+      font-size: 0.98rem;
+    }
+
+    .hero-actions {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .manifest {
+      width: 100%;
+      overflow: hidden;
+      align-items: flex-start;
+      font-size: 0.6rem;
+    }
+
+    .manifest-copy {
+      min-width: 0;
+      flex: 1;
+      width: auto;
+      max-width: none;
+      overflow: visible;
+      line-height: 1.6;
+      white-space: normal;
+      animation: none;
+    }
+
+    .manifest i {
+      display: none;
+    }
+
+    .hero-photo {
+      width: calc(100% - 0.75rem);
+      padding: 0.42rem 0.42rem 2rem;
+    }
+
+    .tape-side {
+      display: none;
+    }
+
+    .stamp-open {
+      right: -0.45rem;
+    }
+
+    .course-section,
+    .handoff,
+    .back-cover {
+      padding-inline: 1.25rem;
+    }
+
+    .section-heading h2,
+    .handoff h2,
+    .back-cover h2 {
+      font-size: clamp(2.4rem, 11.7vw, 3.6rem);
+    }
+
+    .ledger-item > a {
+      grid-template-columns: 3.7rem minmax(0, 1fr);
+      gap: 0.8rem;
+    }
+
+    .entry-check {
+      display: none;
+    }
+
+    .entry-number {
+      font-size: 0.68rem;
+    }
+
+    .entry-main strong {
+      font-size: 1.3rem;
+    }
+
+    .entry-main > span {
+      font-size: 0.82rem;
+    }
+
+    .entry-topics {
+      display: none;
+    }
+
+    .entry-meta {
+      font-size: 0.62rem;
+    }
+
+    .section-action {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .section-action > span {
+      line-height: 1.6;
+    }
+
+    .bureau-photo {
+      width: calc(100% - 0.75rem);
+    }
+
+    .stamp-recruit {
+      right: -0.5rem;
+    }
+
+    .method li {
+      grid-template-columns: 3rem 1fr;
+    }
+
+    .closing-actions {
+      justify-items: stretch;
+    }
+
+    .closing-actions .button {
+      width: 100%;
+      text-align: center;
+    }
+
+    footer {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      padding-block: 2rem;
+    }
+
+    footer nav {
+      justify-self: start;
+      flex-wrap: wrap;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    .manifest-copy {
+      width: auto;
+    }
   }
 </style>
