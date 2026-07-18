@@ -21,22 +21,45 @@ from pathlib import Path
 
 path = Path("data") / "anonymous.txt"
 text = path.read_text(encoding="utf-8")
+print(type(text).__name__)
 ```
+
+Пример предполагает, что `data/anonymous.txt` существует относительно текущей
+рабочей папки.
+
+```text
+str
+```
+
+Вывод подтверждает декодирование UTF-8 в текст. Если потребителю нужны исходные
+байты, тот же путь читают без декодирования.
 
 Бинарный режим возвращает `bytes` без декодирования. Он нужен для хешей, изображений, архивов и парсера `.eml`, которому важны исходные байты:
 
 ```python
 raw = path.read_bytes()
+print(type(raw).__name__)
+```
+
+```text
+bytes
 ```
 
 ## Контекстный менеджер `with`
 
-Для пошагового чтения откройте файл через `with`. Python закроет его и при успешном завершении, и при исключении:
+Следующие примеры используют тот же существующий `path`. Для пошагового чтения
+откройте файл через `with`. Python закроет его и при успешном завершении, и при
+исключении:
 
 ```python
 with path.open("r", encoding="utf-8") as file:
     first_line = file.readline()
+
+print(first_line.rstrip("\n"))
 ```
+
+Выводит первую строку без завершающего перевода строки. Это проверяет границу
+одной строки; для содержимого целиком уже подходит `read_text()`.
 
 Основные режимы:
 
@@ -56,7 +79,9 @@ with path.open("r", encoding="utf-8") as file:
 
 ```python
 import hashlib
+from pathlib import Path
 
+path = Path("data") / "anonymous.txt"
 digest = hashlib.sha256()
 with path.open("rb") as file:
     while chunk := file.read(64 * 1024):
@@ -66,12 +91,18 @@ print(digest.hexdigest())
 ```
 
 `file.read()` возвращает пустые байты `b""` в конце файла; они считаются ложным значением и останавливают `while`.
+Программа печатает 64 шестнадцатеричных символа. Это наблюдаемый SHA-256
+содержимого файла; изменение хотя бы одного байта меняет значение, поэтому
+хеш можно передать следующему этапу как проверку целостности.
 
 ## Ошибки файловой системы
 
 Чтение может завершиться `FileNotFoundError`, `PermissionError`, `UnicodeDecodeError` или более общим `OSError`. Ловите исключение только там, где можете добавить понятный контекст или выбрать безопасное действие:
 
 ```python
+from pathlib import Path
+
+path = Path("data") / "anonymous.txt"
 try:
     text = path.read_text(encoding="utf-8")
 except OSError as exc:

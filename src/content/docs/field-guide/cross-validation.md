@@ -8,14 +8,36 @@ order: 38
 
 ## Зачем нужна CV
 
-Одно разбиение на обучение и проверку может оказаться случайно лёгким или трудным. K-fold кросс-валидация делит обучающую выборку на `k` частей: по очереди обучается на `k-1` частях и оценивается на оставшейся. Каждый объект участвует в проверке ровно один раз.
+Одно разбиение на обучение и проверку может оказаться случайно лёгким или
+трудным. K-fold кросс-валидация делит обучающую выборку на `k` частей: по
+очереди обучается на `k-1` частях и оценивается на оставшейся. Каждый объект
+участвует в проверке ровно один раз.
 
-**Фолд (fold)** — одна из этих частей, а не отдельный набор данных из другого источника. Если в обучающей выборке 12 объектов и `k=3`, получится три запуска: каждый раз 8 объектов используются для обучения и 4 — для проверки. Оценки `0.82`, `0.88`, `0.84` можно свести к среднему `0.847` и разбросу; эти понятия разобраны в [математическом словаре](../numpy/#math-vocabulary). Несколько фолдов надёжнее одного удачного числа, но всё ещё проверяют только выбранную схему разбиения.
+**Фолд (fold)** — одна из этих частей. Следующий пример создаёт 40 объектов с
+четырьмя признаками и бинарной целью. Конвейер масштабирует признаки внутри
+каждого фолда и обучает логистическую регрессию:
 
 ```python
+import numpy as np
+from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+X_train, y_train = make_classification(
+    n_samples=40,
+    n_features=4,
+    n_informative=3,
+    n_redundant=0,
+    class_sep=1.2,
+    random_state=7,
+)
+pipeline = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=1000, random_state=42),
+)
+cv = StratifiedKFold(n_splits=4, shuffle=True, random_state=42)
 scores = cross_validate(
     pipeline,
     X_train,
@@ -24,19 +46,53 @@ scores = cross_validate(
     scoring=["accuracy", "precision", "recall", "f1"],
     n_jobs=1,
 )
+
+print("F1 по фолдам:", np.round(scores["test_f1"], 3))
+print(
+    "Среднее ± стандартное отклонение:",
+    f"{scores['test_f1'].mean():.3f} ± {scores['test_f1'].std():.3f}",
+)
 ```
 
-Для классификации `StratifiedKFold` сохраняет доли классов. Для связанных наблюдений он недостаточен — используйте группы.
+```text
+F1 по фолдам: [0.8   0.833 1.    1.   ]
+Среднее ± стандартное отклонение: 0.908 ± 0.092
+```
+
+`scores` — словарь вида `название → массив из четырёх значений`. F1 лежит от
+0 до 1, больше — лучше; стандартное отклонение `0.092` описывает разброс
+четырёх оценок, но не является доверительным интервалом. `StratifiedKFold`
+сохраняет доли классов. Для связанных наблюдений он недостаточен — нужны
+группы.
 
 ## Вневыборочные прогнозы
 
-`cross_val_predict()` возвращает для каждого объекта обучающей выборки прогноз модели, которая не училась на этом объекте. Такие прогнозы называют вневыборочными (out-of-fold, OOF):
+`cross_val_predict()` возвращает для каждого объекта прогноз модели, которая
+не училась на этом объекте. Повторим определения, чтобы листинг запускался
+отдельно, и проверим форму вневыборочных (OOF) оценок:
 
 ```python
-from sklearn.model_selection import cross_val_predict
+import numpy as np
+from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
-# cross_val_predict возвращает OOF-прогноз для каждого объекта.
-oof_probability = cross_val_predict(
+X_train, y_train = make_classification(
+    n_samples=40,
+    n_features=4,
+    n_informative=3,
+    n_redundant=0,
+    class_sep=1.2,
+    random_state=7,
+)
+pipeline = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=1000, random_state=42),
+)
+cv = StratifiedKFold(n_splits=4, shuffle=True, random_state=42)
+oof_score = cross_val_predict(
     pipeline,
     X_train,
     y_train,
@@ -44,46 +100,106 @@ oof_probability = cross_val_predict(
     method="predict_proba",
     n_jobs=1,
 )[:, 1]
+
+assert oof_score.shape == (len(X_train),)
+print(np.round(oof_score[:3], 3))
+print(oof_score.shape)
 ```
 
-Каждый объект получает прогноз из фолда, где он был проверочным, а не обучающим. На этих вероятностях можно выбрать порог, не используя отложенную тестовую выборку. Затем конвейер переобучается на всей внешней обучающей выборке и один раз проверяется на тестовой.
+```text
+[0.053 0.82  0.538]
+(40,)
+```
+
+Форма `(40,)` подтверждает по одной оценке на строку. Первые три числа —
+оценки класса `1`, а не метки и не автоматически откалиброванные вероятности.
+Теперь можно сравнить несколько заранее заданных порогов на OOF-оценках, не
+используя внешнюю тестовую выборку.
 
 ## GridSearchCV
 
-Гиперпараметры задают до обучения: например, `n_neighbors`, глубину дерева, `C` и `gamma`. В отличие от коэффициентов модели, они не вычисляются обычным `.fit()` — исследователь задаёт кандидатов, а процедура сравнивает их. `GridSearchCV` перебирает конечную объявленную сетку:
+Гиперпараметры задают до обучения. `GridSearchCV` перебирает конечную
+объявленную сетку. Сравним три значения силы регуляризации `C` на тех же
+четырёх фолдах и выведем всех кандидатов:
 
 ```python
-from sklearn.model_selection import GridSearchCV
+import pandas as pd
+from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
+X_train, y_train = make_classification(
+    n_samples=40,
+    n_features=4,
+    n_informative=3,
+    n_redundant=0,
+    class_sep=1.2,
+    random_state=7,
+)
+pipeline = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=1000, random_state=42),
+)
+cv = StratifiedKFold(n_splits=4, shuffle=True, random_state=42)
 search = GridSearchCV(
     pipeline,
-    param_grid={
-        "svc__C": [1, 10],
-        "svc__gamma": ["scale", 0.01],
-    },
+    param_grid={"logisticregression__C": [0.1, 1.0, 10.0]},
     scoring="f1_macro",
     cv=cv,
     n_jobs=1,
 )
 search.fit(X_train, y_train)
+
+results = pd.DataFrame(search.cv_results_)
+table = results[[
+    "param_logisticregression__C",
+    "mean_test_score",
+    "std_test_score",
+]].sort_values("mean_test_score", ascending=False)
+print(table.to_string(
+    index=False,
+    formatters={
+        "mean_test_score": "{:.3f}".format,
+        "std_test_score": "{:.3f}".format,
+    },
+))
 ```
 
-Имена параметров включают имя шага и двойное подчёркивание. Передавайте целый конвейер, иначе подготовка данных будет обучена до разбиения и информация из проверочной части попадёт в обучение.
+```text
+ param_logisticregression__C mean_test_score std_test_score
+                         0.1           0.898          0.102
+                         1.0           0.898          0.102
+                        10.0           0.873          0.085
+```
 
-В примере два значения `C` умножаются на два значения `gamma`: всего четыре кандидата. При пяти фолдах это 20 обучений, после которых лучшая конфигурация ещё раз обучается на всей переданной обучающей выборке. Размер поиска стоит считать и сообщать: сотни неявных попыток повышают вероятность случайной победы.
+Имя параметра включает имя шага и двойное подчёркивание. Три значения `C` и
+четыре фолда означают 12 обучений, после которых лучшая конфигурация ещё раз
+обучается на всей переданной выборке. Кандидаты `0.1` и `1.0` имеют одинаковое
+среднее `0.898`, поэтому таблица не обосновывает преимущество одного из них.
+`std_test_score` показывает разброс по фолдам. Мы проверили кандидатов внутри
+обучающей выборки; внешняя тестовая выборка всё ещё закрыта.
 
 ## Как читать результат
 
-Показывайте не только `best_score_`, но и среднее, разброс, параметры кандидатов и размер поиска. Победа на тысячную может быть шумом кросс-валидации. Чем больше комбинаций и ручных итераций, тем сильнее процедура подстраивается под фолды.
+Показывайте не только `best_score_`, но и среднее, разброс, параметры кандидатов
+и размер поиска. Победа на тысячную может быть шумом кросс-валидации. Чем
+больше комбинаций и ручных итераций, тем сильнее процедура подстраивается под
+фолды.
 
 ## Типичные ловушки
 
 - Включить внешнюю тестовую выборку в кросс-валидацию.
 - Масштабировать всю матрицу до вызова `GridSearchCV`.
 - Выбрать scoring после просмотра результатов.
-- Расширять сетку до тех пор, пока значение метрики не понравится, и не документировать поиск.
+- Расширять сетку, пока значение метрики не понравится, и не документировать
+  поиск.
 - Считать фолды независимыми доверительными интервалами.
 
 ## Где встречается
 
-[II-03](../../bureau/cost-of-one-error/) использует кросс-валидацию и вневыборочные прогнозы для выбора модели и порога. [II-05](../../bureau/familiar-handwriting/) проводит небольшой `GridSearchCV`. [II-06](../../bureau/compass-exam/) добавляет группы.
+[II-03](../../bureau/cost-of-one-error/) использует кросс-валидацию и
+вневыборочные прогнозы для выбора модели и порога.
+[II-05](../../bureau/familiar-handwriting/) проводит небольшой `GridSearchCV`.
+[II-06](../../bureau/compass-exam/) добавляет группы.

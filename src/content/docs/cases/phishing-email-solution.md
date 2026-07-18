@@ -18,11 +18,8 @@ from pathlib import Path
 import re
 from urllib.parse import urlparse
 
-from rich.console import Console
-from rich.table import Table
-
-
 def default_project_dir():
+    """Вернуть корень case-03 для learner-файла или файла внутри solution/."""
     script_dir = Path(__file__).resolve().parent
     return script_dir if (script_dir / "data").exists() else script_dir.parent
 
@@ -43,9 +40,6 @@ URGENT_PHRASES = (
     "immediately",
 )
 RISKY_SUFFIXES = {".exe", ".js", ".scr", ".cmd", ".bat", ".vbs", ".ps1"}
-
-console = Console()
-
 
 class EmailAnalysisError(Exception):
     """Ошибка чтения одного учебного .eml-файла."""
@@ -89,6 +83,7 @@ class _AnchorParser(HTMLParser):
 
 
 def clean_url(raw_url):
+    """Убрать только завершающую пунктуацию, не меняя компоненты URL."""
     return raw_url.rstrip(TRAILING_URL_CHARS)
 
 
@@ -104,19 +99,27 @@ def is_ip_address(host):
 
 
 def normalize_host(host):
+    """Привести имя хоста к форме для сравнения доменов."""
+    # Регистр и завершающая точка не должны менять результат сравнения.
     return host.strip().strip(".").lower()
 
 
 def base_domain(host):
+    """Вернуть учебный базовый домен: две последние метки имени хоста."""
     host = normalize_host(host)
+    # Пустая строка и числовой IP уже являются конечной формой для сравнения.
     if not host or is_ip_address(host):
         return host
     labels = host.split(".")
+    # Правило двух меток подходит учебным данным, но не учитывает составные публичные суффиксы.
     return host if len(labels) < 2 else ".".join(labels[-2:])
 
 
 def domain_from_address(value):
+    """Извлечь нормализованный домен или вернуть пустую строку."""
+    # parseaddr() отделяет отображаемое имя человека от адреса в угловых скобках.
     _, address = parseaddr(value or "")
+    # parseaddr() может вернуть отображаемый текст без части user@domain.
     if "@" not in address:
         return ""
     return normalize_host(address.rsplit("@", 1)[1])
@@ -256,6 +259,8 @@ def assess_link(link, sender_domain):
 
 
 def risk_verdict(score):
+    """Преобразовать сумму ручных баллов в одну из трёх категорий риска."""
+    # Пороги 7 и 3 — учебные правила, а не калиброванные вероятности.
     if score >= 7:
         return "высокий риск"
     if score >= 3:
@@ -264,12 +269,15 @@ def risk_verdict(score):
 
 
 def message_time(message):
+    """Вернуть дату как ISO-строку, сохранив нестандартное исходное значение."""
     value = message.get("Date")
+    # Пустая строка представляет отсутствующую дату в JSON-совместимой форме.
     if not value:
         return ""
     try:
         return parsedate_to_datetime(str(value)).isoformat()
     except (TypeError, ValueError):
+        # Исходное значение сохраняется, если учебная дата не разобралась.
         return str(value)
 
 
@@ -370,7 +378,7 @@ def analyze_directory(data_dir=DATA_DIR, context_path=CONTEXT_PATH):
             reports.append(analyze_file(path, context_phrases))
         except EmailAnalysisError as exc:
             # Ошибка одного файла становится отчётом и не прерывает обработку каталога.
-            # Те же ключи, что у обычного отчёта, упрощают таблицу и JSON-сериализацию.
+            # Те же ключи, что у обычного отчёта, упрощают вывод и JSON-сериализацию.
             reports.append(
                 {
                     "filename": path.name,
@@ -442,38 +450,32 @@ def build_artifact(reports):
 
 
 def save_artifact(artifact, path=ARTIFACT_PATH):
+    """Создать каталог назначения и записать один UTF-8 JSON-артефакт."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(artifact, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def render_results(reports):
-    # Колонки отделяют итоговую категорию и балл от объясняющих её признаков.
-    table = Table(title="Проверка писем")
-    table.add_column("Файл", style="cyan")
-    table.add_column("Вердикт")
-    table.add_column("Балл", justify="right")
-    table.add_column("Сигналы или ошибка")
+    """Показать по каждому письму итог и объясняющие его признаки."""
+    print("Проверка писем")
     # Письма идут по убыванию score; при равенстве сохраняется исходный порядок.
     for report in sorted(reports, key=lambda item: item["score"], reverse=True):
-        # Каждый признак занимает отдельную строку внутри последней ячейки таблицы.
-        details = "\n".join(
-            f"{signal['title']} (+{signal['points']})" for signal in report["signals"]
-        )
-        # Текст ошибки имеет приоритет; при отсутствии сигналов выводится явная подпись.
-        table.add_row(
-            report["filename"],
-            report["verdict"],
-            str(report["score"]),
-            report["error"] or details or "явных сигналов нет",
-        )
-    console.print(table)
+        print(f"{report['filename']}: {report['verdict']} (балл {report['score']})")
+        if report["error"]:
+            print(f"  - ошибка: {report['error']}")
+        elif report["signals"]:
+            for signal in report["signals"]:
+                print(f"  - {signal['title']} (+{signal['points']})")
+        else:
+            print("  - явных сигналов нет")
 
 
 def main():
+    """Построить один набор reports для текста и передаваемого JSON."""
     reports = analyze_directory()
     render_results(reports)
     save_artifact(build_artifact(reports))
-    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
+    print(f"Отчёт сохранён: {ARTIFACT_PATH.name}")
 
 
 if __name__ == "__main__":

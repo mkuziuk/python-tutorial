@@ -30,6 +30,12 @@ SELECTED_FINDINGS = {
     "I-02": ["F-I02-TEXT-MATCHES"],
     "I-03": ["F-I03-LOCKOUT", "F-I03-CAMERA"],
 }
+# Пустая строка скрыла бы пробел в handoff. Эта буквальная метка сохраняет
+# карточку пригодной для JSON и запрещает принимать отсутствующую оговорку за её отсутствие.
+MISSING_LIMITATION = (
+    "Ограничение не указано в исходном артефакте; "
+    "вывод нельзя трактовать шире его summary."
+)
 
 
 def load_artifact(path, expected_id):
@@ -50,13 +56,16 @@ def find_finding(artifact, finding_id):
 
 
 def normalize_finding(finding, source_id):
-    """Привести вывод любого этапа к общей схеме из шести полей."""
+    """Привести вывод к общей схеме и явно отметить отсутствующее ограничение."""
+    limitation = str(finding.get("limitation") or "").strip()
+    if not limitation:
+        limitation = MISSING_LIMITATION
     return {
         "finding_id": finding["finding_id"],
         "source_investigation_id": source_id,
         "title": finding["title"],
         "summary": finding["summary"],
-        "limitation": finding.get("limitation", ""),
+        "limitation": limitation,
         # dict(effect) создаёт копию: рейтинг не меняет загруженный JSON.
         "effects": [dict(effect) for effect in finding.get("effects", [])],
     }

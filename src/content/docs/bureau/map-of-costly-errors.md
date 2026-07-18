@@ -67,11 +67,14 @@ X = housing.drop(columns=[manifest["target"]])
 y = housing[manifest["target"]]
 ```
 
-Теперь ключевые ячейки тетради для самостоятельной работы показывают, что новое утверждение требует нового разбиения. В первой заглушке нужно заменить технические группы реальными географическими ячейками; проверка пересечения уже подготовлена:
+Теперь ключевые ячейки показывают, что новое утверждение требует нового
+разбиения. Координаты превращаются в географические ячейки 0,5° × 0,5°, а
+проверка пересечения подтверждает границу:
 
 ```python
-# TODO: замените временные группы на географические ячейки 0,5° × 0,5°.
-region_groups = pd.Series(np.arange(len(X)) // 100, index=X.index, name="region_id")
+longitude_bin = np.floor((X["Longitude"] + 125.0) * 2).astype(int)
+latitude_bin = np.floor((X["Latitude"] - 32.0) * 2).astype(int)
+region_groups = longitude_bin.astype(str) + "_" + latitude_bin.astype(str)
 
 region_splitter = GroupShuffleSplit(
     n_splits=1, test_size=0.20, random_state=RANDOM_STATE
@@ -81,27 +84,49 @@ grouped_train, grouped_test = next(
 )
 # Нулевое пересечение групп — главный инвариант проверки переноса в новые ячейки.
 group_overlap = set(region_groups.iloc[grouped_train]) & set(region_groups.iloc[grouped_test])
-print(f"Временная группировка; пересечение={len(group_overlap)}. Выполните TODO.")
+print(
+    f"Групп: {region_groups.nunique()}, train={len(grouped_train):,}, "
+    f"test={len(grouped_test):,}, пересечение={len(group_overlap)}"
+)
 ```
 
-Общая функция оценки должна прогнать один набор моделей на обоих разбиениях. В исходной учебной ячейке реализована только базовая модель — линейную регрессию и лес добавляете вы:
+`region_groups` имеет форму одномерного массива длиной 20 640, где одинаковый
+строковый ключ обозначает одну пространственную ячейку. Нулевое пересечение
+проверяет только изоляцию выбранных групп; один holdout не охватывает все
+варианты регионального переноса. Поэтому модели и их параметры фиксируются до
+сравнения двух разбиений.
+
+Общая функция прогоняет один набор моделей на обоих разбиениях:
 
 ```python
-model_suite = {"dummy_mean": DummyRegressor(strategy="mean")}
+model_suite = {
+    "dummy_mean": DummyRegressor(strategy="mean"),
+    "linear": make_pipeline(StandardScaler(), LinearRegression()),
+    "random_forest": RandomForestRegressor(
+        n_estimators=120,
+        min_samples_leaf=2,
+        max_features=0.8,
+        random_state=RANDOM_STATE,
+        n_jobs=1,
+    ),
+}
 
-# TODO: добавьте linear и random_forest, затем заполните общую функцию оценки.
 def evaluate_suite(train_positions, test_positions):
-    fitted = DummyRegressor(strategy="mean").fit(
-        X.iloc[train_positions], y.iloc[train_positions]
-    )
-    predicted = fitted.predict(X.iloc[test_positions])
-    result = pd.DataFrame([{
-        "model": "dummy_mean",
-        "mae": mean_absolute_error(y.iloc[test_positions], predicted),
-        "rmse": root_mean_squared_error(y.iloc[test_positions], predicted),
-        "r2": r2_score(y.iloc[test_positions], predicted),
-    }]).set_index("model")
-    return result, {"dummy_mean": predicted}, {"dummy_mean": fitted}
+    rows, predictions, fitted_models = [], {}, {}
+    for model_name, template in model_suite.items():
+        fitted = clone(template).fit(
+            X.iloc[train_positions], y.iloc[train_positions]
+        )
+        predicted = fitted.predict(X.iloc[test_positions])
+        rows.append({
+            "model": model_name,
+            "mae": mean_absolute_error(y.iloc[test_positions], predicted),
+            "rmse": root_mean_squared_error(y.iloc[test_positions], predicted),
+            "r2": r2_score(y.iloc[test_positions], predicted),
+        })
+        predictions[model_name] = predicted
+        fitted_models[model_name] = fitted
+    return pd.DataFrame(rows).set_index("model"), predictions, fitted_models
 
 random_results, random_predictions, random_fitted = evaluate_suite(
     random_train, random_test
@@ -109,12 +134,19 @@ random_results, random_predictions, random_fitted = evaluate_suite(
 display(random_results.round(3))
 ```
 
+`clone` создаёт новую необученную копию каждого шаблона, поэтому состояние
+одного разбиения не переносится в другое. Функция возвращает таблицу
+`модель → MAE/RMSE/R²`, словарь массивов прогнозов и словарь обученных моделей.
+Baseline показывает пользу обучения относительно среднего, но случайная
+таблица отвечает только на вопрос об интерполяции. Для проверки обещания о
+новых регионах ту же функцию вызывают с `grouped_train` и `grouped_test`.
+
 После реализации леса та же тетрадь связывает величину ошибки с местом. Цвет показывает доллары, а не абстрактные единицы target:
 
 ```python
 if "random_forest" in grouped_predictions:
     map_frame = X.iloc[grouped_test][["Longitude", "Latitude"]].copy()
-    map_frame["absolute_error_usd"] = np.abs(grouped_остатки) * 100_000
+    map_frame["absolute_error_usd"] = np.abs(grouped_residuals) * 100_000
     fig, ax = plt.subplots(figsize=(7, 6))
     points = ax.scatter(
         map_frame["Longitude"], map_frame["Latitude"],
@@ -127,6 +159,13 @@ else:
     map_frame = pd.DataFrame()
     print("Карта появится после реализации random_forest.")
 ```
+
+Здесь `grouped_residuals` — массив `y_true - y_pred` для строк регионального
+теста. `np.abs(...) * 100_000` превращает его в абсолютную ошибку в долларах,
+а `map_frame` сохраняет соответствие «координаты → ошибка». Скопления ярких
+точек показывают, где модель ошибается сильнее, но не доказывают причину
+ошибки. Поэтому после карты тетрадь сравнивает ценовые и географические срезы
+вместе с числом наблюдений `n`.
 
 ## Что сдать
 

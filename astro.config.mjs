@@ -132,7 +132,6 @@ export default defineConfig({
                 { label: 'email, URL и IP', slug: 'field-guide/email-url-ip' },
                 { label: 'hashlib', slug: 'field-guide/hashlib' },
                 { label: 'JSON', slug: 'field-guide/json' },
-                { label: 'Rich', slug: 'field-guide/rich' },
                 { label: 'classes', slug: 'field-guide/classes' },
                 { label: 'dataclasses', slug: 'field-guide/dataclasses' },
                 { label: 'Аннотации типов', slug: 'field-guide/type-hints' },

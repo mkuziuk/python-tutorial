@@ -15,18 +15,16 @@ import json
 from pathlib import Path
 import re
 
-from rich.console import Console
-from rich.table import Table
-
 # Эталон лежит в solution/, поэтому parents[1] возвращает папку case-01.
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_DIR / "data"
 ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "01-authorship.json"
 # Шаблон выделяет только цепочки русских букв, включая «ё».
 WORD_RE = re.compile(r"[а-яё]+", re.IGNORECASE)
+# Закрытый набор задаёт границу признака: кавычки, тире и скобки в профиль не входят.
 PUNCTUATION = ".,;:!?"
-console = Console()
 
+# Словарь связывает основу имени каждого входного файла с подписью в отчёте.
 AUTHOR_NAMES = {
     "author_morozova": "Алина Морозова",
     "author_sokolov": "Илья Соколов",
@@ -78,8 +76,11 @@ def punctuation_similarity(left, right):
     # Единица защищает от деления на ноль, а / 2 приводит результат к диапазону 0–1.
     left_total = sum(left.values()) or 1
     right_total = sum(right.values()) or 1
+    # distance накапливает L1-расстояние: сумму модулей разностей долей каждого знака.
     distance = 0.0
 
+    # Фиксированный набор знаков делает формы обоих профилей одинаковыми;
+    # для отсутствующего знака Counter возвращает ноль.
     for mark in PUNCTUATION:
         distance += abs((left[mark] / left_total) - (right[mark] / right_total))
 
@@ -94,6 +95,7 @@ def compare_profiles(anonymous, candidate):
     candidate_words = {word for word, _ in candidate["common_words"]}
     word_overlap = jaccard(anonymous_words, candidate_words)
 
+    # average_delta измеряет абсолютную разницу средних длин в буквах на слово.
     average_delta = abs(
         float(anonymous["average_word_length"]) - float(candidate["average_word_length"])
     )
@@ -120,8 +122,9 @@ def read_text(path):
 
 
 def rank_candidates(data_dir=DATA_DIR):
-    """Сравнить письмо со всеми author_*.txt и вернуть рейтинг."""
+    """Вернуть непустой рейтинг как список пар (имя, балл) для учебного набора."""
     anonymous = build_profile("Анонимное письмо", read_text(data_dir / "anonymous.txt"))
+    # results хранит пары (имя, балл); учебный каталог гарантирует три author_*.txt.
     results = []
 
     # glob("author_*.txt") выбирает образцы авторов, а sorted() фиксирует их порядок.
@@ -134,7 +137,8 @@ def rank_candidates(data_dir=DATA_DIR):
 
 
 def build_artifact(results, data_dir=DATA_DIR):
-    """Преобразовать рейтинг в JSON-совместимый отчёт расследования I-01."""
+    """Преобразовать непустой рейтинг в JSON-совместимый отчёт I-01."""
+    # candidates меняет форму (имя, балл) на словари с name, score и rank.
     candidates = [
         {"name": name, "score": score, "rank": position}
         for position, (name, score) in enumerate(results, start=1)
@@ -177,20 +181,17 @@ def save_artifact(artifact, path=ARTIFACT_PATH):
 
 
 def render_results(results):
-    """Показать рейтинг и осторожную интерпретацию в терминале."""
-    table = Table(title="Вероятные авторы")
-    table.add_column("Место", justify="right", style="cyan")
-    table.add_column("Кандидат")
-    table.add_column("Сходство", justify="right")
-
+    """Показать непустой рейтинг и осторожную интерпретацию в терминале."""
+    print("Вероятные авторы")
+    print("Место | Кандидат | Сходство")
     for position, (name, score) in enumerate(results, start=1):
-        table.add_row(str(position), name, f"{score:.2f}")
+        print(f"{position:>5} | {name} | {score:.2f}")
 
-    console.print(table)
+    # Учебный набор содержит три кандидатских файла, поэтому у results есть первый элемент.
     winner, score = results[0]
-    console.print(
-        f"\n[bold]Главная версия:[/bold] {winner} "
-        f"([cyan]{score:.2f}[/cyan]). Это лидер по трём выбранным признакам. "
+    print(
+        f"\nГлавная версия: {winner} ({score:.2f}). "
+        "Это лидер по трём выбранным признакам. "
         "Разные авторы могут использовать похожие слова и пунктуацию, "
         "поэтому результат нужно сверить с другими материалами."
     )
@@ -201,7 +202,7 @@ def main():
     results = rank_candidates()
     render_results(results)
     save_artifact(build_artifact(results))
-    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
+    print(f"Отчёт сохранён: {ARTIFACT_PATH.name}")
 
 
 # При импорте модуль определяет функции, но не запускает расследование.

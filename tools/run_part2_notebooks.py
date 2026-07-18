@@ -1,7 +1,8 @@
-"""Execute all Part II solution notebooks in one clean, pinned environment."""
+"""Execute and validate complete Part II notebooks in one pinned environment."""
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
@@ -18,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PART_TWO = ROOT / "projects" / "part-2"
 REQUIREMENTS = PART_TWO / "requirements-ci.txt"
 INSIDE_ENV = "PYTHON_TUTORIAL_PART2_TEST_ENV"
+WRITE_SOLUTIONS_ENV = "PYTHON_TUTORIAL_WRITE_PART2_SOLUTIONS"
 
 
 def venv_python(venv_dir: Path) -> Path:
@@ -26,7 +28,7 @@ def venv_python(venv_dir: Path) -> Path:
     return venv_dir / "bin" / "python"
 
 
-def run_in_clean_environment() -> None:
+def run_in_clean_environment(*, write_solutions: bool) -> None:
     if not REQUIREMENTS.is_file():
         raise SystemExit(f"Missing {REQUIREMENTS.relative_to(ROOT)}")
     with tempfile.TemporaryDirectory(prefix="python-tutorial-part2-env-") as temp:
@@ -40,6 +42,9 @@ def run_in_clean_environment() -> None:
         )
         environment = os.environ.copy()
         environment[INSIDE_ENV] = "1"
+        environment["PYTHONHASHSEED"] = "0"
+        if write_solutions:
+            environment[WRITE_SOLUTIONS_ENV] = "1"
         environment["PYTHONDONTWRITEBYTECODE"] = "1"
         subprocess.run(
             [str(python), "-B", str(Path(__file__).resolve())],
@@ -79,22 +84,60 @@ def verify_manifest_paths() -> None:
                 raise AssertionError(f"manifest notebook does not exist: {notebook}")
 
 
-def execute_notebooks() -> None:
+def assert_complete_learner(notebook: object, *, case_name: str) -> None:
+    from build_part2_notebooks import incomplete_reasons
+
+    for cell in notebook.cells:  # type: ignore[attr-defined]
+        cell_id = cell.get("id", "<unknown>")
+        tags = set(cell.get("metadata", {}).get("tags", []))
+        source = source_text(cell)
+        if "solution-only" in tags:
+            raise AssertionError(f"{case_name}: learner retains solution-only tag in {cell_id}")
+        if "# BEGIN SOLUTION" in source or "# END SOLUTION" in source:
+            raise AssertionError(f"{case_name}: solution markers leaked into {cell_id}")
+        reasons = incomplete_reasons(cell)
+        if reasons:
+            raise AssertionError(
+                f"{case_name}: incomplete learner cell {cell_id}: {', '.join(reasons)}"
+            )
+
+
+def assert_executed(notebook: object, *, case_name: str, variant: str) -> None:
+    for cell in notebook.cells:  # type: ignore[attr-defined]
+        if cell.get("cell_type") != "code":
+            continue
+        cell_id = cell.get("id", "<unknown>")
+        if not isinstance(cell.get("execution_count"), int):
+            raise AssertionError(
+                f"{case_name}: {variant} code cell {cell_id} was not executed"
+            )
+        if any(output.get("output_type") == "error" for output in cell.get("outputs", [])):
+            raise AssertionError(
+                f"{case_name}: {variant} code cell {cell_id} stored an error"
+            )
+
+
+def execute_notebooks(*, write_solutions: bool) -> None:
     import nbformat
     from nbclient import NotebookClient
 
     os.environ["MPLBACKEND"] = "Agg"
-    os.environ["PYTHONHASHSEED"] = "0"
     verify_manifest_paths()
-    for checksum_file in sorted(PART_TWO.glob("case-*/data/CHECKSUMS.sha256")):
-        verify_sha256_file(checksum_file)
 
     cases = sorted(path for path in PART_TWO.glob("case-*") if path.is_dir())
     if len(cases) != 6:
         raise AssertionError(f"expected six Part II cases, found {len(cases)}")
+    for case in cases:
+        checksum_file = case / "data" / "CHECKSUMS.sha256"
+        if not checksum_file.is_file():
+            raise AssertionError(
+                f"{case.name}: missing data/CHECKSUMS.sha256"
+            )
+        verify_sha256_file(checksum_file)
 
     with tempfile.TemporaryDirectory(prefix="python-tutorial-part2-run-") as temp:
         temp_root = Path(temp)
+        executed_solutions: list[tuple[Path, object]] = []
         for case in cases:
             copied_case = temp_root / case.name
             shutil.copytree(case, copied_case)
@@ -132,11 +175,24 @@ def execute_notebooks() -> None:
                 store_widget_state=False,
             )
             client.execute()
+            assert_executed(notebook, case_name=case.name, variant="solution")
+            executed_solutions.append(
+                (case / "solution" / f"{case.name}-solution.ipynb", notebook)
+            )
             print(
                 f"== {case.name}: solution Run All passed "
                 f"({len(notebook.cells)} cells) ==",
                 flush=True,
             )
+
+        if write_solutions:
+            for destination, notebook in executed_solutions:
+                nbformat.write(notebook, destination)
+                print(
+                    f"recorded executed canonical solution "
+                    f"{destination.relative_to(ROOT)}",
+                    flush=True,
+                )
 
         for case in cases:
             archive_path = ROOT / "public" / "downloads" / f"part-2-{case.name}.zip"
@@ -166,9 +222,7 @@ def execute_notebooks() -> None:
             nbformat.validate(notebook)
             if notebook.metadata.get("course", {}).get("variant") != "learner":
                 raise AssertionError(f"{case.name}: learner metadata variant missing")
-            sources = "\n".join(source_text(cell) for cell in notebook.cells)
-            if "# BEGIN SOLUTION" in sources or "# END SOLUTION" in sources:
-                raise AssertionError(f"{case.name}: solution markers leaked into learner")
+            assert_complete_learner(notebook, case_name=case.name)
             os.environ["NOTEBOOK_VARIANT"] = "learner"
 
             print(
@@ -184,6 +238,7 @@ def execute_notebooks() -> None:
                 store_widget_state=False,
             )
             client.execute()
+            assert_executed(notebook, case_name=case.name, variant="learner")
             print(
                 f"== {case.name}: extracted learner Run All passed "
                 f"({len(notebook.cells)} cells) ==",
@@ -192,10 +247,25 @@ def execute_notebooks() -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--write-solutions",
+        action="store_true",
+        help=(
+            "after all canonical solutions execute successfully, write their "
+            "execution counts and tidy outputs back to the repository"
+        ),
+    )
+    arguments = parser.parse_args()
     if os.environ.get(INSIDE_ENV) != "1":
-        run_in_clean_environment()
+        run_in_clean_environment(write_solutions=arguments.write_solutions)
         return
-    execute_notebooks()
+    execute_notebooks(
+        write_solutions=(
+            arguments.write_solutions
+            or os.environ.get(WRITE_SOLUTIONS_ENV) == "1"
+        )
+    )
 
 
 if __name__ == "__main__":

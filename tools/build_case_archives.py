@@ -114,6 +114,11 @@ def discover_part_two_projects() -> list[Path]:
     )
 
 
+def checksum_bytes(archive: Path, payload: bytes) -> bytes:
+    digest = hashlib.sha256(payload).hexdigest()
+    return f"{digest}  {archive.name}\n".encode("ascii")
+
+
 def write_archives(check: bool) -> int:
     failures: list[str] = []
     DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
@@ -121,22 +126,29 @@ def write_archives(check: bool) -> int:
     for project in discover_projects():
         destination = DOWNLOADS_DIR / f"{project.name}.zip"
         expected = archive_bytes(project)
+        checksum_destination = destination.with_suffix(f"{destination.suffix}.sha256")
+        checksum = checksum_bytes(destination, expected)
 
         if check:
             if not destination.is_file() or destination.read_bytes() != expected:
                 failures.append(destination.relative_to(ROOT).as_posix())
+            if (
+                not checksum_destination.is_file()
+                or checksum_destination.read_bytes() != checksum
+            ):
+                failures.append(checksum_destination.relative_to(ROOT).as_posix())
             continue
 
         destination.write_bytes(expected)
+        checksum_destination.write_bytes(checksum)
         print(f"built {destination.relative_to(ROOT)}")
+        print(f"built {checksum_destination.relative_to(ROOT)}")
 
     for project in discover_part_two_projects():
         destination = DOWNLOADS_DIR / f"part-2-{project.name}.zip"
         expected = part_two_archive_bytes(project)
         checksum_destination = destination.with_suffix(f"{destination.suffix}.sha256")
-        checksum = (
-            f"{hashlib.sha256(expected).hexdigest()}  {destination.name}\n"
-        ).encode("ascii")
+        checksum = checksum_bytes(destination, expected)
 
         if check:
             if not destination.is_file() or destination.read_bytes() != expected:

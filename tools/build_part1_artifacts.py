@@ -3,39 +3,10 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
-import types
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = ROOT / "projects"
-
-
-def ensure_rich_imports():
-    try:
-        import rich  # noqa: F401
-        return
-    except ModuleNotFoundError:
-        pass
-
-    class Placeholder:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def __getattr__(self, _name):
-            return lambda *args, **kwargs: None
-
-    rich_module = types.ModuleType("rich")
-    console_module = types.ModuleType("rich.console")
-    table_module = types.ModuleType("rich.table")
-    console_module.Console = Placeholder
-    table_module.Table = Placeholder
-    sys.modules.update(
-        {
-            "rich": rich_module,
-            "rich.console": console_module,
-            "rich.table": table_module,
-        }
-    )
 
 
 def load_solution(case_number, module_name):
@@ -54,7 +25,6 @@ def encoded(data):
 
 
 def expected_artifacts():
-    ensure_rich_imports()
     case01 = load_solution("01", "anonymous_letter")
     case02 = load_solution("02", "copy_paste_detector")
     case03 = load_solution("03", "phishing_email")

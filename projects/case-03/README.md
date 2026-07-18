@@ -8,13 +8,18 @@
 
 Нужен Python 3.13 или новее.
 
+Сначала откройте папку проекта в системном файловом приложении. В Windows
+щёлкните по пустому месту папки правой кнопкой мыши и выберите
+«Открыть в терминале». В macOS откройте папку в Finder, щёлкните по ней правой
+кнопкой и выберите «Службы → Новый терминал в папке». В Linux аналогичная команда
+обычно называется «Открыть в терминале». Так терминал сразу начнёт работу в
+нужной папке, и вводить `cd` не придётся.
+
 ### Windows PowerShell
 
 ```powershell
 py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 ```
 
 ### macOS или Linux
@@ -22,9 +27,10 @@ python -m pip install -r requirements.txt
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 ```
+
+После активации в начале строки терминала появится `(.venv)`. Это означает,
+что команды Python будут использовать окружение именно этого проекта.
 
 ## Запуск
 
@@ -45,4 +51,4 @@ python phishing_email.py
 - собственные исключения;
 - отдельный `try`/`except` для ошибки чтения файла;
 - обработку `EmailAnalysisError` внутри цикла с продолжением остальных писем;
-- `rich.console.Console` и `rich.table.Table` для отчёта в терминале.
+- простой текстовый отчёт через `print`.

@@ -30,6 +30,6 @@ jupyter lab case-03.ipynb
 ## Файлы
 
 - `case-03.ipynb` — рабочая тетрадь;
-- `solution/case-03-solution.ipynb` — эталон;
+- `solution/case-03-solution.ipynb` — эталон в репозитории; в учебный ZIP он не входит;
 - `data/` — локальный снимок, источник, лицензия и SHA-256;
 - `check_result.md` — инварианты и ожидаемый смысл результата.

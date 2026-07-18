@@ -4,10 +4,6 @@ from itertools import combinations
 import json
 from pathlib import Path
 
-from rich.console import Console
-from rich.table import Table
-
-
 def default_data_dir():
     """Найти data и из корня проекта, и из подпапки solution."""
     script_dir = Path(__file__).resolve().parent
@@ -24,8 +20,14 @@ AUTHORSHIP_PATH = DATA_DIR / "artifacts" / "01-authorship.json"
 ARTIFACT_PATH = PROJECT_DIR / "artifacts" / "02-text-matches.json"
 NGRAM_SIZE = 4
 TOP_EXAMPLES = 3
-
-console = Console()
+# Веса задают учебную эвристику: containment важнее для поиска фрагмента,
+# а Jaccard слабее штрафует несовпадающие части. Это не обученная вероятность.
+CONTAINMENT_WEIGHT = 0.7
+JACCARD_WEIGHT = 0.3
+MATCH_LIMITATION = (
+    "Совпадения 4-грамм показывают общие фрагменты текста, но не устанавливают "
+    "направление копирования, автора, правомерность доступа или факт утечки."
+)
 
 DISPLAY_NAMES = {
     "anonymous": "Анонимное предупреждение",
@@ -103,7 +105,11 @@ def overlap_score(left, right):
     # Jaccard снижает оценку, если в текстах много несовпадающих n-грамм.
     containment = len(shared) / min(len(left), len(right))
     jaccard = len(shared) / len(left | right)
-    return round(containment * 0.7 + jaccard * 0.3, 3)
+    # Ручные веса дают containment основную роль; округление стабилизирует отчёт.
+    return round(
+        containment * CONTAINMENT_WEIGHT + jaccard * JACCARD_WEIGHT,
+        3,
+    )
 
 
 def compare_profiles(left, right):
@@ -164,6 +170,8 @@ def load_authorship_lead(path=AUTHORSHIP_PATH):
     data = json.loads(path.read_text(encoding="utf-8"))
     if data.get("investigation_id") != "I-01":
         raise ValueError(f"Expected I-01 artifact: {path}")
+    # Схема I-01 гарантирует один основной finding и непустой рейтинг candidates.
+    # Нулевая позиция candidates — лидер уже отсортированного рейтинга I-01.
     finding = data["findings"][0]
     return {
         "finding_id": finding["finding_id"],
@@ -191,6 +199,7 @@ def build_artifact(results, authorship_path=AUTHORSHIP_PATH):
     return {
         "schema_version": 1,
         "investigation_id": "I-02",
+        # Фиксированная дата делает учебный handoff воспроизводимым при пересборке.
         "generated_at": "2026-03-15T06:50:00+03:00",
         "source_files": [
             "anonymous.txt",
@@ -208,6 +217,7 @@ def build_artifact(results, authorship_path=AUTHORSHIP_PATH):
                     if matches
                     else "Совпадений n-грамм не найдено."
                 ),
+                "limitation": MATCH_LIMITATION,
                 "matches": matches,
             }
         ],
@@ -225,35 +235,29 @@ def save_artifact(artifact, path=ARTIFACT_PATH):
 
 def render_results(results, limit=5):
     """Показать до limit лучших пар и один общий фрагмент каждой."""
-    table = Table(title="Подозрительные совпадения")
-    table.add_column("Место", justify="right", style="cyan")
-    table.add_column("Пара")
-    table.add_column("Оценка", justify="right")
-    table.add_column("Общих n-грамм", justify="right")
-    table.add_column("Пример")
-
+    print("Подозрительные совпадения")
+    # Отчёт остаётся кратким: берём не более limit пар и первый пример каждой.
     for position, result in enumerate(results[:limit], start=1):
         left, right = result["pair"]
         examples = result["examples"]
         example = format_ngram(examples[0]) if examples else "нет общих n-грамм"
-
-        table.add_row(
-            str(position),
-            f"{left} / {right}",
-            f"{float(result['score']):.3f}",
-            str(result["shared_count"]),
-            example,
+        print(f"{position}. {left} / {right}")
+        print(
+            f"   оценка: {float(result['score']):.3f}; "
+            f"общих n-грамм: {result['shared_count']}"
         )
+        print(f"   пример: {example}")
 
-    console.print(table)
-
+    # Пустой рейтинг не имеет первой пары, поэтому итоговая строка условна.
     if results:
         best = results[0]
         left, right = best["pair"]
-        console.print(
-            f"\n[bold]Главная версия:[/bold] {left} и {right} "
-            f"имеют самый сильный общий след: [cyan]{float(best['score']):.3f}[/cyan]."
+        print(
+            f"\nНаибольшее текстовое совпадение: {left} и {right}: "
+            f"{float(best['score']):.3f}."
         )
+    else:
+        print("Совпадений не найдено.")
 
 
 def main():
@@ -261,7 +265,7 @@ def main():
     results = rank_overlaps()
     render_results(results)
     save_artifact(build_artifact(results))
-    console.print(f"[green]Отчёт сохранён:[/green] {ARTIFACT_PATH.name}")
+    print(f"Отчёт сохранён: {ARTIFACT_PATH.name}")
 
 
 # При импорте модуль определяет функции, но не запускает расследование.

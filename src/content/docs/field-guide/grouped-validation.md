@@ -19,16 +19,45 @@ order: 40
 | B-original | B | train |
 
 ```python
+train_source_ids = ["A", "B"]
+test_source_ids = ["C", "D"]
 overlap = set(train_source_ids) & set(test_source_ids)
+print(sorted(overlap))
 assert not overlap
 ```
 
+```text
+[]
+```
+
+Пустой список подтверждает, что ни один `source_id` не пересёк границу. Такая
+проверка должна выполняться на фактическом разбиении, а не только на примере.
 Единицу независимости определяет задача будущего применения. Для вариантов изображения в II-06 это `source_id`, а не `sample_id`.
 
 ## StratifiedGroupKFold
 
+Проверим разбиение на десяти источниках. Каждый источник даёт две строки, а
+`source_id` должен целиком оставаться в одном фолде. Небольшой конвейер нужен
+здесь не для сравнения алгоритмов, а чтобы получить по одной macro-F1 на фолд:
+
 ```python
+import numpy as np
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedGroupKFold, cross_validate
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+source_id = np.repeat([f"S{index}" for index in range(10)], 2)
+y = np.repeat([0, 1] * 5, 2)
+X = np.column_stack([
+    y + np.tile([-0.15, 0.15], 10),
+    np.arange(20) % 3,
+])
+
+pipeline = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=1000, random_state=42),
+)
 
 cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
 scores = cross_validate(
@@ -41,9 +70,35 @@ scores = cross_validate(
     scoring="f1_macro",
     n_jobs=1,
 )
+
+for train_index, test_index in cv.split(X, y, groups=source_id):
+    train_groups = set(source_id[train_index])
+    test_groups = set(source_id[test_index])
+    assert train_groups.isdisjoint(test_groups)
+
+print(np.round(scores["test_score"], 3))
+print(
+    f"mean={scores['test_score'].mean():.3f}; "
+    f"groups={np.unique(source_id).size}"
+)
+print("group overlap: 0")
+```
+
+```text
+[1. 1. 1. 1. 1.]
+mean=1.000; groups=10
+group overlap: 0
 ```
 
 Разбиение старается сохранять доли классов и одновременно держит каждую группу целиком в одном фолде. После построения фолдов полезно программно проверить отсутствие пересечений.
+
+`scores["test_score"]` содержит пять macro-F1, по одному на фолд. Macro-F1
+лежит от 0 до 1, больше — лучше, а каждый класс имеет одинаковый вес. В этом
+искусственном легко разделимом наборе все пять значений равны `1.0`; это
+проверяет механику примера, но не обещает такого качества на реальных
+изображениях. Последняя строка подтверждает отсутствие пересечения групп, а
+`groups=10` показывает число независимых источников: одинаковое число строк
+при малом числе групп не делает оценку точнее.
 
 ## Сдвиг распределения
 
@@ -58,6 +113,12 @@ scores = cross_validate(
 5. сообщите результат вместе с происхождением и ограничениями.
 
 Падение показывает чувствительность к конкретному сдвигу, но не объясняет автоматически причину и не покрывает все будущие сдвиги.
+
+Например, падение macro-F1 с `0.84` на обычной проверке до `0.68` на новой
+партии равно `0.16` по шкале 0–1, или 16 процентным пунктам. Это наблюдение относится только к
+заранее изолированной партии и не доказывает, что причиной был сканер. Мы
+зафиксировали величину сдвига качества; следующий шаг — разобрать ошибки по
+классам и условиям получения данных, не переобучаясь на этой партии.
 
 ## Бутстреп по независимой единице
 

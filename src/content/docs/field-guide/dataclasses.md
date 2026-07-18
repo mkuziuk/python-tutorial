@@ -32,6 +32,14 @@ evidence = Evidence(title="Письмо", source="anonymous.txt")
 print(evidence.title)
 ```
 
+```text
+Письмо
+```
+
+Объект хранит две строки с именованными полями; вывод проверяет чтение поля
+`title`. Если поле содержит изменяемый контейнер, его значение по умолчанию
+нужно создавать отдельно для каждого объекта.
+
 ## Изменяемые значения и `default_factory`
 
 Список нельзя безопасно поставить обычным значением по умолчанию: один объект мог бы разделить его с другим. `default_factory` вызывает `list` отдельно для каждого нового объекта:
@@ -44,9 +52,23 @@ from dataclasses import dataclass, field
 class Evidence:
     title: str
     tags: list[str] = field(default_factory=list)
+
+
+first = Evidence("Письмо")
+second = Evidence("Фото")
+first.tags.append("текст")
+print(first.tags, second.tags)
 ```
 
 `slots=True` фиксирует объявленный набор полей и не позволяет случайно создать новое поле опечаткой.
+
+```text
+['текст'] []
+```
+
+Пустой список у `second` подтверждает инвариант: экземпляры не разделяют
+`tags`. Теперь можно добавить проверку значений, которая действует на каждый
+создаваемый объект.
 
 ## Валидация после создания
 
@@ -61,24 +83,50 @@ class Evidence:
     def __post_init__(self):
         if not 1 <= self.reliability <= 5:
             raise ValueError("Надёжность должна быть от 1 до 5")
+
+
+try:
+    Evidence("Письмо", 7)
+except ValueError as error:
+    print(error)
 ```
 
-Так неверный объект не успевает попасть в остальную программу.
+```text
+Надёжность должна быть от 1 до 5
+```
+
+Границы `1..5` — инвариант модели: неверный объект не попадает в остальную
+программу. Следующая задача — применить этот же конструктор к внешнему словарю,
+где типы и наличие ключей ещё не гарантированы.
 
 ## Фабрика из словаря
 
-`@classmethod` получает сам класс в параметре `cls`. Метод `from_dict()` удобно держит преобразование JSON рядом с моделью:
+Ниже предполагается класс `Evidence` из предыдущего примера. Метод
+`from_dict()` удобно держит преобразование JSON рядом с моделью:
 
 ```python
 @classmethod
-def from_dict(cls, data):
+def from_dict(cls, data: dict[str, object]):
     return cls(
         title=str(data["title"]),
         reliability=int(data.get("reliability", 3)),
     )
+
+
+Evidence.from_dict = from_dict
+item = Evidence.from_dict({"title": "Письмо", "reliability": "4"})
+print(item)
 ```
 
-Вызов `Evidence.from_dict(data)` создаёт `Evidence`; использование `cls(...)` сохраняет правильное поведение и для возможного подкласса.
+```text
+Evidence(title='Письмо', reliability=4)
+```
+
+Ключ `title` обязателен: при его отсутствии возникает `KeyError`. Для
+`reliability` выбран нейтральный учебный default `3`, а `int()` принимает
+строковое число и отклоняет прочие значения через `ValueError`. `cls(...)`
+создаёт правильный тип и для возможного подкласса. После проверки границы
+внешних данных модель можно сделать неизменяемой.
 
 ## Неизменяемые факты и вычисляемые свойства
 
@@ -93,9 +141,20 @@ class Assessment:
     @property
     def score(self):
         return self.support_points - self.conflict_points
+
+
+assessment = Assessment(support_points=5, conflict_points=2)
+print(assessment.score)
 ```
 
 `@property` позволяет читать вычисляемое значение как `assessment.score`, хотя оно считается методом и не хранится отдельным полем.
+
+```text
+3
+```
+
+Результат подтверждает, что `score` вычисляется из двух сохранённых целых
+чисел; отдельного поля, которое могло бы рассинхронизироваться, нет.
 
 ## Типичные ловушки
 

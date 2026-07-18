@@ -77,6 +77,7 @@ class CopyPasteDetectorTests(unittest.TestCase):
         self.assertEqual(artifact["investigation_id"], "I-02")
         self.assertEqual(artifact["inputs"]["authorship_lead"]["finding_id"], "F-I01-AUTHORSHIP")
         self.assertEqual(artifact["findings"][0]["matches"][0]["pair"], ["Опись Северного стола", "Черновик экскурсии"])
+        self.assertIn("не устанавливают", artifact["findings"][0]["limitation"])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             path = Path(tmp_dir) / "02-text-matches.json"

@@ -64,6 +64,20 @@ class FinalEvidenceTests(unittest.TestCase):
         by_id = {item["finding_id"]: item for item in evidence}
         self.assertIn("не устанавливает автора", by_id["F-I01-AUTHORSHIP"]["limitation"])
         self.assertIn("не доказывают", by_id["F-I03-LOCKOUT"]["limitation"])
+        self.assertIn(
+            "не устанавливают направление копирования",
+            by_id["F-I02-TEXT-MATCHES"]["limitation"],
+        )
+
+    def test_collect_evidence_marks_missing_upstream_limitation(self):
+        artifacts = copy.deepcopy(self.artifacts)
+        artifacts["I-02"]["findings"][0].pop("limitation")
+        evidence = collect_evidence(artifacts, self.final_evidence)
+        by_id = {item["finding_id"]: item for item in evidence}
+        self.assertIn(
+            "не указано в исходном артефакте",
+            by_id["F-I02-TEXT-MATCHES"]["limitation"],
+        )
 
     def test_collect_evidence_rejects_duplicate_finding_id(self):
         duplicate = copy.deepcopy(self.final_evidence)

@@ -20,6 +20,11 @@ print(moment.hour)       # 23
 print(moment.tzinfo)     # UTC+03:00
 ```
 
+```text
+23
+UTC+03:00
+```
+
 Формат ISO 8601 располагает части от крупных к мелким и хранит смещение `+03:00`. `datetime.fromisoformat()` превращает такую строку в объект, который можно сортировать и форматировать.
 
 ## Наивное и осведомленное время
@@ -29,9 +34,16 @@ print(moment.tzinfo)     # UTC+03:00
 ```python
 naive = datetime.fromisoformat("2026-03-14T23:07:00")
 aware = datetime.fromisoformat("2026-03-14T23:07:00+03:00")
+print(naive.tzinfo is None, aware.tzinfo is not None)
 ```
 
-`naive.tzinfo is None`, поэтому неизвестно, в каком месте произошло событие. Для хронологии используйте значения со смещением и отклоняйте входные данные без него.
+```text
+True True
+```
+
+У `naive` отсутствует смещение, поэтому неизвестно, в каком месте произошло
+событие; `aware` содержит его. Для общей хронологии нужны осведомлённые
+значения, которые можно привести к одной шкале.
 
 ## UTC и время файла
 
@@ -42,28 +54,62 @@ from datetime import datetime, timezone
 
 moment = datetime.now(timezone.utc)
 stamp = moment.isoformat().replace("+00:00", "Z")
+print(stamp.endswith("Z"))
+```
+
+```text
+True
 ```
 
 Буква `Z` означает нулевое смещение UTC. Метка изменения файла приходит как число секунд от начала эпохи Unix; передайте часовой пояс явно:
 
 ```python
+from pathlib import Path
+
+path = Path("data") / "anonymous.txt"
 modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+print(modified.tzinfo)
 ```
 
 Время изменения показывает состояние файловой системы, а не обязательно время события внутри документа. Не смешивайте эти два факта в выводе.
+Для существующего файла последняя строка выводит `UTC`, подтверждая шкалу
+значения. Сам момент зависит от файловой системы, поэтому фиксировать его в
+ожидаемом выводе нельзя.
 
 ## Сортировка хронологии
 
 Осведомленные `datetime` с разными смещениями сравниваются как реальные моменты времени:
 
 ```python
+from dataclasses import dataclass
+from datetime import datetime
+
+
+@dataclass
+class Evidence:
+    evidence_id: str
+    occurred_at: datetime
+
+
+evidence = [
+    Evidence("B", datetime.fromisoformat("2026-03-14T21:30:00+00:00")),
+    Evidence("A", datetime.fromisoformat("2026-03-15T00:00:00+03:00")),
+]
 ordered = sorted(
     evidence,
     key=lambda item: (item.occurred_at, item.evidence_id),
 )
+print([item.evidence_id for item in ordered])
 ```
 
-Второй ключ делает порядок стабильным, если два события имеют одинаковое время. Не сортируйте произвольные отображаемые строки вроде `14.03.2026 9:05`: их алфавитный порядок не обязан быть хронологическим.
+```text
+['A', 'B']
+```
+
+Оба времени переведены к реальным моментам: `A` произошло в `21:00 UTC`, на
+30 минут раньше `B`. Второй ключ делает порядок детерминированным, если два
+события имеют одинаковое время. Не сортируйте произвольные отображаемые строки
+вроде `14.03.2026 9:05`: их алфавитный порядок не обязан быть хронологическим.
 
 ## Типичные ловушки
 

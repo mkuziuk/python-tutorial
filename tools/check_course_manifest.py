@@ -32,6 +32,27 @@ def require_keys(
             failures.append(f"{label}: missing {key!r}")
 
 
+def validate_sha256_sidecar(
+    target: Path,
+    sidecar: Path,
+    *,
+    label: str,
+    failures: list[str],
+) -> None:
+    try:
+        sidecar_text = sidecar.read_text(encoding="ascii")
+    except UnicodeDecodeError:
+        failures.append(f"{label}: invalid checksum sidecar encoding")
+        return
+
+    actual = hashlib.sha256(target.read_bytes()).hexdigest()
+    expected = f"{actual}  {target.name}\n"
+    if sidecar_text != expected:
+        failures.append(
+            f"{label}: checksum sidecar digest, filename, or format differs"
+        )
+
+
 def main() -> None:
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     failures: list[str] = []
@@ -102,6 +123,17 @@ def main() -> None:
                 failures.append(f"{label}: missing project {project.relative_to(ROOT)}")
             if not archive.is_file():
                 failures.append(f"{label}: missing archive {archive.relative_to(ROOT)}")
+            else:
+                sidecar = archive.with_suffix(f"{archive.suffix}.sha256")
+                if not sidecar.is_file():
+                    failures.append(f"{label}: missing archive checksum sidecar")
+                else:
+                    validate_sha256_sidecar(
+                        archive,
+                        sidecar,
+                        label=f"{label}: archive",
+                        failures=failures,
+                    )
             if not item.get("concepts") or not item.get("datasetIds"):
                 failures.append(f"{label}: concepts and datasetIds must be non-empty")
 
@@ -123,6 +155,13 @@ def main() -> None:
                     )
                     if not checksum_sidecar.is_file():
                         failures.append(f"{label}: missing public dataset checksum")
+                    else:
+                        validate_sha256_sidecar(
+                            public_dataset,
+                            checksum_sidecar,
+                            label=f"{label}: public dataset",
+                            failures=failures,
+                        )
 
                 for variant in ("learner", "solution"):
                     notebook = notebooks.get(variant)
@@ -164,15 +203,6 @@ def main() -> None:
                             f"{label}: {record_name} dataset_id differs from manifest"
                         )
 
-                if archive.is_file():
-                    sidecar = archive.with_suffix(f"{archive.suffix}.sha256")
-                    if not sidecar.is_file():
-                        failures.append(f"{label}: missing archive checksum sidecar")
-                    else:
-                        expected = sidecar.read_text(encoding="ascii").split()[0]
-                        actual = hashlib.sha256(archive.read_bytes()).hexdigest()
-                        if expected != actual:
-                            failures.append(f"{label}: archive checksum sidecar differs")
             elif any(notebooks.get(key) is not None for key in ("learner", "solution")):
                 failures.append(f"{label}: Part I notebook values must be null")
 

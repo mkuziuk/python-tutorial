@@ -15,9 +15,26 @@ ROOT = Path(__file__).resolve().parents[1]
 PART_TWO = ROOT / "projects" / "part-2"
 BEGIN_MARKER = "# BEGIN SOLUTION"
 END_MARKER = "# END SOLUTION"
-SOLUTION_BLOCK = re.compile(
-    r"(?ms)^(?P<indent>[ \t]*)# BEGIN SOLUTION[^\n]*\n"
-    r".*?^(?P=indent)# END SOLUTION[^\n]*(?:\n|$)"
+MARKER_LINE = re.compile(
+    r"(?m)^[ \t]*# (?:BEGIN|END) SOLUTION[^\n]*(?:\n|$)"
+)
+TECHNICAL_OVERRIDE_TAGS = {"bootstrap", "variant"}
+INCOMPLETE_TEXT = (
+    re.compile(r"\bTODO\b", re.IGNORECASE),
+    re.compile(r"\bнапишите\s+код\b", re.IGNORECASE),
+    re.compile(r"\bтвой\s+вывод\b", re.IGNORECASE),
+    re.compile(r"\byour\s+conclusion\b", re.IGNORECASE),
+    re.compile(r"\bwrite\s+(?:your\s+)?code\b", re.IGNORECASE),
+)
+PASS_ONLY_CELL = re.compile(
+    r"(?s)^(?:[ \t]*#.*\n)*[ \t]*pass(?:[ \t]*#.*)?[ \t]*$"
+)
+ELLIPSIS_PLACEHOLDER = re.compile(r"(?m)^[ \t]*(?:\.\.\.|[A-Za-z_]\w*\s*=\s*\.\.\.)[ \t]*$")
+UNFINISHED_MAPPING = re.compile(
+    r"(?m)^[ \t]*[A-Za-z_]\w*\s*=\s*\{[ \t]*\Z"
+)
+RUNTIME_VARIANT = re.compile(
+    r"(?m)^[ \t]*NOTEBOOK_VARIANT[ \t]*=[ \t]*[\"'](learner|solution)[\"'][ \t]*(?:#.*)?$"
 )
 
 
@@ -59,22 +76,40 @@ def pop_learner_source(cell: dict[str, Any]) -> str | None:
     return "".join(value) if isinstance(value, list) else str(value)
 
 
-def strip_solution_blocks(source: str) -> str:
-    replacement_count = 0
-
-    def replacement(match: re.Match[str]) -> str:
-        nonlocal replacement_count
-        replacement_count += 1
-        indent = match.group("indent")
-        return (
-            f"{indent}# TODO: напишите решение этого шага.\n"
-            f"{indent}pass\n"
-        )
-
-    stripped = SOLUTION_BLOCK.sub(replacement, source)
-    if replacement_count == 0 and (BEGIN_MARKER in source or END_MARKER in source):
+def strip_solution_markers(source: str) -> str:
+    """Keep the complete solution and remove only its boundary comments."""
+    depth = 0
+    for line in source.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith(BEGIN_MARKER):
+            depth += 1
+        elif stripped.startswith(END_MARKER):
+            depth -= 1
+            if depth < 0:
+                raise ValueError("solution end marker precedes begin marker")
+    if depth:
         raise ValueError("unbalanced solution markers")
-    return stripped
+    return MARKER_LINE.sub("", source)
+
+
+def incomplete_reasons(cell: dict[str, Any]) -> list[str]:
+    """Return learner-facing blank and stub patterns found in one cell."""
+    source = source_text(cell)
+    reasons = [
+        pattern.pattern
+        for pattern in INCOMPLETE_TEXT
+        if pattern.search(source)
+    ]
+    if cell.get("cell_type") == "code":
+        if not source.strip():
+            reasons.append("empty code cell")
+        if PASS_ONLY_CELL.fullmatch(source):
+            reasons.append("pass-only code cell")
+        if ELLIPSIS_PLACEHOLDER.search(source):
+            reasons.append("ellipsis placeholder")
+        if UNFINISHED_MAPPING.search(source):
+            reasons.append("unfinished dictionary")
+    return reasons
 
 
 def learner_from_solution(solution: dict[str, Any]) -> dict[str, Any]:
@@ -86,17 +121,30 @@ def learner_from_solution(solution: dict[str, Any]) -> dict[str, Any]:
     for original in learner.get("cells", []):
         cell = deepcopy(original)
         tags = metadata_tags(cell)
-        if "solution-only" in tags:
-            continue
 
         override = pop_learner_source(cell)
+        if override is not None and not tags.intersection(TECHNICAL_OVERRIDE_TAGS):
+            cell_id = cell.get("id", "<unknown>")
+            raise ValueError(
+                f"learner_source is allowed only for bootstrap/variant cells ({cell_id})"
+            )
+
+        if "solution-only" in tags:
+            remaining_tags = [
+                tag
+                for tag in cell.get("metadata", {}).get("tags", [])
+                if tag != "solution-only"
+            ]
+            if remaining_tags:
+                cell["metadata"]["tags"] = remaining_tags
+            else:
+                cell["metadata"].pop("tags", None)
+
         if cell.get("cell_type") == "code":
-            cell["execution_count"] = None
-            cell["outputs"] = []
             if override is not None:
                 cell["source"] = override
-            elif "exercise" in tags:
-                cell["source"] = strip_solution_blocks(source_text(cell))
+            else:
+                cell["source"] = strip_solution_markers(source_text(cell))
         elif override is not None:
             cell["source"] = override
 
@@ -143,6 +191,7 @@ def validate_notebook(
 
     ids: list[str] = []
     all_tags: set[str] = set()
+    runtime_variants: list[tuple[str, str]] = []
     for index, cell in enumerate(notebook.get("cells", [])):
         cell_id = cell.get("id")
         if not isinstance(cell_id, str) or not cell_id:
@@ -153,27 +202,50 @@ def validate_notebook(
         all_tags.update(tags)
         source = source_text(cell)
         if cell.get("cell_type") == "code":
-            if cell.get("execution_count") is not None or cell.get("outputs", []):
-                failures.append(f"{label}: code cell {cell_id or index} must have cleared output")
+            runtime_variants.extend(
+                (cell_id or str(index), match.group(1))
+                for match in RUNTIME_VARIANT.finditer(source)
+            )
+            outputs = cell.get("outputs", [])
+            if not isinstance(outputs, list):
+                failures.append(f"{label}: code cell {cell_id or index} outputs must be a list")
+            elif any(output.get("output_type") == "error" for output in outputs):
+                failures.append(f"{label}: code cell {cell_id or index} stores an error output")
         if expected_variant == "learner":
             if "solution-only" in tags:
-                failures.append(f"{label}: learner contains solution-only cell {cell_id or index}")
+                failures.append(f"{label}: learner retains solution-only tag in {cell_id or index}")
             if BEGIN_MARKER in source or END_MARKER in source:
                 failures.append(f"{label}: learner contains solution marker in {cell_id or index}")
             metadata = cell.get("metadata", {})
             if "learner_source" in metadata or "learner_source" in metadata.get("course", {}):
                 failures.append(f"{label}: learner_source leaked into learner cell {cell_id or index}")
-        elif "exercise" in tags:
-            metadata = cell.get("metadata", {})
-            has_override = "learner_source" in metadata or "learner_source" in metadata.get("course", {})
-            has_markers = BEGIN_MARKER in source and END_MARKER in source
-            if not has_override and not has_markers:
+            for reason in incomplete_reasons(cell):
                 failures.append(
-                    f"{label}: exercise cell {cell_id or index} needs markers or learner_source"
+                    f"{label}: learner cell {cell_id or index} is incomplete ({reason})"
+                )
+        else:
+            metadata = cell.get("metadata", {})
+            has_override = (
+                "learner_source" in metadata
+                or "learner_source" in metadata.get("course", {})
+            )
+            if has_override and not tags.intersection(TECHNICAL_OVERRIDE_TAGS):
+                failures.append(
+                    f"{label}: learner_source is restricted to bootstrap/variant cell "
+                    f"{cell_id or index}"
                 )
 
     if len(ids) != len(set(ids)):
         failures.append(f"{label}: duplicate cell ids")
+    if not runtime_variants:
+        failures.append(f"{label}: missing runtime NOTEBOOK_VARIANT assignment")
+    else:
+        for cell_label, runtime_variant in runtime_variants:
+            if runtime_variant != expected_variant:
+                failures.append(
+                    f"{label}: runtime NOTEBOOK_VARIANT in {cell_label} is "
+                    f"{runtime_variant!r}, expected {expected_variant!r}"
+                )
     for required_tag in ("bootstrap", "exercise", "validation"):
         if required_tag not in all_tags:
             failures.append(f"{label}: missing required cell tag {required_tag!r}")
