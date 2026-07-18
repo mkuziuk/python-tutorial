@@ -29,7 +29,7 @@ export default defineConfig({
           label: 'Часть I · Архив',
           collapsed: true,
           items: [
-            { label: 'Обзор первой части', link: '/cases/' },
+            { label: 'Обзор первой части', slug: 'cases' },
             {
               label: '01. Кто оставил предупреждение?',
               slug: 'cases/anonymous-letter',
